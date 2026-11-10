@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Opens the panel configuration again when it closes as soon as it opens from a Plasma menu",
+        "Description[es]": "Vuelve a abrir la configuración del panel cuando se cierra nada más abrirse desde un menú de Plasma",
+        "EnabledByDefault": true,
+        "Icon": "configure",
+        "Id": "panelconfigretry",
+        "License": "GPL-3.0-or-later",
+        "Name": "Panel configuration retry",
+        "Name[es]": "Reintento de la configuración del panel",
+        "Version": "0.1.0"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

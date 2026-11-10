@@ -1,0 +1,38 @@
+#!/bin/sh
+# Make the lock screen from Plasma's own, with the ball buttons. Also run as a
+# trigger when Plasma updates it (at its diverted path). If this ever breaks,
+# the greeter falls back to its built-in locker, which can still unlock.
+set -e
+
+old_logo=57ad5b4583aa8aaf6b54b50823a463d6c1a4ce8491ac1e898f084680163bb481
+ui=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml
+panel=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml
+
+case "$1" in
+    configure|triggered)
+        if [ -f "$ui.distrib" ]; then
+            sed 's/^\(\s*\)ActionButton {/\1UzunyxActionButton {/' "$ui.distrib" > "$ui.uzunyx-tmp"
+            chmod 644 "$ui.uzunyx-tmp"
+            mv -f "$ui.uzunyx-tmp" "$ui"
+        fi
+        # A floating panel keeps floating when a window touches it: Plasma only
+        # does that for panels that aren't always visible. If the line changes
+        # in a new Plasma, the panel is Plasma's own.
+        if [ -f "$panel.distrib" ]; then
+            sed 's/^\(\s*\)if (panel\.visibilityMode != Panel\.Global\.NormalPanel && floating) {/\1if (floating) {/' \
+                "$panel.distrib" > "$panel.uzunyx-tmp"
+            chmod 644 "$panel.uzunyx-tmp"
+            mv -f "$panel.uzunyx-tmp" "$panel"
+        fi
+        # Users who still have Debian's avatar or our previous default (the logo,
+        # until 0.25.0) get the new default; a personal one is theirs.
+        getent passwd | while IFS=: read -r _ _ uid _ _ home _; do
+            [ "$uid" -ge 1000 ] && [ "$uid" -lt 60000 ] || continue
+            [ -f "$home/.face" ] && [ ! -L "$home/.face" ] || continue
+            if cmp -s "$home/.face" /etc/skel/.face.distrib \
+                || [ "$(sha256sum < "$home/.face" | cut -d' ' -f1)" = "$old_logo" ]; then
+                cat /etc/skel/.face > "$home/.face"
+            fi
+        done
+        ;;
+esac

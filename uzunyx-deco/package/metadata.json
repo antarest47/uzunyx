@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "KWin/Decoration",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Rounded window decoration that keeps its rounded corners on maximized windows",
+        "Description[es]": "Decoración de ventanas redondeada que mantiene las esquinas redondeadas al maximizar",
+        "Id": "uzunyx",
+        "License": "GPL-3.0-or-later",
+        "Name": "Uzunyx",
+        "Version": "0.10.0"
+    },
+    "X-KWin-Config-TranslationDomain": "aurorae"
+}

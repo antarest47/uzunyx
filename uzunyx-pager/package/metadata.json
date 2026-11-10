@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "Windows and Tasks",
+        "Description": "Virtual desktops as dots, hidden while there is only one",
+        "Description[es]": "Escritorios virtuales como puntos, oculto mientras hay uno solo",
+        "Icon": "virtual-desktops",
+        "Id": "org.uzunyx.pager",
+        "License": "GPL-2.0-or-later",
+        "Name": "Uzunyx Pager",
+        "Name[es]": "Paginador de Uzunyx",
+        "Version": "0.1.1"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

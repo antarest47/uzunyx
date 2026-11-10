@@ -1,0 +1,36 @@
+#!/bin/sh
+# uzunyx-tiling [off|stack|spiral|cycle|status]
+#
+# Chooses the tiling of the uzunyxtiling KWin script: the mode is saved for the
+# next login and sent to the running script. Prints the resulting mode.
+
+mode() {
+    # Called qtile and hyprland before 0.5.0.
+    kreadconfig6 --file kwinrc --group Script-uzunyxtiling --key Mode --default off |
+        sed 's/^qtile$/stack/; s/^hyprland$/spiral/'
+}
+
+# Meta+C (org.uzunyx.tiling-cycle.desktop), like a click on the tray icon.
+if [ "$1" = cycle ]; then
+    case "$(mode)" in
+        off) set -- stack ;;
+        stack) set -- spiral ;;
+        *) set -- off ;;
+    esac
+fi
+
+case "${1:-status}" in
+    off) shortcut=UzunyxTilingOff ;;
+    stack) shortcut=UzunyxTilingStack ;;
+    spiral) shortcut=UzunyxTilingSpiral ;;
+    status) mode; exit 0 ;;
+    *)
+        echo "usage: uzunyx-tiling [off|stack|spiral|cycle|status]" >&2
+        exit 2
+        ;;
+esac
+# --notify: uzunyx-outline marks the active window while tiling is on.
+kwriteconfig6 --notify --file kwinrc --group Script-uzunyxtiling --key Mode "$1"
+busctl --user call org.kde.kglobalaccel /component/kwin org.kde.kglobalaccel.Component \
+    invokeShortcut s "$shortcut" >/dev/null 2>&1
+mode

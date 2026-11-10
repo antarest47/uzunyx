@@ -1,0 +1,4 @@
+# Default Konsole profile (installed by uzunyx-colors). uzunyx-edition writes
+# the user's konsolerc when the edition changes.
+[Desktop Entry]
+DefaultProfile=UzunyxAkane.profile

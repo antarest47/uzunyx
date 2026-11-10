@@ -1,0 +1,31 @@
+Package: uzunyx-buttons
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: breeze-gtk-theme, kora-icon-theme, systemd
+Conflicts: waifbian-buttons
+Replaces: waifbian-buttons
+Recommends: kde-config-gtk-style
+Description: Uzunyx window buttons and folder icons
+ Glossy black minimize, maximize and close buttons, white for minimize and
+ maximize and red for close (maximize and restore look the same) for the window title bars that applications draw
+ themselves:
+ .
+  * the "Breeze-Uzunyx" GTK 3/4 theme: Breeze GTK with these buttons in
+    the header bars. Its name starts with "Breeze" so that Electron apps
+    space their title bar buttons like Breeze instead of GNOME. It also avoids the invisible buttons that
+    kde-gtk-config produces for Breeze GTK when the window decoration is an
+    Aurorae QML theme.
+  * the "uzunyx" icon theme: Kora plus full-colour PNG versions of the
+    window-*-symbolic icons, which Firefox and Chromium/Electron use for
+    their title bar buttons, and its own folder icons (generic folder and
+    the home directory folders) and Dolphin icon: dark grey with the
+    colours of the Akane logo.
+  * the "uzunyx-sora" icon theme: the same with the Sora folders.
+ .
+ A Plasma global theme cannot set the GTK theme, so at login a one-time
+ autostart script switches it from Breeze (or none) to Breeze-Uzunyx. The
+ uzunyx-deco window decoration uses the same buttons, and the
+ uzunyx-lookandfeel global theme selects the icon theme of each edition.

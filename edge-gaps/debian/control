@@ -1,0 +1,19 @@
+Package: edge-gaps
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: python3, python3-gi, python3-gi-cairo, gir1.2-gtk-3.0, gir1.2-gtklayershell-0.1, libkf6config-bin, systemd
+Breaks: tsunyx-launcher (<< 1.7.1)
+Enhances: plasma-workspace
+Description: invisible screen-edge margins for maximized windows on Plasma Wayland
+ Reserves a configurable gap on every screen edge using 1px click-through
+ layer-shell surfaces, so maximized windows keep their distance from the
+ screen edges and from panels, and floating Plasma panels keep floating.
+ Starts automatically in Plasma sessions; configure it in edge-gapsrc.
+ .
+ Also ships uzunyx-mode, which switches between the normal layout (gaps,
+ bottom panel always visible) and a focus mode (no gaps, the bottom panel
+ dodges windows). The running edge-gaps re-reads its configuration when
+ its "reload" action is activated over D-Bus.

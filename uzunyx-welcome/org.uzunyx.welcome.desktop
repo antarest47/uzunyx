@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Welcome to Uzunyx
+Name[es]=Bienvenida a Uzunyx
+Comment=Choose an edition and learn the basics of the desktop
+Comment[es]=Elegí una edición y conocé lo básico del escritorio
+Exec=uzunyx-welcome
+Icon=uzunyx-akane
+Categories=Qt;KDE;System;
+OnlyShowIn=KDE;

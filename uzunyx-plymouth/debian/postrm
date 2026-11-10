@@ -1,0 +1,23 @@
+#!/bin/sh
+# If the boot splash was one of ours, go back to the distribution default;
+# on purge the grub.d file is gone, so regenerate the GRUB menu too.
+set -e
+
+case "$1" in
+    remove|purge)
+        if [ -x /usr/sbin/plymouth-set-default-theme ]; then
+            case "$(/usr/sbin/plymouth-set-default-theme 2>/dev/null || true)" in
+                uzunyx-*)
+                    /usr/sbin/plymouth-set-default-theme --reset || true
+                    if command -v update-initramfs >/dev/null 2>&1; then
+                        update-initramfs -u || true
+                    fi
+                    ;;
+            esac
+        fi
+        ;;
+esac
+
+if [ "$1" = purge ] && command -v update-grub >/dev/null 2>&1 && [ -e /boot/grub/grub.cfg ]; then
+    update-grub || true
+fi

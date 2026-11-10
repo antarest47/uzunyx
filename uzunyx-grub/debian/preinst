@@ -1,0 +1,14 @@
+#!/bin/sh
+# Divert grub2-common's /etc/grub.d/10_linux: the postinst puts in its place
+# a copy with quiet_boot="1", so GRUB doesn't print "Loading Linux ..." and
+# "Loading initial ramdisk ..." before the boot splash (Debian builds it
+# with 0, Ubuntu with 1). The original keeps being updated by grub2-common
+# at the diverted path; GRUB skips it (*.dpkg-* names).
+set -e
+
+case "$1" in
+    install|upgrade)
+        dpkg-divert --package uzunyx-grub --add --rename \
+            --divert /etc/grub.d/10_linux.dpkg-uzunyx /etc/grub.d/10_linux
+        ;;
+esac

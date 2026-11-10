@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standard/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standard/kcfg/1.0
+      http://www.kde.org/standard/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name=""/>
+    <group name="General">
+        <entry name="launchers" type="StringList">
+            <label>Pinned applications, in the same format as Plasma's task manager.</label>
+            <default>applications:systemsettings.desktop,preferred://filemanager,preferred://browser</default>
+        </entry>
+        <entry name="showOnlyCurrentScreen" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="showOnlyCurrentDesktop" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="showOnlyCurrentActivity" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="showOnlyMinimized" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="unhideOnAttention" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="groupingStrategy" type="Int">
+            <label>0: do not group, 1: by program name.</label>
+            <default>1</default>
+        </entry>
+        <entry name="groupedTaskVisualization" type="Int">
+            <label>Clicking a group. 0: cycle, 1: small previews, 2: large previews, 3: textual list.</label>
+            <default>1</default>
+        </entry>
+        <entry name="sortingStrategy" type="Int">
+            <label>A TasksModel.SortMode.</label>
+            <default>1</default>
+        </entry>
+        <entry name="separateLaunchers" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="hideLauncherOnStart" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="showToolTips" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="highlightWindows" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="wheelEnabled" type="Int">
+            <label>0: nothing, 1: cycle through all tasks, 2: cycle through the hovered task's windows, 3: the hovered task's volume.</label>
+            <default>0</default>
+        </entry>
+        <entry name="wheelSkipMinimized" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="middleClickAction" type="Int">
+            <label>0: nothing, 1: close, 2: new instance, 3: minimize or restore, 4: toggle grouping, 5: bring to the current desktop.</label>
+            <default>2</default>
+        </entry>
+        <entry name="fill" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="minimizeActiveTaskOnClick" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="reverseMode" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="indicateAudioStreams" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="interactiveMute" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="tooltipControls" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="maxStripes" type="Int">
+            <label>Rows (columns in a vertical panel), as many as fit.</label>
+            <default>1</default>
+        </entry>
+        <entry name="iconSpacing" type="Int">
+            <label>Pixels between buttons.</label>
+            <default>0</default>
+        </entry>
+    </group>
+</kcfg>

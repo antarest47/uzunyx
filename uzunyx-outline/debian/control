@@ -1,0 +1,18 @@
+Package: uzunyx-outline
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: @ARCH@
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: kwin-wayland (>= @KWIN@), kwin-wayland (<< @KWIN@.~)
+Conflicts: waifbian-outline
+Replaces: waifbian-outline
+Description: thin outline around windows that draw their own frame
+ KWin effect that adds a 1 px light outline with 8 px rounded corners to
+ windows with client-side decorations (Firefox, Electron apps, GTK and
+ libadwaita apps), matching the outline of the uzunyx window decoration.
+ Windows with a server-side decoration are left alone. The outline is
+ brighter on the active window.
+ .
+ Built against one exact KWin version: KWin refuses to load it in any
+ other, so it must be rebuilt after every KWin update.

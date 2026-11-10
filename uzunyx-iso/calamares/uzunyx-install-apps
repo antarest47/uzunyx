@@ -1,0 +1,39 @@
+#!/bin/sh
+# Installs the extended selection of apps in the new system, from the internet
+# (Calamares' "Aplicaciones" page). Without a connection it leaves the default
+# install: it never fails, and what happened goes to the new system's log.
+root=$1
+log=$root/var/log/uzunyx-install-apps.log
+exec >>"$log" 2>&1
+in_root() { chroot "$root" env DEBIAN_FRONTEND=noninteractive LC_ALL=C.UTF-8 "$@"; }
+
+if ! in_root apt-get update; then
+    echo "uzunyx-install-apps: no se pudo actualizar la lista de paquetes; queda la instalación por defecto"
+    exit 0
+fi
+
+packages="libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-plasma
+          thunderbird vlc elisa gimp kcalc"
+# The translations of the system's language, when Debian has them.
+lang=$(sed -n 's/^LANG="\{0,1\}\([a-z]*\)_\([A-Z]*\).*/\1 \2/p' "$root/etc/default/locale" 2>/dev/null)
+code=${lang% *}
+country=$(echo "${lang#* }" | tr 'A-Z' 'a-z')
+if [ -n "$code" ] && [ "$code" != en ]; then
+    for candidate in "libreoffice-l10n-$code" "thunderbird-l10n-$code-$country" "thunderbird-l10n-$code-es" \
+                     "thunderbird-l10n-$code"; do
+        if in_root apt-cache show "$candidate" >/dev/null 2>&1; then
+            case $candidate in
+                thunderbird-*) [ -n "$thunderbird" ] && continue; thunderbird=$candidate ;;
+            esac
+            packages="$packages $candidate"
+        fi
+    done
+fi
+
+# shellcheck disable=SC2086
+if ! in_root apt-get install -y $packages; then
+    echo "uzunyx-install-apps: falló la instalación; queda la instalación por defecto"
+    in_root dpkg --configure -a
+fi
+in_root apt-get clean
+exit 0

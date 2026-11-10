@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=inode/directory;
+Actions=openTerminal;
+X-KDE-Priority=TopLevel
+X-KDE-AuthorizeAction=shell_access
+
+[Desktop Action openTerminal]
+TryExec=konsole
+Exec=konsole --workdir %f
+Icon=utilities-terminal
+Name=Open in Terminal
+Name[es]=Abrir en la terminal

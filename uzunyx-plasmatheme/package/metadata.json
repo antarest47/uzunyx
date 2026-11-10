@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "",
+        "Description": "Breeze with Unity-style task manager indicators: a dot under running apps and rounded highlights",
+        "Description[es]": "Breeze con indicadores del gestor de tareas al estilo Unity: un punto bajo las aplicaciones abiertas y resaltados redondeados",
+        "EnabledByDefault": true,
+        "Id": "uzunyx",
+        "License": "LGPL",
+        "Name": "Uzunyx",
+        "Version": "0.8.1"
+    },
+    "X-Plasma-API": "5.0"
+}

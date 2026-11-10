@@ -1,0 +1,8 @@
+# Uzunyx: Firefox as the default browser for new users, and with it the
+# browser pinned in the panel (preferred://browser). Debian's Firefox first;
+# the other name if that one isn't there.
+[Default Applications]
+text/html=firefox-esr.desktop;firefox.desktop;
+application/xhtml+xml=firefox-esr.desktop;firefox.desktop;
+x-scheme-handler/http=firefox-esr.desktop;firefox.desktop;
+x-scheme-handler/https=firefox-esr.desktop;firefox.desktop;

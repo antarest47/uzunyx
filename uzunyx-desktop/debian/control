@@ -1,0 +1,48 @@
+Package: uzunyx-desktop
+Version: @VERSION@
+Section: metapackages
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: uzunyx-lookandfeel (>= 0.24.0),
+ uzunyx-deco (>= 0.10.0),
+ uzunyx-plasmatheme (>= 0.7.0),
+ uzunyx-colors (>= 0.3.0),
+ uzunyx-terminal (>= 0.1.0),
+ uzunyx-tiling (>= 0.2.0),
+ uzunyx-controlcenter (>= 0.5.0),
+ uzunyx-buttons (>= 0.7.0),
+ uzunyx-wallpapers (>= 0.8.0),
+ kora-icon-theme,
+ edge-gaps (>= 0.4.0),
+ uzunyx-editions (>= 0.2.2),
+ uzunyx-lockkeys (>= 0.3.0),
+ uzunyx-shortcuts (>= 0.2.0),
+ uzunyx-tasks (>= 0.4.0),
+ uzunyx-pager (>= 0.1.0),
+ uzunyx-clock (>= 0.2.0),
+ uzunyx-timer,
+ uzunyx-keys,
+ uzunyx-welcome,
+ uzunyx-logout (>= 0.1.0),
+ tsunyx-launcher (>= 1.11.0),
+ xdg-user-dirs,
+ systemd-zram-generator
+Recommends: uzunyx-outline,
+ uzunyx-altguard,
+ uzunyx-doctor,
+ lunyx,
+ uzunyx-openclose,
+ uzunyx-genie,
+ uzunyx-plymouth (>= 0.2.1),
+ uzunyx-grub (>= 0.2.1)
+Description: Uzunyx desktop for KDE Plasma (metapackage)
+ Installs the whole Uzunyx desktop on Plasma 6.7 or later: the Akane and
+ Sora global themes with their colours, window decoration, Plasma theme,
+ window buttons, icons and wallpapers, the edition switcher, the screen-edge
+ gaps, the lock keys widget, the keyboard shortcuts and Tsunyx Launcher.
+ .
+ Recommended, installed by default but removable on their own: the KWin
+ effects (window outline, open/close and genie animations) and the Alt guard
+ plugin, which are built for one exact KWin version, the boot splash and the GRUB theme and hidden
+ menu, which change how the PC boots, and the battery widget.

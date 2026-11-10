@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: kora
+Upstream-Contact: bikass (https://github.com/bikass)
+Source: https://github.com/bikass/kora
+
+Files: *
+Copyright: bikass and the Kora contributors
+License: GPL-3.0
+ The full text of the GNU General Public License version 3 is in
+ /usr/share/common-licenses/GPL-3 and in the LICENSE file next to this one.

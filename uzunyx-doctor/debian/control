@@ -1,0 +1,13 @@
+Package: uzunyx-doctor
+Version: @VERSION@
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: python3, konsole, kdialog, sudo, util-linux, make
+Recommends: timeshift, git
+Description: updates the system and checks that Uzunyx still works
+ A guided routine: checks, snapshot, simulated upgrade, upgrade, rebuild of
+ the KWin effects tied to the KWin version, and a last round of checks after
+ the next login. It stops and explains when an upgrade wants to remove a
+ package of Uzunyx or of the desktop, and reminds once a month to run it.

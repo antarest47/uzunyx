@@ -1,0 +1,9 @@
+[Plymouth Theme]
+Name=Uzunyx @Edition@
+Description=Uzunyx boot splash, @Edition@ edition
+ModuleName=script
+
+[script]
+ImageDir=@DIR@
+ScriptFile=@DIR@/uzunyx.script
+ConsoleLogBackgroundColor=0x111318

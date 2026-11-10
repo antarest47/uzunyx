@@ -1,0 +1,33 @@
+Package: uzunyx-lookandfeel
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: fonts-nunito, uzunyx-deco (>= 0.10.0), uzunyx-buttons (>= 0.8.0), uzunyx-plasmatheme (>= 0.6.0), uzunyx-wallpapers (>= 0.4.0), uzunyx-colors (>= 0.1.0), kora-icon-theme, qml6-module-qtquick-effects, plasma-workspace (>= 4:6.7)
+Conflicts: waifbian-lookandfeel
+Replaces: waifbian-lookandfeel
+Recommends: tsunyx-launcher (>= 1.7.1), uzunyx-lockkeys (>= 0.3.0), firefox-esr | firefox
+Description: Uzunyx global themes for Plasma (Akane and Sora)
+ Two dark Plasma look-and-feel packages, "Uzunyx Akane" (the default,
+ crimson) and "Uzunyx Sora" (cyan). They share the Uzunyx rounded window
+ decoration and window buttons, the Uzunyx Plasma theme (Unity-style task
+ manager indicators) and the Kora icon theme (through the "uzunyx" icon
+ theme from uzunyx-buttons), and differ in their color scheme
+ (uzunyx-colors), wallpaper and the Uzunyx logo on the launcher button. Its desktop layout has a floating, centered
+ bottom panel sized to its content, with Tsunyx Launcher as the app menu
+ (Kickoff if tsunyx-launcher is not installed) followed by the Tsunyx Search
+ box, a task manager that shows window thumbnails when a group of
+ windows is clicked, and the Caps Lock / Num Lock indicator from
+ uzunyx-lockkeys before the system tray.
+ .
+ It is set as the system default global theme in /etc/xdg/kdeglobals, so
+ new users get it on their first login. Users who already chose a global
+ theme keep theirs until they select Uzunyx Akane or Uzunyx Sora in System
+ Settings > Colors & Themes > Global Theme.
+ .
+ Dolphin gets an "Up" button after "Forward" in its main toolbar.
+ .
+ A plasma-workspace env script makes Plasma rewrite the theme defaults of
+ users already on Uzunyx when this package is updated (Plasma only does
+ it when the global theme's name changes).

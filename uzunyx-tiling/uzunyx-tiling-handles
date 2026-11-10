@@ -1,0 +1,124 @@
+#!/usr/bin/python3
+"""Resize handles for uzunyx-tiling's divisions (Wayland layer-shell).
+
+KWin gives no resize border to windows without a decoration, and tiled windows
+lose theirs. The tiling script sends here, over D-Bus, the strips over each
+division between tiles (Set, a JSON list of {x, y, width, height, horizontal}
+in global coordinates); each one becomes an invisible surface above the windows
+with the resize cursor (↔ between windows side by side, ↕ between stacked ones).
+Pressing it tells the script to follow the pointer with that division until the
+button is released, through two of its shortcuts, invoked from kglobalaccel:
+a KWin script can't receive D-Bus calls.
+
+Started by D-Bus activation on the script's first call; an empty list leaves
+nothing on screen.
+"""
+
+import json
+
+import gi
+
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+gi.require_version("GtkLayerShell", "0.1")
+from gi.repository import Gdk, Gio, GLib, Gtk, GtkLayerShell  # noqa: E402
+
+NAME = "org.uzunyx.TilingHandles"
+PATH = "/org/uzunyx/TilingHandles"
+INTERFACE = """
+<node>
+  <interface name="org.uzunyx.TilingHandles">
+    <method name="Set">
+      <arg type="s" name="handles" direction="in"/>
+    </method>
+  </interface>
+</node>
+"""
+
+
+class Handles:
+    def __init__(self):
+        self.windows = []
+        self.dragging = False
+        # A list that arrives during a drag waits: replacing the pressed surface
+        # would lose the button's release.
+        self.pending = None
+        self.bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+        node = Gio.DBusNodeInfo.new_for_xml(INTERFACE)
+        self.bus.register_object(PATH, node.interfaces[0], self.on_call, None, None)
+        Gio.bus_own_name_on_connection(self.bus, NAME, Gio.BusNameOwnerFlags.NONE, None, lambda *_: Gtk.main_quit())
+
+    def on_call(self, _bus, _sender, _path, _interface, method, params, invocation):
+        if method == "Set":
+            try:
+                handles = json.loads(params.unpack()[0])
+            except ValueError:
+                handles = []
+            if self.dragging:
+                self.pending = handles
+            else:
+                self.show(handles)
+        invocation.return_value(None)
+
+    def shortcut(self, name):
+        self.bus.call("org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component", "invokeShortcut",
+                      GLib.Variant("(s)", (name,)), None, Gio.DBusCallFlags.NONE, -1, None, None)
+
+    def show(self, handles):
+        for window in self.windows:
+            window.destroy()
+        self.windows = [self.handle(h) for h in handles]
+        self.windows = [w for w in self.windows if w]
+
+    def handle(self, h):
+        display = Gdk.Display.get_default()
+        monitor = display.get_monitor_at_point(int(h["x"] + h["width"] / 2), int(h["y"] + h["height"] / 2))
+        if monitor is None:
+            return None
+        area = monitor.get_geometry()
+        window = Gtk.Window()
+        window.set_app_paintable(True)
+        visual = window.get_screen().get_rgba_visual()
+        if visual:
+            window.set_visual(visual)
+        window.connect("draw", lambda _w, cr: (cr.set_source_rgba(0, 0, 0, 0), cr.set_operator(1), cr.paint()))
+        GtkLayerShell.init_for_window(window)
+        GtkLayerShell.set_namespace(window, "uzunyx-tiling-handle")
+        GtkLayerShell.set_layer(window, GtkLayerShell.Layer.TOP)
+        GtkLayerShell.set_monitor(window, monitor)
+        # Placed by the output's corner, over any panel's reserved space.
+        GtkLayerShell.set_exclusive_zone(window, -1)
+        GtkLayerShell.set_anchor(window, GtkLayerShell.Edge.TOP, True)
+        GtkLayerShell.set_anchor(window, GtkLayerShell.Edge.LEFT, True)
+        GtkLayerShell.set_margin(window, GtkLayerShell.Edge.LEFT, int(h["x"]) - area.x)
+        GtkLayerShell.set_margin(window, GtkLayerShell.Edge.TOP, int(h["y"]) - area.y)
+        GtkLayerShell.set_keyboard_mode(window, GtkLayerShell.KeyboardMode.NONE)
+        window.set_size_request(max(1, int(h["width"])), max(1, int(h["height"])))
+        window.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK)
+        cursor = Gdk.Cursor.new_from_name(display, "col-resize" if h["horizontal"] else "row-resize")
+        window.connect("realize", lambda w: w.get_window().set_cursor(cursor))
+        window.connect("button-press-event", self.on_press)
+        window.connect("button-release-event", self.on_release)
+        window.show_all()
+        return window
+
+    def on_press(self, _window, event):
+        if event.button == Gdk.BUTTON_PRIMARY and event.type == Gdk.EventType.BUTTON_PRESS:
+            self.dragging = True
+            self.shortcut("UzunyxTilingDragStart")
+        return True
+
+    def on_release(self, _window, event):
+        if event.button == Gdk.BUTTON_PRIMARY and self.dragging:
+            self.dragging = False
+            self.shortcut("UzunyxTilingDragEnd")
+            if self.pending is not None:
+                handles, self.pending = self.pending, None
+                # After the script's last layout of the drag.
+                GLib.timeout_add(50, lambda: self.show(handles) and False)
+        return True
+
+
+if __name__ == "__main__":
+    Handles()
+    Gtk.main()

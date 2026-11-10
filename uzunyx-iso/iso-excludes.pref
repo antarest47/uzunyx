@@ -1,0 +1,14 @@
+# Only while building the ISO (build-iso.sh): Recommends that would take it
+# past 2 GiB, the most a file can be in a GitHub release. None is a
+# dependency of anything on the ISO, and all can be installed later.
+# Noto's extra weights and CJK extras (fonts-noto-cjk stays):
+Package: fonts-noto-extra fonts-noto-ui-extra fonts-noto-cjk-extra
+Pin: release *
+Pin-Priority: -1
+
+# An input method's data without the input method; VLC comes with the
+# extended selection; Konqueror, KDE's help and online accounts bring Qt's
+# web engine:
+Package: ibus-data vlc konqueror khelpcenter kaccounts-providers
+Pin: release *
+Pin-Priority: -1

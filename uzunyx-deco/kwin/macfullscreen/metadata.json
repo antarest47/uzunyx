@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Fullscreen on a desktop of its own, like macOS (Super+F or the window menu)",
+        "Description[es]": "Pantalla completa en un escritorio propio, como en macOS (Super+F o el menú de la ventana)",
+        "EnabledByDefault": true,
+        "Icon": "view-fullscreen",
+        "Id": "macfullscreen",
+        "License": "GPL-3.0-or-later",
+        "Name": "macOS-like fullscreen",
+        "Name[es]": "Pantalla completa como macOS",
+        "Version": "0.12.4"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

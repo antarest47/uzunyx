@@ -1,0 +1,17 @@
+Package: uzunyx-openclose
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: @ARCH@
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: kwin-wayland (>= @KWIN@), kwin-wayland (<< @KWIN@.~)
+Description: Uzunyx window open and close animation
+ KWin effect that animates windows opening and closing: they rise into
+ place (up 16 px, from 97 % size, fading in) and sink back out. While it
+ animates, the window is drawn above the others, so the closing animation
+ isn't hidden by the window that gets the focus, and it replaces KWin's
+ maximize animation on apps that open maximized.
+ .
+ Takes over from KWin's Scale effect for the windows it animates (Scale
+ stops on its own). Built against one exact KWin version: KWin refuses to
+ load it in any other, so it must be rebuilt after every KWin update.

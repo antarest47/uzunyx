@@ -1,0 +1,6 @@
+#!/bin/sh
+# dpkg holds the lock here, so apt can't run: the install is a second command.
+set -e
+if [ "$1" = configure ] && [ -z "$UZUNYX_QUIET" ]; then
+    echo "Para instalar Uzunyx: sudo uzunyx-install"
+fi

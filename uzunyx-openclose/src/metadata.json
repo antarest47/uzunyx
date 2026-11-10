@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "Appearance",
+        "Description": "Windows rise into place when opened and sink back out when closed",
+        "Description[es]": "Las ventanas emergen al abrirse y se hunden al cerrarse",
+        "EnabledByDefault": true,
+        "License": "GPL-2.0-or-later",
+        "Name": "Uzunyx open and close",
+        "Name[es]": "Abrir y cerrar de Uzunyx"
+    },
+    "X-KWin-Exclusive-Category": "toplevel-open-close-animation"
+}

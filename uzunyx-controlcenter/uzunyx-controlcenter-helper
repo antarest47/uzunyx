@@ -1,0 +1,130 @@
+#!/usr/bin/python3
+"""What the control center can't do from QML; prints JSON, one line.
+
+    tray-activate SERVICE PATH     opens the app of a tray icon
+    tray-menu SERVICE PATH         its menu (com.canonical.dbusmenu)
+    tray-event SERVICE PATH ID     clicks a menu entry
+    usb                            removable partitions
+    usb-mount|usb-unmount DEVICE
+    usb-eject DEVICE               unmounts all of its disk and powers it off
+"""
+
+import json
+import re
+import subprocess
+import sys
+
+import gi
+
+gi.require_version("Gio", "2.0")
+from gi.repository import Gio, GLib
+
+SNI = "org.kde.StatusNotifierItem"
+MENU = "com.canonical.dbusmenu"
+
+
+def call(service, path, interface, method, args=None, reply=None):
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+    return bus.call_sync(service, path, interface, method, args,
+                         GLib.VariantType(reply) if reply else None, Gio.DBusCallFlags.NONE, 5000).unpack()
+
+
+def menu_path(service, path):
+    return call(service, path, "org.freedesktop.DBus.Properties", "Get",
+                GLib.Variant("(ss)", (SNI, "Menu")), "(v)")[0]
+
+
+def entry(node):
+    item, props, children = node
+    return {
+        "id": item,
+        "label": re.sub(r"_(.)", r"\1", props.get("label", "")),
+        "type": props.get("type", "standard"),
+        "enabled": props.get("enabled", True),
+        "visible": props.get("visible", True),
+        "icon": props.get("icon-name", ""),
+        "checked": props.get("toggle-state", 0) == 1,
+        "children": [entry(child) for child in children],
+    }
+
+
+def tray_menu(service, path):
+    menu = menu_path(service, path)
+    try:
+        call(service, menu, MENU, "AboutToShow", GLib.Variant("(i)", (0,)))
+    except GLib.Error:
+        pass
+    return entry(call(service, menu, MENU, "GetLayout", GLib.Variant("(iias)", (0, -1, [])), "(u(ia{sv}av))")[1])["children"]
+
+
+def tray_event(service, path, item):
+    call(service, menu_path(service, path), MENU, "Event",
+         GLib.Variant("(isvu)", (int(item), "clicked", GLib.Variant("i", 0), 0)))
+    return True
+
+
+def tray_activate(service, path):
+    call(service, path, SNI, "Activate", GLib.Variant("(ii)", (0, 0)))
+    return True
+
+
+def block_devices():
+    out = subprocess.run(["lsblk", "-J", "-o", "NAME,PATH,LABEL,SIZE,TYPE,RM,HOTPLUG,MOUNTPOINT,FSTYPE,TRAN"],
+                         capture_output=True, text=True, check=True).stdout
+    return json.loads(out)["blockdevices"]
+
+
+def usb():
+    found = []
+    for disk in block_devices():
+        if not (disk["hotplug"] or disk["rm"] or disk["tran"] == "usb"):
+            continue
+        for part in disk.get("children") or [disk]:
+            if part["fstype"]:
+                found.append({"device": part["path"], "disk": disk["path"], "label": part["label"] or "",
+                              "size": part["size"], "mount": part["mountpoint"] or ""})
+    return found
+
+
+def udisks(*args):
+    subprocess.run(["udisksctl", *args, "--no-user-interaction"], capture_output=True, text=True, check=True)
+    return True
+
+
+def usb_eject(device):
+    for disk in block_devices():
+        parts = disk.get("children") or [disk]
+        if device == disk["path"] or device in [p["path"] for p in parts]:
+            for part in parts:
+                if part["mountpoint"]:
+                    udisks("unmount", "-b", part["path"])
+            return udisks("power-off", "-b", disk["path"])
+    raise ValueError(device)
+
+
+def device(value):
+    if not re.fullmatch(r"/dev/[\w.-]+", value):
+        raise ValueError(value)
+    return value
+
+
+COMMANDS = {
+    "tray-activate": tray_activate,
+    "tray-menu": tray_menu,
+    "tray-event": tray_event,
+    "usb": usb,
+    "usb-mount": lambda d: udisks("mount", "-b", device(d)),
+    "usb-unmount": lambda d: udisks("unmount", "-b", device(d)),
+    "usb-eject": lambda d: usb_eject(device(d)),
+}
+
+
+def main():
+    try:
+        print(json.dumps({"result": COMMANDS[sys.argv[1]](*sys.argv[2:])}))
+    except (GLib.Error, OSError, ValueError, KeyError, IndexError, TypeError, subprocess.CalledProcessError) as error:
+        print(json.dumps({"error": str(error)}))
+
+
+if __name__ == "__main__":
+    main()

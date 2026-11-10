@@ -1,0 +1,9 @@
+#!/bin/sh
+# Writes the final APT sources. Debian's copy names a fixed older release.
+CHROOT=$(mount | grep proc | grep calamares | awk '{print $3}' | sed -e "s#/proc##g")
+cat > "$CHROOT/etc/apt/sources.list" <<SOURCES
+deb http://deb.debian.org/debian forky main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian forky-updates main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian-security forky-security main contrib non-free non-free-firmware
+SOURCES
+exit 0

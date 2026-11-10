@@ -1,0 +1,45 @@
+# In the ISO, besides what uzunyx-install brings. Live session and installer:
+live-boot
+live-config
+live-config-systemd
+calamares
+calamares-settings-debian
+# What Calamares partitions with:
+dosfstools
+gdisk
+smartmontools
+xfsprogs
+ntfs-3g
+exfatprogs
+# Boot and hardware:
+linux-image-amd64
+grub-common
+efibootmgr
+firmware-linux
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+firmware-sof-signed
+network-manager
+# Spanish and English:
+locales
+firefox-esr-l10n-es-es
+hunspell-es
+# Apps:
+firefox-esr
+konsole
+dolphin
+kate
+ark
+gwenview
+okular
+kde-spectacle
+plasma-nm
+plasma-pa
+bluedevil
+powerdevil
+kscreen
+plasma-discover
+systemsettings
+sudo

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Uzunyx GTK theme
+Name[es]=Tema GTK de Uzunyx
+Comment=Switches the GTK theme from Breeze to Breeze-Uzunyx once
+Comment[es]=Cambia una vez el tema GTK de Breeze a Breeze-Uzunyx
+Exec=uzunyx-gtk-theme-setup
+TryExec=uzunyx-gtk-theme-setup
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=2

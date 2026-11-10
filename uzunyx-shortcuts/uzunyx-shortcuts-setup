@@ -1,0 +1,189 @@
+#!/usr/bin/python3
+"""Adds the Uzunyx global shortcuts to the user's own, at login.
+
+The shortcuts are added next to the existing ones (Alt+F4 still closes a
+window, the media keys still work...), through kglobalaccel's D-Bus API, the
+same way System Settings does. Super+Escape is taken from the System
+Monitor, which opens with it by default, for locking the screen, and it is the
+only key for that: Meta+L is freed.
+
+Runs once per version of the list below (marker in
+~/.config/uzunyx/shortcuts-version), so later changes the user makes in
+System Settings are kept. --force applies them again.
+"""
+
+import os
+import subprocess
+import sys
+import time
+
+VERSION = "8"
+
+# Qt key codes (Qt::Key and Qt::KeyboardModifier values)
+MODIFIERS = {"Meta": 0x10000000, "Ctrl": 0x04000000, "Alt": 0x08000000, "Shift": 0x02000000}
+KEYS = {"Esc": 0x01000000, "Tab": 0x01000001, "Left": 0x01000012, "Right": 0x01000014}
+
+
+def key(sequence):
+    """'Alt+W' -> Qt key code."""
+    *mods, name = sequence.split("+")
+    code = KEYS.get(name, ord(name.upper()) if len(name) == 1 else None)
+    if code is None:
+        raise ValueError(sequence)
+    for mod in mods:
+        code |= MODIFIERS[mod]
+    return code
+
+
+# (component, action, shortcuts to add)
+ADD = [
+    ("kmix", "increase_volume", ["Alt+W"]),
+    ("kmix", "decrease_volume", ["Alt+S"]),
+    # Alt+Left/Right are back and forward in browsers and Dolphin: chosen anyway
+    # by the user (2026-11-07), those have the mouse buttons and Backspace.
+    ("org_kde_powerdevil", "Increase Screen Brightness", ["Alt+Right"]),
+    ("org_kde_powerdevil", "Decrease Screen Brightness", ["Alt+Left"]),
+    ("kwin", "Window Maximize", ["Alt+2"]),
+    ("kwin", "Window Quick Tile Left", ["Alt+1"]),
+    ("kwin", "Window Quick Tile Right", ["Alt+3"]),
+    ("kwin", "Window Close", ["Alt+Esc"]),
+    ("kwin", "Switch One Desktop to the Left", ["Alt+A"]),
+    ("kwin", "UzunyxDesktopNext", ["Alt+D"]),
+    ("mediacontrol", "playpausemedia", ["Alt+X"]),
+    ("mediacontrol", "previousmedia", ["Alt+Z"]),
+    ("mediacontrol", "nextmedia", ["Alt+C"]),
+    ("org.kde.spectacle.desktop", "RectangularRegionScreenShot", ["Ctrl+Shift+S"]),
+    ("ksmserver", "Lock Session", ["Meta+Esc"]),
+    ("kwin", "Switch Window Up", ["Meta+W"]),
+    ("kwin", "Switch Window Left", ["Meta+A"]),
+    ("kwin", "Switch Window Down", ["Meta+S"]),
+    ("kwin", "Switch Window Right", ["Meta+D"]),
+    ("kwin", "Overview", ["Meta+Tab"]),
+    ("kwin", "Show Desktop", ["Meta+Q"]),
+    # uzunyx-tiling's: a key another action holds isn't given to a script.
+    ("kwin", "UzunyxTilingRotate", ["Meta+E"]),
+    ("kwin", "UzunyxTilingPromote", ["Meta+R"]),
+    ("kwin", "UzunyxTilingFloat", ["Meta+Shift+E"]),
+    ("kwin", "UzunyxTilingMoveUp", ["Meta+Shift+W"]),
+    ("kwin", "UzunyxTilingMoveLeft", ["Meta+Shift+A"]),
+    ("kwin", "UzunyxTilingMoveDown", ["Meta+Shift+S"]),
+    ("kwin", "UzunyxTilingShrink", ["Meta+Z"]),
+    ("kwin", "UzunyxTilingGrow", ["Meta+X"]),
+    ("kwin", "UzunyxTilingReset", ["Meta+Shift+Z"]),
+    ("kwin", "UzunyxWindowDesktopNext", ["Alt+E"]),
+    ("kwin", "UzunyxWindowDesktopPrevious", ["Alt+Q"]),
+]
+# (component, action, shortcuts to remove)
+REMOVE = [
+    ("org.kde.plasma-systemmonitor.desktop", "_launch", ["Meta+Esc"]),
+    ("ksmserver", "Lock Session", ["Meta+L"]),
+    # Their keys go to moving between windows, all for the left hand.
+    ("kwin", "Overview", ["Meta+W"]),
+    ("kwin", "Show Desktop", ["Meta+D"]),
+    ("kwin", "Walk Through Windows", ["Meta+Tab"]),
+    ("plasmashell", "manage activities", ["Meta+Q"]),
+    ("plasmashell", "next activity", ["Meta+A"]),
+    ("plasmashell", "previous activity", ["Meta+Shift+A"]),
+    ("kwin", "Switch One Desktop to the Right", ["Alt+D"]),
+    ("kwin", "UzunyxTilingFloat", ["Meta+E"]),
+    ("kwin", "UzunyxTilingMoveRight", ["Meta+Shift+D"]),
+    ("kwin", "Window One Desktop to the Left", ["Alt+Shift+A"]),
+    ("kwin", "Window One Desktop to the Right", ["Alt+Shift+D"]),
+    ("org.kde.spectacle.desktop", "RecordRegion", ["Meta+R"]),
+    ("org.kde.spectacle.desktop", "_launch", ["Meta+Shift+S"]),
+    ("org.kde.dolphin.desktop", "_launch", ["Meta+E"]),
+]
+# KWin's button rebinding, in kcminputrc: the mouse's back and forward buttons
+# change the volume. A button the user already rebound is left alone.
+MOUSE_BUTTONS = [
+    ("ExtraButton1", "Key,Volume Down"),
+    ("ExtraButton2", "Key,Volume Up"),
+]
+
+
+def busctl(method, signature, *args):
+    return subprocess.run(
+        ["busctl", "--user", "call", "org.kde.kglobalaccel", "/kglobalaccel",
+         "org.kde.KGlobalAccel", method, signature, *map(str, args)],
+        check=True, capture_output=True, text=True).stdout
+
+
+def action_id(component, action):
+    # componentUnique, actionUnique, componentFriendly, actionFriendly
+    return [4, component, action, "", ""]
+
+
+def current_keys(component, action):
+    """First key of each of the action's shortcuts. busctl prints
+    'a(ai) N 4 k1 k2 k3 k4 ...': a key sequence is up to four keys."""
+    out = busctl("shortcutKeys", "as", *action_id(component, action)).split()
+    count, values = int(out[1]), [int(v) for v in out[2:]]
+    keys = []
+    for i in range(count):
+        size = values.pop(0)
+        sequence = values[:size]
+        del values[:size]
+        keys.append(sequence[0] if sequence else 0)
+    return [k for k in keys if k]
+
+
+def set_keys(component, action, keys):
+    args = action_id(component, action) + [len(keys)]
+    for k in keys:
+        args += [4, k, 0, 0, 0]
+    busctl("setForeignShortcutKeys", "asa(ai)", *args)
+
+
+def apply_mouse_buttons():
+    group = ["--file", "kcminputrc", "--group", "ButtonRebinds", "--group", "Mouse", "--key"]
+    for button, action in MOUSE_BUTTONS:
+        current = subprocess.run(["kreadconfig6", *group, button],
+                                 check=True, capture_output=True, text=True).stdout.strip()
+        if not current:
+            subprocess.run(["kwriteconfig6", "--notify", *group, button, action], check=True)
+
+
+def apply():
+    apply_mouse_buttons()
+    # Removals first, so a freed shortcut (Super+Escape) can be given away.
+    for component, action, sequences in REMOVE:
+        keys = current_keys(component, action)
+        new = [k for k in keys if k not in [key(s) for s in sequences]]
+        if new != keys:
+            set_keys(component, action, new)
+    for component, action, sequences in ADD:
+        keys = current_keys(component, action)
+        new = keys + [key(s) for s in sequences if key(s) not in keys]
+        if new != keys:
+            set_keys(component, action, new)
+
+
+def main():
+    marker = os.path.join(os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config"),
+                          "uzunyx", "shortcuts-version")
+    force = "--force" in sys.argv
+    try:
+        with open(marker) as f:
+            if f.read().strip() == VERSION and not force:
+                return 0
+    except OSError:
+        pass
+    # kglobalaccel or the components (e.g. kmix, registered by plasmashell)
+    # may not be ready right at login: retry for a while, else next login.
+    for attempt in range(15):
+        try:
+            apply()
+            break
+        except (subprocess.CalledProcessError, ValueError, IndexError) as error:
+            if attempt == 14:
+                print("uzunyx-shortcuts-setup:", error, file=sys.stderr)
+                return 1
+            time.sleep(2)
+    os.makedirs(os.path.dirname(marker), exist_ok=True)
+    with open(marker, "w") as f:
+        f.write(VERSION + "\n")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

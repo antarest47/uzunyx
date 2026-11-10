@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Three fingers up open the launcher and down close it; three fingers left on the last desktop make a new one",
+        "Description[es]": "Tres dedos hacia arriba abren el lanzador y hacia abajo lo cierran; tres dedos a la izquierda en el último escritorio crean otro",
+        "EnabledByDefault": true,
+        "Icon": "input-touchpad",
+        "Id": "uzunyxgestures",
+        "License": "GPL-3.0-or-later",
+        "Name": "Uzunyx gestures",
+        "Name[es]": "Gestos de Uzunyx",
+        "Version": "0.2.0"
+    },
+    "X-Plasma-API": "declarativescript",
+    "X-Plasma-MainScript": "ui/main.qml"
+}

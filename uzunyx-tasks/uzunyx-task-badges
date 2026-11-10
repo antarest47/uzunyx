@@ -1,0 +1,40 @@
+#!/usr/bin/python3
+"""Passes the apps' launcher announcements on to the task manager.
+
+Apps send counts and progress with the signal Update of
+com.canonical.Unity.LauncherEntry, each from its own bus name and path, and QML
+can only watch a fixed sender. So this repeats them from a fixed one. It also
+holds the name com.canonical.Unity, which some apps look for before sending.
+"""
+from gi.repository import Gio, GLib
+
+SERVICE = "org.uzunyx.TaskBadges"
+PATH = "/org/uzunyx/TaskBadges"
+INTERFACE = "org.uzunyx.TaskBadges"
+UNITY = "com.canonical.Unity"
+UNITY_INTERFACE = "com.canonical.Unity.LauncherEntry"
+# Booleans and numbers as they are; apps also send text and icons we don't use.
+USED = {"count", "count-visible", "progress", "progress-visible", "urgent"}
+
+
+def repeat(connection, sender, path, interface, signal, parameters):
+    app_uri, properties = parameters.unpack()
+    used = {key: GLib.Variant("d", float(value)) if key in ("count", "progress")
+            else GLib.Variant("b", bool(value))
+            for key, value in properties.items() if key in USED}
+    connection.emit_signal(None, PATH, INTERFACE, "Update",
+                           GLib.Variant("(sa{sv})", (app_uri, used)))
+
+
+def main():
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+    bus.signal_subscribe(None, UNITY_INTERFACE, "Update", None, None,
+                         Gio.DBusSignalFlags.NONE, repeat)
+    Gio.bus_own_name_on_connection(bus, SERVICE, Gio.BusNameOwnerFlags.NONE, None, None)
+    # Plasma's own task manager may hold it: then this one just waits.
+    Gio.bus_own_name_on_connection(bus, UNITY, Gio.BusNameOwnerFlags.NONE, None, None)
+    GLib.MainLoop().run()
+
+
+if __name__ == "__main__":
+    main()

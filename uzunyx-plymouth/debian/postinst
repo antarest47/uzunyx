@@ -1,0 +1,15 @@
+#!/bin/sh
+# On first install, make Uzunyx Akane the boot splash (later choices, e.g.
+# Sora from uzunyx-edition, are kept on upgrades) and regenerate the GRUB
+# menu so "splash" from /etc/default/grub.d takes effect. The initramfs is
+# rebuilt by the update-initramfs trigger (debian/triggers).
+set -e
+
+if [ "$1" = configure ]; then
+    if [ -z "$2" ] && [ -x /usr/sbin/plymouth-set-default-theme ]; then
+        /usr/sbin/plymouth-set-default-theme uzunyx-akane
+    fi
+    if [ -z "$2" ] && command -v update-grub >/dev/null 2>&1 && [ -e /boot/grub/grub.cfg ]; then
+        update-grub || true
+    fi
+fi

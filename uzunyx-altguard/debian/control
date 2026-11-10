@@ -1,0 +1,18 @@
+Package: uzunyx-altguard
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: @ARCH@
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: kwin-wayland (>= @KWIN@), kwin-wayland (<< @KWIN@.~)
+Description: keeps apps from opening their menu after an Alt shortcut
+ KWin plugin. Apps such as Firefox, Electron apps or LibreOffice open their
+ menu when Alt is pressed and released alone. When Alt is used with a global
+ shortcut (Alt+W, Alt+1…) or to move a window with the mouse, KWin keeps the
+ other key and the app only sees Alt, so the menu opens. This plugin sends
+ the focused window a harmless F24 key just before Alt is released, so the
+ app knows Alt was not alone. Alt alone and Alt+letter inside apps work as
+ before.
+ .
+ Built against one exact KWin version: KWin refuses to load it in any
+ other, so it must be rebuilt after every KWin update.

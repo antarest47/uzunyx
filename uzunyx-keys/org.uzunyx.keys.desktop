@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Uzunyx shortcuts
+Name[es]=Atajos de Uzunyx
+Comment=Show the keyboard shortcuts of the desktop
+Comment[es]=Muestra los atajos de teclado del escritorio
+Exec=uzunyx-keys
+Icon=preferences-desktop-keyboard-shortcuts
+Categories=Qt;KDE;Settings;
+OnlyShowIn=KDE;
+X-KDE-Shortcuts=Meta+Space

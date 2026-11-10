@@ -1,0 +1,15 @@
+Uzunyx: https://github.com/antarest47/uzunyx
+Copyright 2026 emi and the authors named in each file.
+
+Code: GPL-3.0-or-later, unless a file or its metadata.json states another
+compatible licence (such as GPL-2.0-or-later). The GPL is in
+/usr/share/common-licenses/GPL-3.
+
+Images generated with AI: CC0-1.0, in /usr/share/common-licenses/CC0-1.0.
+
+Adapted from KDE, keeping their authors and licences (GPL-2.0-or-later or
+LGPL-2.0-or-later): the SDDM theme, the logout screen, dolphinui.rc, Breeze's SVGs
+and colours, and the genie effect, from KWin's magic lamp.
+
+uzunyx-terminal also bundles Oh My Zsh and zsh-autocomplete (MIT), with their
+licences in /usr/share/uzunyx-terminal.

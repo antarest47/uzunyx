@@ -1,0 +1,9 @@
+# Build output
+build/
+build-calamares/
+wheels-cache/
+__pycache__/
+*.pyc
+
+# Claude's notes on this project and this PC: kept locally, not published
+CLAUDE.md

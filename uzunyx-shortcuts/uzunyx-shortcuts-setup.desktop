@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Uzunyx shortcuts
+Name[es]=Atajos de Uzunyx
+Comment=Adds the Uzunyx global shortcuts once per version
+Comment[es]=Agrega los atajos globales de Uzunyx una vez por versión
+Exec=uzunyx-shortcuts-setup
+TryExec=uzunyx-shortcuts-setup
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=2

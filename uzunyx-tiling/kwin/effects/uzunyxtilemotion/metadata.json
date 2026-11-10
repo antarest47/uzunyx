@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Effect",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "Appearance",
+        "Description": "Tiled windows glide to their new place, and a new one appears once the others made room",
+        "Description[es]": "Las ventanas del mosaico se deslizan a su nuevo lugar, y una nueva aparece cuando las demás le hicieron lugar",
+        "EnabledByDefault": false,
+        "Icon": "preferences-system-windows-effect-maximize",
+        "Id": "uzunyxtilemotion",
+        "License": "GPL-3.0-or-later",
+        "Name": "Uzunyx tiling motion",
+        "Name[es]": "Movimiento del mosaico de Uzunyx"
+    },
+    "X-KDE-Ordering": 61,
+    "X-Plasma-API": "javascript"
+}

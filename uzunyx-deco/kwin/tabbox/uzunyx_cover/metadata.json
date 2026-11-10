@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "KWin/WindowSwitcher",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Large live previews: the chosen window faces you and the others turn away at its sides",
+        "Description[es]": "Vistas grandes en vivo: la ventana elegida de frente y las demás giradas a los lados",
+        "Icon": "preferences-system-windows-effect-coverswitch",
+        "Id": "uzunyx_cover",
+        "License": "GPL-2.0-or-later",
+        "Name": "Uzunyx Cover",
+        "Version": "0.1.0"
+    }
+}

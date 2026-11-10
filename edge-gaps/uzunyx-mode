@@ -1,0 +1,53 @@
+#!/bin/sh
+# uzunyx-mode [normal|focus|toggle|status]
+#
+# Switches the Uzunyx layout between two modes:
+#   normal  the bottom panel is always visible and edge-gaps keeps maximized
+#           windows away from the screen edges and the panel.
+#   focus   no gaps, and the bottom panel dodges windows: it hides when a
+#           window covers it (e.g. a maximized one) and comes back when the
+#           pointer reaches the bottom edge.
+# Windows keep their rounded corners in both (uzunyx-deco, softmaximize).
+#
+# The mode is the user's edge-gaps Enabled key (edge-gaps applies it at
+# login) and the panel's visibility setting (kept by Plasma). Prints the
+# resulting mode.
+
+mode() {
+    if [ "$(kreadconfig6 --file edge-gapsrc --group General --key Enabled --default true)" = false ]; then
+        echo focus
+    else
+        echo normal
+    fi
+}
+
+apply() {
+    if [ "$1" = focus ]; then
+        enabled=false hiding=dodgewindows
+    else
+        enabled=true hiding=none
+    fi
+    kwriteconfig6 --file edge-gapsrc --group General --key Enabled "$enabled"
+    # The running edge-gaps re-reads its configuration (nothing if it isn't running).
+    busctl --user call org.uzunyx.EdgeGaps /org/uzunyx/EdgeGaps org.gtk.Actions \
+        Activate 'sava{sv}' reload 0 0 >/dev/null 2>&1
+    busctl --user call org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell evaluateScript s \
+        "panels().forEach(function (p) { if (p.location === 'bottom') { p.hiding = '$hiding'; } });" \
+        >/dev/null 2>&1
+}
+
+case "${1:-status}" in
+    normal|focus)
+        apply "$1"
+        ;;
+    toggle)
+        if [ "$(mode)" = focus ]; then apply normal; else apply focus; fi
+        ;;
+    status)
+        ;;
+    *)
+        echo "usage: uzunyx-mode [normal|focus|toggle|status]" >&2
+        exit 2
+        ;;
+esac
+mode

@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Empty virtual desktops go away when you leave them, and the last one can be extended",
+        "Description[es]": "Los escritorios vacíos se borran al dejarlos, y desde el último se puede crear otro",
+        "EnabledByDefault": true,
+        "Icon": "virtual-desktops",
+        "Id": "uzunyxdesktops",
+        "License": "GPL-3.0-or-later",
+        "Name": "Uzunyx dynamic desktops",
+        "Name[es]": "Escritorios dinámicos de Uzunyx",
+        "Version": "0.1.0"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

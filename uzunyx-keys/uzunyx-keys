@@ -1,0 +1,232 @@
+#!/usr/bin/python3
+"""Shows the desktop's shortcuts, with the keys they have right now.
+
+The keys come from kglobalaccel, so a change in System Settings shows here too;
+an action without keys, or from a package that isn't installed, is left out.
+Called again, or with Esc, it closes.
+"""
+
+import os
+import subprocess
+
+import gi
+
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gdk, Gio, GLib, Gtk  # noqa: E402
+
+TILING = "Con el mosaico encendido"
+# Section, note, then rows: text, component, action, and keys that kglobalaccel
+# doesn't know (the launcher's Super is KWin's modifier-only shortcut).
+# Three-finger swipes: KWin's own, and uzunyx-tiling's script (uzunyxgestures).
+# kglobalaccel knows none of them, so they're listed as they are.
+GESTURES = [("Vista general", "", "", ["4 dedos", "↑"]),
+            ("Escritorio siguiente", "", "", ["3 dedos", "←"]),
+            ("Escritorio anterior", "", "", ["3 dedos", "→"])]
+if os.path.isdir("/usr/share/kwin-wayland/scripts/uzunyxgestures"):
+    GESTURES[1] = ("Escritorio siguiente o uno nuevo", "", "", ["3 dedos", "←"])
+    GESTURES += [("Abrir Tsunyx", "", "", ["3 dedos", "↑"]),
+                 ("Cerrar Tsunyx", "", "", ["3 dedos", "↓"])]
+
+SECTIONS = [
+    ("Ventanas", None, [
+        ("Foco arriba", "kwin", "Switch Window Up"),
+        ("Foco a la izquierda", "kwin", "Switch Window Left"),
+        ("Foco abajo", "kwin", "Switch Window Down"),
+        ("Foco a la derecha", "kwin", "Switch Window Right"),
+        ("Cambiar de ventana", "kwin", "Walk Through Windows"),
+        ("Pegar a la izquierda", "kwin", "Window Quick Tile Left"),
+        ("Pegar a la derecha", "kwin", "Window Quick Tile Right"),
+        ("Maximizar", "kwin", "Window Maximize"),
+        ("Pantalla completa", "kwin", "UzunyxFullscreen"),
+        ("Cerrar", "kwin", "Window Close"),
+    ]),
+    ("Mosaico", TILING, [
+        ("Cambiar de modo", "org.uzunyx.tiling-cycle.desktop", "_launch"),
+        ("Rotar por los lugares", "kwin", "UzunyxTilingRotate"),
+        ("Al lugar principal", "kwin", "UzunyxTilingPromote"),
+        ("Intercambiar arriba", "kwin", "UzunyxTilingMoveUp"),
+        ("Intercambiar a la izquierda", "kwin", "UzunyxTilingMoveLeft"),
+        ("Intercambiar abajo", "kwin", "UzunyxTilingMoveDown"),
+        ("Flotar", "kwin", "UzunyxTilingFloat"),
+        ("Achicar el lugar principal", "kwin", "UzunyxTilingShrink"),
+        ("Agrandar el lugar principal", "kwin", "UzunyxTilingGrow"),
+        ("Tamaños por defecto", "kwin", "UzunyxTilingReset"),
+    ]),
+    ("Escritorios", None, [
+        ("Ir a la izquierda", "kwin", "Switch One Desktop to the Left"),
+        ("Ir a la derecha o crear otro", "kwin", "UzunyxDesktopNext"),
+        ("Llevar la ventana al siguiente", "kwin", "UzunyxWindowDesktopNext"),
+        ("Llevar la ventana al anterior", "kwin", "UzunyxWindowDesktopPrevious"),
+        ("Vista general", "kwin", "Overview"),
+        ("Mostrar el escritorio", "kwin", "Show Desktop"),
+    ]),
+    ("Panel táctil", None, GESTURES),
+    ("Sonido y música", None, [
+        ("Subir el volumen", "kmix", "increase_volume"),
+        ("Bajar el volumen", "kmix", "decrease_volume"),
+        ("Subir el volumen", "kmix", "increase_volume", ["Ratón", "Adelante"]),
+        ("Bajar el volumen", "kmix", "decrease_volume", ["Ratón", "Atrás"]),
+        ("Subir el brillo", "org_kde_powerdevil", "Increase Screen Brightness"),
+        ("Bajar el brillo", "org_kde_powerdevil", "Decrease Screen Brightness"),
+        ("Reproducir o pausar", "mediacontrol", "playpausemedia"),
+        ("Pista anterior", "mediacontrol", "previousmedia"),
+        ("Pista siguiente", "mediacontrol", "nextmedia"),
+    ]),
+    ("Sistema", None, [
+        ("Abrir Tsunyx", "plasmashell", "activate application launcher", ["Super"]),
+        ("Portapapeles", "plasmashell", "show-on-mouse-pos"),
+        ("Captura de una región", "org.kde.spectacle.desktop", "RectangularRegionScreenShot"),
+        ("Bloquear", "ksmserver", "Lock Session"),
+        ("Esta ventana", "org.uzunyx.keys.desktop", "_launch"),
+    ]),
+]
+
+MODIFIERS = ((0x10000000, "Super"), (0x04000000, "Ctrl"), (0x08000000, "Alt"), (0x02000000, "Shift"))
+MODIFIER_MASK = 0x10000000 | 0x04000000 | 0x08000000 | 0x02000000
+NAMES = {0x01000000: "Esc", 0x01000001: "Tab", 0x01000009: "Impr", 0x20: "Espacio",
+         0x01000012: "←", 0x01000013: "↑", 0x01000014: "→", 0x01000015: "↓",
+         0x01000016: "RePág", 0x01000017: "AvPág"}
+NAMES.update({0x01000030 + i: f"F{i + 1}" for i in range(12)})
+
+CSS = b"""
+.key {
+    border: 1px solid alpha(@theme_fg_color, 0.25);
+    border-radius: 6px;
+    padding: 1px 7px;
+    background: alpha(@theme_fg_color, 0.08);
+    font-weight: bold;
+}
+.note { opacity: 0.7; }
+.section { font-weight: bold; font-size: 115%; color: mix(@theme_selected_bg_color, @theme_fg_color, 0.4); }
+"""
+
+
+def key_text(code):
+    """A Qt key code as its parts, or None for keys not worth listing (media keys)."""
+    key = code & ~MODIFIER_MASK
+    name = NAMES.get(key) or (chr(key) if 0x21 <= key < 0x7f else None)
+    if name is None:
+        return None
+    return [label for bit, label in MODIFIERS if code & bit] + [name]
+
+
+def read_keys(bus, component, action):
+    try:
+        reply = bus.call_sync("org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel", "shortcutKeys",
+                              GLib.Variant("(as)", ([component, action, "", ""],)), None,
+                              Gio.DBusCallFlags.NONE, 2000, None)
+    except GLib.Error:
+        return []
+    # A shortcut is a sequence of up to four keys; those of Uzunyx use one.
+    texts = (key_text(keys[0]) for (keys,) in reply[0] if keys and keys[0])
+    return [text for text in texts if text]
+
+
+def key_row(text, sequences):
+    row = Gtk.Box(spacing=12)
+    label = Gtk.Label(label=text, xalign=0)
+    label.set_hexpand(True)
+    row.pack_start(label, True, True, 0)
+    keys = Gtk.Box(spacing=3)
+    # Only the main one: for the left hand if there is one (Alt+2, not Super+RePág).
+    main = min(sequences, key=lambda s: 0 if len(s[-1]) == 1 and s[-1] not in "←→↑↓" else 1 if s[-1] in ("Esc", "Tab") else 2)
+    for part in main:
+        cap = Gtk.Label(label=part)
+        cap.get_style_context().add_class("key")
+        keys.pack_start(cap, False, False, 0)
+    row.pack_end(keys, False, False, 0)
+    return row
+
+
+def section_box(bus, title, note, rows):
+    filled = []
+    for text, component, action, *fixed in rows:
+        sequences = fixed[0:1] or read_keys(bus, component, action)
+        if sequences:
+            filled.append(key_row(text, sequences))
+    if not filled:
+        return None
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    heading = Gtk.Label(label=title, xalign=0)
+    heading.get_style_context().add_class("section")
+    box.pack_start(heading, False, False, 0)
+    if note:
+        small = Gtk.Label(label=note, xalign=0)
+        small.get_style_context().add_class("note")
+        box.pack_start(small, False, False, 0)
+    for row in filled:
+        box.pack_start(row, False, False, 0)
+    return box
+
+
+# GTK takes Wayland's app id from here: it's how KWin finds the .desktop file and
+# its icon, and how uzunyx-tiling recognizes this window.
+GLib.set_prgname("org.uzunyx.keys")
+
+
+class Keys(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="org.uzunyx.keys")
+        self.window = None
+
+    def do_activate(self):
+        if self.window:
+            self.window.destroy()
+            return
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS)
+        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider,
+                                                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self.window = Gtk.ApplicationWindow(application=self, title="Atajos de Uzunyx")
+        self.window.set_icon_name("preferences-desktop-keyboard-shortcuts")
+        self.window.set_default_size(1120, 640)
+        self.window.connect("key-press-event", self.on_key)
+        # uzunyx-tiling takes its title bar away: dragged by any empty spot.
+        self.window.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.window.connect("button-press-event", self.on_press)
+        self.window.connect("destroy", lambda _w: self.quit())
+
+        bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+        grid = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, homogeneous=True, column_spacing=32,
+                           row_spacing=24, min_children_per_line=1, max_children_per_line=3)
+        grid.set_valign(Gtk.Align.START)
+        for title, note, rows in SECTIONS:
+            box = section_box(bus, title, note, rows)
+            if box:
+                grid.add(box)
+        for child in grid.get_children():
+            child.set_can_focus(False)
+            child.set_valign(Gtk.Align.START)
+
+        settings = Gtk.Button(label="Cambiar atajos…")
+        settings.connect("clicked", lambda _b: subprocess.Popen(["systemsettings", "kcm_keys"]))
+        hint = Gtk.Label(label="Esc para cerrar", xalign=0)
+        hint.get_style_context().add_class("note")
+        footer = Gtk.Box(spacing=12)
+        footer.pack_start(hint, True, True, 0)
+        footer.pack_end(settings, False, False, 0)
+
+        scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        scroll.add(grid)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, border_width=24)
+        page.pack_start(scroll, True, True, 0)
+        page.pack_start(footer, False, False, 0)
+        self.window.add(page)
+        self.window.show_all()
+
+    def on_press(self, window, event):
+        if event.button == Gdk.BUTTON_PRIMARY:
+            window.begin_move_drag(event.button, int(event.x_root), int(event.y_root), event.time)
+            return True
+        return False
+
+    def on_key(self, _window, event):
+        if event.keyval == Gdk.KEY_Escape:
+            self.window.destroy()
+            return True
+        return False
+
+
+if __name__ == "__main__":
+    Keys().run([])

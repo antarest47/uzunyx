@@ -1,0 +1,12 @@
+Package: uzunyx-controlcenter
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plasma-workspace (>= 4:6.7), plasma-nm, network-manager, python3, python3-gi, udisks2, util-linux, plasma-pa, powerdevil, qt6-svg-plugins, qml6-module-org-kde-bluezqt, qml6-module-org-kde-notificationmanager, qml6-module-org-kde-plasma-workspace, qml6-module-org-kde-plasma-plasma5support, uzunyx-tiling, edge-gaps
+Description: Control center for the Uzunyx panel
+ A pill in the panel with network, volume and battery that opens quick settings,
+ in the manner of GNOME: volume and brightness sliders, toggles for Wi-Fi,
+ Bluetooth, focus mode, tiling, do not disturb and night light, the media player
+ and the session actions.

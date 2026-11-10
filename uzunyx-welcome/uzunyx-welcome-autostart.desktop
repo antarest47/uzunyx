@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Uzunyx welcome
+Exec=uzunyx-welcome --first-login
+Icon=uzunyx-akane
+NoDisplay=true
+OnlyShowIn=KDE;
+X-KDE-autostart-phase=2

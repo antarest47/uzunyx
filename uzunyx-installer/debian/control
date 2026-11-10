@@ -1,0 +1,11 @@
+Package: uzunyx-installer
+Version: @VERSION@
+Section: admin
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: apt, debconf
+Description: Installs the Uzunyx desktop on Debian
+ Carries every Uzunyx package in a local APT repository and the uzunyx-install
+ command, which moves the system to the Debian release Uzunyx is built for if
+ needed, installs Plasma if it is missing, and installs the desktop.

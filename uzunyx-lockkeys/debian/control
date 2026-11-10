@@ -1,0 +1,19 @@
+Package: uzunyx-lockkeys
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plasma-workspace (>= 4:6.7), kwin-wayland (>= 4:6.7), qt6-svg-plugins, qml6-module-org-kde-plasma-workspace, qml6-module-org-kde-plasma-plasma5support, libkf6config-bin
+Conflicts: waifbian-lockkeys
+Replaces: waifbian-lockkeys
+Description: Caps Lock and Num Lock indicator for the Plasma panel
+ Plasma widget (org.uzunyx.lockkeys), an alarm for keyboards without lock
+ key lights: a glossy pill, in the style of the Uzunyx window buttons, with an
+ "A" half for Caps Lock and a "1" half for Num Lock. In the normal position
+ (Caps Lock off, Num Lock on) a half is quiet, in the edition's accent colour;
+ otherwise it fills with intense red and pulses, hard to miss.
+ .
+ Its option, "Caps Lock and Num Lock" (default) or "Caps Lock only" (for
+ keyboards without a numeric keypad), also decides whether Num Lock is
+ turned on at login. The system default, on, is set in /etc/xdg/kcminputrc.

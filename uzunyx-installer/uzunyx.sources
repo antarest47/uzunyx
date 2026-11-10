@@ -1,0 +1,5 @@
+# The Uzunyx packages this package carries; they update with it.
+Types: deb
+URIs: file:/usr/share/uzunyx-installer/repo
+Suites: ./
+Trusted: yes

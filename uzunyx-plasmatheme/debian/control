@@ -1,0 +1,21 @@
+Package: uzunyx-plasmatheme
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plasma-workspace (>= 4:6.7)
+Conflicts: waifbian-plasmatheme
+Replaces: waifbian-plasmatheme
+Recommends: uzunyx-wallpapers
+Description: Uzunyx Plasma theme (Breeze with Unity-style task indicators)
+ Plasma desktop theme that only overrides the task manager graphics and the
+ panel background, and inherits everything else from Breeze and the active
+ color scheme. Running
+ apps get a dot under their icon instead of a line along the panel edge,
+ the active task gets a rounded highlight in the colour scheme's highlight
+ colour with a thin outline like the panel's, hovered tasks a rounded grey one, and apps with
+ several grouped windows show a rounded dash instead of a "+" badge. The
+ panel background gets a thin light outline along its rounded edge, like
+ the uzunyx window outline. Its default wallpaper is
+ Uzunyx 1 (package uzunyx-wallpapers).

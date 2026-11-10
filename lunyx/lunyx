@@ -1,0 +1,5 @@
+#!/bin/sh
+# libVLC embeds the video through X11 (set_xwindow), so Qt runs on XWayland.
+export QT_QPA_PLATFORM=xcb
+export PYTHONPATH=/usr/share/lunyx/vendor
+exec python3 /usr/share/lunyx/main.py "$@"

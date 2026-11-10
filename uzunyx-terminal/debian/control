@@ -1,0 +1,13 @@
+Package: uzunyx-terminal
+Version: @VERSION@
+Section: shells
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: zsh, starship, atuin, zsh-syntax-highlighting, fonts-nerd-symbols, fastfetch, imagemagick, git
+Recommends: uzunyx-lookandfeel
+Description: Uzunyx terminal: zsh, Oh My Zsh, Starship and fastfetch
+ Configuration used by the Uzunyx Konsole profiles: zsh with a pinned copy of
+ Oh My Zsh and zsh-autocomplete, a Powerline-style Starship prompt in the
+ colours of each edition, syntax highlighting, and fastfetch showing Uzunyx
+ with its ASCII logo. The login shell of the user is not changed.

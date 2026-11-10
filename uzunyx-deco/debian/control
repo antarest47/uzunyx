@@ -1,0 +1,28 @@
+Package: uzunyx-deco
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: kwin-style-aurorae (>= 6.7), kwin-wayland (>= 4:6.7), qml6-module-qtquick-effects (>= 6.9), qml6-module-org-kde-kirigami
+Conflicts: waifbian-deco
+Replaces: waifbian-deco
+Description: rounded KWin window decoration that stays rounded when maximized
+ QML window decoration for the KWin Aurorae engine with 8px rounded
+ corners, thin borders, shadows and glossy black minimize, maximize (also
+ used for restore) and close buttons (white, and red for close). Unlike Breeze it keeps its borders and
+ rounded corners on maximized windows, so maximized windows stay truly
+ maximized (with a working restore button) and still look rounded.
+ .
+ Select it in System Settings > Colors & Themes > Window Decorations, or
+ install uzunyx-lookandfeel, whose global theme uses it.
+ .
+ Also ships the "Soft maximize" KWin script, enabled by default: windows
+ that draw their own frame (Firefox, Electron, libadwaita apps) stay
+ normal windows filling the maximize area when maximized, so they keep
+ their own rounded corners. Their maximize button keeps showing
+ "maximize".
+ .
+ Alt+Tab uses its own switcher in the style of Cover Switch, with live previews.
+ /etc/xdg/kwinrc enables KWin's "magic lamp" minimize animation instead of
+ "squash", lasting 300 ms like macOS (KWin's default is 250 ms).

@@ -1,0 +1,11 @@
+Package: uzunyx-keys
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: python3, python3-gi, gir1.2-gtk-3.0
+Recommends: uzunyx-shortcuts
+Description: Window listing the shortcuts of the Uzunyx desktop
+ Opens with Super+Space, from the menu, or from the Uzunyx module of System
+ Settings, and shows each shortcut with the keys it has right now.

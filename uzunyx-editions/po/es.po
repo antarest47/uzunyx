@@ -1,0 +1,51 @@
+# Spanish translation of kcm_uzunyx_editions.
+msgid ""
+msgstr ""
+"Project-Id-Version: kcm_uzunyx_editions\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+
+msgid "The uzunyx-edition command was not found."
+msgstr "No se encontró el comando uzunyx-edition."
+
+msgid "Could not apply the edition."
+msgstr "No se pudo aplicar la edición."
+
+msgid "Crimson"
+msgstr "Carmesí"
+
+msgid "Cyan"
+msgstr "Cian"
+
+msgid "Current edition"
+msgstr "Edición actual"
+
+msgid "Change, without touching the panels or the icons:"
+msgstr "Cambiar, sin tocar los paneles ni los iconos:"
+
+msgid "Theme and colors"
+msgstr "Tema y colores"
+
+msgid "Desktop wallpaper"
+msgstr "Fondo de escritorio"
+
+msgid "Lock screen"
+msgstr "Pantalla de bloqueo"
+
+msgid "Launcher icon"
+msgstr "Icono del lanzador"
+
+msgid "Login screen too (all users; asks for the administrator password)"
+msgstr "También la pantalla de inicio de sesión (todos los usuarios; pide la contraseña de administrador)"
+
+msgid "Boot screen too (all users; asks for the administrator password; takes a while)"
+msgstr "También la pantalla de arranque (todos los usuarios; pide la contraseña de administrador; tarda un poco)"
+
+msgid "Applying…"
+msgstr "Aplicando…"
+
+msgid "Keyboard shortcuts…"
+msgstr "Atajos de teclado…"

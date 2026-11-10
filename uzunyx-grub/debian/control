@@ -1,0 +1,20 @@
+Package: uzunyx-grub
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Pre-Depends: grub2-common
+Depends: grub2-common
+Description: Uzunyx GRUB theme and hidden boot menu
+ A neutral, dark GRUB theme for Uzunyx (the boot splash's #111318
+ background, a centred menu without icons, the chosen entry framed like
+ Uzunyx windows), replacing Debian's blue picture, and a hidden boot menu
+ like Ubuntu's or Linux Mint's: GRUB waits one second and boots, and Esc
+ (or F4, or holding Shift) shows the menu. If os-prober is enabled (there
+ are other systems to choose from) the menu shows as usual.
+ .
+ It also keeps GRUB from printing "Loading Linux ..." and "Loading initial
+ ramdisk ..." before the boot splash: /etc/grub.d/10_linux is diverted and
+ replaced by a copy with quiet_boot="1", made again whenever grub2-common
+ updates it.

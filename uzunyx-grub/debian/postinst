@@ -1,0 +1,29 @@
+#!/bin/sh
+# Copy the theme where GRUB can always read it (/boot; /usr may be on an
+# encrypted root), write the quiet copy of 10_linux (see preinst) and
+# regenerate the GRUB menu. Also run as a trigger when grub2-common updates
+# 10_linux.
+set -e
+
+quiet_linux() {
+    src=/etc/grub.d/10_linux.dpkg-uzunyx
+    [ -f "$src" ] || return 0
+    # The temporary name ends in .dpkg-tmp, which grub-mkconfig skips.
+    sed 's/^quiet_boot="0"$/quiet_boot="1"/' "$src" > /etc/grub.d/10_linux.dpkg-tmp
+    chmod 755 /etc/grub.d/10_linux.dpkg-tmp
+    mv -f /etc/grub.d/10_linux.dpkg-tmp /etc/grub.d/10_linux
+}
+
+case "$1" in
+    configure|triggered)
+        if [ "$1" = configure ]; then
+            rm -rf /boot/grub/themes/uzunyx
+            mkdir -p /boot/grub/themes
+            cp -r /usr/share/uzunyx-grub/theme /boot/grub/themes/uzunyx
+        fi
+        quiet_linux
+        if command -v update-grub >/dev/null 2>&1 && [ -e /boot/grub/grub.cfg ]; then
+            update-grub || true
+        fi
+        ;;
+esac

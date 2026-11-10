@@ -1,0 +1,21 @@
+#!/bin/sh
+# Remove the theme's copy in /boot and the quiet 10_linux, give grub2-common
+# its 10_linux back and regenerate the GRUB menu. The grub.d file only goes
+# on purge (it's a conffile).
+set -e
+
+case "$1" in
+    remove|purge|abort-install|abort-upgrade)
+        if [ "$1" = remove ] || [ "$1" = purge ]; then
+            rm -rf /boot/grub/themes/uzunyx
+        fi
+        if dpkg-divert --listpackage /etc/grub.d/10_linux | grep -qx uzunyx-grub; then
+            rm -f /etc/grub.d/10_linux
+            dpkg-divert --package uzunyx-grub --remove --rename \
+                --divert /etc/grub.d/10_linux.dpkg-uzunyx /etc/grub.d/10_linux
+        fi
+        if [ "$1" != abort-upgrade ] && command -v update-grub >/dev/null 2>&1 && [ -e /boot/grub/grub.cfg ]; then
+            update-grub || true
+        fi
+        ;;
+esac

@@ -1,0 +1,28 @@
+#!/bin/sh
+# Switches the user's GTK theme from Breeze to Breeze-Uzunyx once, at login.
+#
+# A Plasma global theme cannot set the GTK theme, and kde-gtk-config sets
+# Breeze for new users. Only Breeze or no theme is replaced, and only once:
+# after that the user's choice in System Settings is kept.
+#
+# The name must start with "Breeze": Electron picks its title bar button
+# style (Breeze or GNOME spacing) by the GTK theme name.
+
+marker="${XDG_CONFIG_HOME:-$HOME/.config}/uzunyx/gtk-theme-set"
+[ -e "$marker" ] && exit 0
+
+current=$(sed -n 's/^gtk-theme-name=//p' "${XDG_CONFIG_HOME:-$HOME/.config}/gtk-3.0/settings.ini" 2>/dev/null)
+case "$current" in
+    ""|Breeze)
+        # kded may still be starting: try for a while; on failure, retry
+        # at the next login.
+        i=0
+        until busctl --user call org.kde.kded6 /GtkConfig org.kde.GtkConfig setGtkTheme s Breeze-Uzunyx >/dev/null 2>&1; do
+            i=$((i + 1))
+            [ $i -ge 15 ] && exit 1
+            sleep 2
+        done
+        ;;
+esac
+
+mkdir -p "$(dirname "$marker")" && touch "$marker"

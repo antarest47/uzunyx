@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Shows Caps Lock and Num Lock, and turns Num Lock on at login",
+        "Description[es]": "Muestra Bloq Mayús y Bloq Num, y activa Bloq Num al iniciar sesión",
+        "Icon": "input-caps-on",
+        "Id": "org.uzunyx.lockkeys",
+        "License": "GPL-2.0-or-later",
+        "Name": "Lock Keys",
+        "Name[es]": "Teclas de bloqueo",
+        "Version": "0.3.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

@@ -1,0 +1,56 @@
+#!/bin/sh
+# System-wide parts of an Uzunyx edition, for all users:
+#   sddm      the background of the "uzunyx" SDDM theme (the edition's sky);
+#   plymouth  the boot splash (uzunyx-<edition> Plymouth theme, from
+#             uzunyx-plymouth), rebuilding the initramfs (10-30 s).
+# Runs as root through pkexec (polkit action org.uzunyx.edition.system), so
+# it only accepts the edition names and those two words, and writes fixed
+# places: the SDDM theme's theme.conf.user, which SDDM reads over theme.conf
+# (KDE's SDDM settings module does the same), and plymouthd.conf through
+# plymouth-set-default-theme. One helper for both, so the password is asked
+# once.
+set -e
+
+usage() { echo "usage: $0 akane|sora sddm|plymouth..." >&2; exit 2; }
+
+case "$1" in
+    akane) sky=UzunyxAkaneSky ;;
+    sora) sky=UzunyxSoraSky ;;
+    *) usage ;;
+esac
+edition=$1
+shift
+[ $# -gt 0 ] || usage
+
+sddm() {
+    theme=/usr/share/sddm/themes/uzunyx
+    images=/usr/share/wallpapers/$sky/contents/images
+    [ -d "$theme" ] || { echo "$theme not found" >&2; return 1; }
+    image=$(find "$images" -maxdepth 1 -type f -name '*.jp*g' | sort | head -n 1)
+    [ -n "$image" ] || { echo "no image in $images" >&2; return 1; }
+
+    case "$edition" in sora) accent='#16CDE0' ;; *) accent='#E62967' ;; esac
+    printf '[General]\nbackground=%s\naccent=%s\n' "$image" "$accent" > "$theme/theme.conf.user.new"
+    chmod 644 "$theme/theme.conf.user.new"
+    mv "$theme/theme.conf.user.new" "$theme/theme.conf.user"
+    # Colors of the password field and buttons (see /etc/sddm.conf.d/uzunyx.conf).
+    [ -d "$theme/colors/$edition" ] && ln -sfn "$edition" "$theme/colors/current"
+}
+
+plymouth() {
+    name=uzunyx-$edition
+    [ -f "/usr/share/plymouth/themes/$name/$name.plymouth" ] ||
+        { echo "boot splash $name not installed (uzunyx-plymouth)" >&2; return 1; }
+    [ "$(/usr/sbin/plymouth-set-default-theme)" = "$name" ] && return 0
+    /usr/sbin/plymouth-set-default-theme -R "$name" >/dev/null
+}
+
+status=0
+for part in "$@"; do
+    case "$part" in
+        sddm) sddm || status=1 ;;
+        plymouth) plymouth || status=1 ;;
+        *) usage ;;
+    esac
+done
+exit $status

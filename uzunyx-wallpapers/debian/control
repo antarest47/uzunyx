@@ -1,0 +1,16 @@
+Package: uzunyx-wallpapers
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: fonts-nunito, plasma-integration, sddm-theme-breeze, plasma-workspace (>= 4:6.7), layer-shell-qt, kwin-wayland
+Conflicts: waifbian-wallpapers
+Replaces: waifbian-wallpapers
+Recommends: sddm
+Description: Uzunyx wallpapers, lock screen and login screen
+ Uzunyx wallpapers as Plasma wallpaper packages (Uzunyx Akane and Uzunyx Sora, their skies, and Uzunyx 1, 1 alt, 2 and
+ 2 alt). Sets "Uzunyx Akane (sky)" as the default lock screen wallpaper
+ (/etc/xdg/kscreenlockerrc) and as the background of the "uzunyx" SDDM
+ login theme, KDE's Breeze login theme with that background, made the
+ active SDDM theme in /etc/sddm.conf.d/uzunyx.conf.

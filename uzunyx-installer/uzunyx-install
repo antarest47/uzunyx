@@ -1,0 +1,87 @@
+#!/bin/sh
+# Installs Uzunyx from the repository in uzunyx-installer. Moves the system to
+# the release Uzunyx is built for (a backup of the APT sources goes to
+# /var/backups) and installs Plasma if it isn't there.
+set -e
+
+RELEASE=forky
+MIN_PLASMA=4:6.7
+MIRROR=http://deb.debian.org/debian
+SECURITY=http://deb.debian.org/debian-security
+COMPONENTS="main contrib non-free non-free-firmware"
+
+YES=
+for arg in "$@"; do
+    case "$arg" in
+        -y|--yes) YES=1 ;;
+        *) echo "Uso: uzunyx-install [--yes]"; exit 2 ;;
+    esac
+done
+
+ask() {
+    [ -n "$YES" ] && return 0
+    printf '%s [s/N] ' "$1"
+    read -r answer </dev/tty || return 1
+    case "$answer" in s|S|si|sí|y|Y) return 0 ;; esac
+    return 1
+}
+
+[ "$(id -u)" = 0 ] || { echo "Hay que ejecutarlo como root: sudo uzunyx-install"; exit 1; }
+. /etc/os-release
+[ "$ID" = debian ] || { echo "Uzunyx se instala sobre Debian, y esto es $NAME."; exit 1; }
+[ "$(dpkg --print-architecture)" = amd64 ] || { echo "Uzunyx solo está compilado para amd64."; exit 1; }
+
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
+
+current=${VERSION_CODENAME:-}
+if ! grep -qsE "^[^#]*\b$RELEASE\b" /etc/apt/sources.list /etc/apt/sources.list.d/*.list \
+        /etc/apt/sources.list.d/*.sources; then
+    echo "Este sistema es Debian ${current:-desconocido}; Uzunyx necesita Debian $RELEASE."
+    echo "Se cambian los repositorios y se actualiza todo el sistema. No se puede deshacer"
+    echo "y puede tardar bastante: mejor con una copia de seguridad y conectado a la corriente."
+    ask "¿Pasar a Debian $RELEASE?" || { echo "No se cambió nada."; exit 1; }
+    backup=/var/backups/uzunyx-installer-apt-$(date +%Y%m%d-%H%M%S)
+    mkdir -p "$backup"
+    cp -a /etc/apt/sources.list /etc/apt/sources.list.d "$backup"/ 2>/dev/null || true
+    echo "Copia de los repositorios en $backup"
+    [ -e /etc/apt/sources.list ] && : > /etc/apt/sources.list
+    for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+        [ -e "$f" ] || continue
+        [ "$f" = /etc/apt/sources.list.d/uzunyx.sources ] && continue
+        # Other people's repositories stay, but only Debian's are replaced.
+        grep -qE 'debian\.org' "$f" && rm -f "$f"
+    done
+    cat > /etc/apt/sources.list.d/debian.sources <<SOURCES
+Types: deb
+URIs: $MIRROR
+Suites: $RELEASE $RELEASE-updates
+Components: $COMPONENTS
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: $SECURITY
+Suites: $RELEASE-security
+Components: $COMPONENTS
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+SOURCES
+    apt-get update
+    apt-get -y full-upgrade
+else
+    apt-get update
+fi
+
+if ! dpkg --compare-versions "$(dpkg-query -W -f='${Version}' plasma-workspace 2>/dev/null)" ge "$MIN_PLASMA"; then
+    echo "Instalando Plasma..."
+    apt-get -y install plasma-workspace kde-plasma-desktop sddm
+fi
+
+# Explicit: the effects are Recommends, and a system may have them turned off.
+apt-get -y --install-recommends install uzunyx-desktop
+
+kwin=$(dpkg-query -W -f='${Version}' kwin-wayland)
+for p in uzunyx-outline uzunyx-openclose uzunyx-genie; do
+    dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q '^install ok installed' || \
+        echo "Aviso: $p no se instaló: se compila para una sola versión de KWin (aquí $kwin)."
+done
+
+echo "Uzunyx instalado. Reinicia para verlo completo."

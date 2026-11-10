@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 200" width="256" height="200">
+  <defs>
+    <linearGradient id="ring" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="512" y2="200">
+      <stop offset="0" stop-color="#dfe3ea"/><stop offset=".5" stop-color="#9ba3b2"/><stop offset="1" stop-color="#6b7384"/>
+    </linearGradient>
+    <linearGradient id="ringin" gradientUnits="userSpaceOnUse" x1="0" y1="200" x2="512" y2="0">
+      <stop offset="0" stop-color="#7a8294"/><stop offset="1" stop-color="#e6e9ef"/>
+    </linearGradient>
+    <linearGradient id="btn" gradientUnits="userSpaceOnUse" x1="0" y1="24" x2="0" y2="176">
+      <stop offset="0" stop-color="#66ff55"/><stop offset=".5" stop-color="#15a528"/><stop offset="1" stop-color="#085a15"/>
+    </linearGradient>
+    <linearGradient id="ch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe3ea"/>
+    </linearGradient>
+    <clipPath id="cb"><rect x="24" y="24" width="464" height="152" rx="76"/></clipPath>
+  </defs>
+  <rect x="4" y="8" width="504" height="192" rx="96" fill="#000" fill-opacity=".22"/>
+  <rect x="4" y="4" width="504" height="192" rx="96" fill="url(#ring)"/>
+  <rect x="4" y="4" width="504" height="192" rx="96" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>
+  <rect x="14" y="14" width="484" height="172" rx="86" fill="url(#ringin)"/>
+  <rect x="24" y="24" width="464" height="152" rx="76" fill="url(#btn)"/>
+  <g clip-path="url(#cb)">
+    <rect x="24" y="24" width="464" height="52" fill="#fff" fill-opacity=".12"/>
+  </g>
+  <rect x="24" y="24" width="464" height="152" rx="76" fill="none" stroke="#000" stroke-opacity=".28" stroke-width="2"/>
+  <line x1="254.5" y1="26" x2="254.5" y2="174" stroke="#000" stroke-opacity=".4" stroke-width="3"/><line x1="252" y1="26" x2="252" y2="174" stroke="#fff" stroke-opacity=".18" stroke-width="2"/>
+  <g transform="translate(0,5)" opacity=".3"><path d="M90,172 L128,82 L166,172 M105,143 H151" fill="none" stroke="#000" stroke-width="19" stroke-linecap="round" stroke-linejoin="round" transform="translate(160,100) scale(1.2) translate(-128,-127)"/></g>
+  <path d="M90,172 L128,82 L166,172 M105,143 H151" fill="none" stroke="url(#ch)" stroke-width="19" stroke-linecap="round" stroke-linejoin="round" transform="translate(160,100) scale(1.2) translate(-128,-127)"/>
+</svg>

@@ -1,0 +1,33 @@
+Description: Partition legend in the palette's text colours
+ The legend's text is fixed black and grey, unreadable on a dark theme.
+--- a/src/modules/partition/gui/PartitionLabelsView.cpp
++++ b/src/modules/partition/gui/PartitionLabelsView.cpp
+@@ -373,7 +373,9 @@
+                                 const QPoint& pos,
+                                 bool selected )
+ {
+-    painter->setPen( Qt::black );
++    QColor secondaryColor = palette().windowText().color();
++    secondaryColor.setAlphaF( 0.65f );
++    painter->setPen( palette().windowText().color() );
+     int vertOffset = 0;
+     int width = 0;
+     for ( const QString& textLine : text )
+@@ -382,7 +384,7 @@
+         painter->drawText(
+             pos.x() + LABEL_PARTITION_SQUARE_MARGIN, pos.y() + vertOffset + textSize.height() / 2, textLine );
+         vertOffset += textSize.height();
+-        painter->setPen( Qt::gray );
++        painter->setPen( secondaryColor );
+         width = qMax( width, textSize.width() );
+     }
+
+@@ -395,7 +397,7 @@
+         drawSelectionSquare( painter, partitionSquareRect.adjusted( 2, 2, -2, -2 ), color );
+     }
+
+-    painter->setPen( Qt::black );
++    painter->setPen( palette().windowText().color() );
+ }
+
+ QModelIndex

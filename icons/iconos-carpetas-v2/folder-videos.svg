@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="gf" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#8e949e"/><stop offset=".5" stop-color="#686f7c"/><stop offset="1" stop-color="#454c59"/>
+    </linearGradient>
+    <radialGradient id="gc" cx="1" cy="1" r=".55">
+      <stop offset="0" stop-color="#aab0ba" stop-opacity=".55"/><stop offset="1" stop-color="#aab0ba" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="cb"><path d="M28,50 Q28,36 42,36 L90,36 Q95,36 98,39 L111,51 Q114,54 119,54 L214,54 Q228,54 228,68 L228,210 Q228,224 214,224 L42,224 Q28,224 28,210 Z"/></clipPath>
+    <linearGradient id="gb" x1="0" y1="0" x2="1" y2="0.5">
+      <stop offset="0" stop-color="#f0a500"/><stop offset="1" stop-color="#ffe066"/>
+    </linearGradient>
+    <linearGradient id="gg" gradientUnits="userSpaceOnUse" x1="0" y1="138" x2="0" y2="202">
+      <stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#f0a500"/>
+    </linearGradient>
+    <path id="pf" d="M28,94 Q28,80 42,80 L97,80 Q101,80 104,77 L108,72 Q111,68 116,68 L214,68 Q228,68 228,82 L228,210 Q228,224 214,224 L42,224 Q28,224 28,210 Z"/>
+  </defs>
+  <path d="M28,50 Q28,36 42,36 L90,36 Q95,36 98,39 L111,51 Q114,54 119,54 L214,54 Q228,54 228,68 L228,210 Q228,224 214,224 L42,224 Q28,224 28,210 Z" fill="url(#gb)"/>
+  <path d="M28,50 Q28,36 42,36 L90,36 Q95,36 98,39 L111,51 Q114,54 119,54 L214,54 Q228,54 228,68 L228,210 Q228,224 214,224 L42,224 Q28,224 28,210 Z" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2"/>
+  <use href="#pf" fill="url(#gf)"/>
+  <use href="#pf" fill="url(#gc)"/>
+  <use href="#pf" fill="none" stroke="#e8ebf0" stroke-width="2.5"/>
+  <g transform="translate(0,-16)">
+    <g transform="translate(0,2.5)" fill="#000" fill-opacity=".28" stroke-opacity=".28"><rect x="98" y="146" width="60" height="50" rx="8"/>
+<path d="M121,158 L121,184 L142,171 Z" fill="#000"/></g>
+    <g fill="url(#gg)"><rect x="98" y="146" width="60" height="50" rx="8"/>
+<path d="M121,158 L121,184 L142,171 Z" fill="#2f3643"/></g>
+  </g>
+</svg>

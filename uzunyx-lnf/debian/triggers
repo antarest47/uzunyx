@@ -1,0 +1,5 @@
+# Plasma updated its lock screen (at its diverted path): make ours again.
+interest-noawait /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml.distrib
+interest-noawait /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml
+# Plasma updated its panel view (at its diverted path): make ours again.
+interest-noawait /usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml.distrib

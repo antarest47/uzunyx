@@ -1,0 +1,4 @@
+Lunyx: GPL-3.0-only. Its source is the Python in /usr/share/lunyx.
+On Debian systems, the full licence is in /usr/share/common-licenses/GPL-3.
+Bundled in /usr/share/lunyx/vendor, each with its licence in its dist-info:
+smbprotocol (MIT), pyspnego (MIT).

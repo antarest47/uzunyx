@@ -1,0 +1,10 @@
+Package: uzunyx-logout
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plasma-workspace (>= 4:6.7), qml6-module-org-kde-plasma-workspace
+Description: Log out button for the Plasma panel, in the Uzunyx style
+ Plasma widget (org.uzunyx.logout) that opens the logout screen: a glossy
+ black ball with its ring in the edition's accent colour.

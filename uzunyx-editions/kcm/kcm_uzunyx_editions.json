@@ -1,0 +1,20 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Switch between the Uzunyx editions, Akane and Sora",
+        "Description[es]": "Cambiar entre las ediciones de Uzunyx, Akane y Sora",
+        "Icon": "uzunyx-config-akane",
+        "License": "GPL-2.0-or-later",
+        "Name": "Uzunyx Edition",
+        "Name[es]": "Edición de Uzunyx"
+    },
+    "X-KDE-Keywords": "uzunyx,edition,akane,sora,theme,wallpaper,lock screen,login screen,sddm",
+    "X-KDE-Keywords[es]": "uzunyx,edición,akane,sora,tema,fondo,pantalla de bloqueo,inicio de sesión,sddm",
+    "X-KDE-System-Settings-Parent-Category": "themes",
+    "X-KDE-Weight": 5
+}

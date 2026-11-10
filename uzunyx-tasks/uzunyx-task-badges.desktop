@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Uzunyx task badges
+Exec=/usr/libexec/uzunyx-task-badges
+NoDisplay=true
+OnlyShowIn=KDE;
+X-KDE-autostart-phase=1

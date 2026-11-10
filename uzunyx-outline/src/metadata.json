@@ -1,0 +1,17 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "Appearance",
+        "Description": "Thin outline around windows that draw their own frame, like the uzunyx decoration",
+        "Description[es]": "Borde fino alrededor de las ventanas que dibujan su propio marco, como la decoración uzunyx",
+        "EnabledByDefault": true,
+        "License": "GPL-2.0-or-later",
+        "Name": "Uzunyx outline",
+        "Name[es]": "Borde de Uzunyx"
+    }
+}

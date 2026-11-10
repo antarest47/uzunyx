@@ -1,0 +1,43 @@
+# Spanish translation for the Uzunyx lock keys widget
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Caps Lock on"
+msgstr "Bloq Mayús activado"
+
+msgid "Caps Lock off"
+msgstr "Bloq Mayús desactivado"
+
+msgid "Num Lock on"
+msgstr "Bloq Num activado"
+
+msgid "Num Lock off"
+msgstr "Bloq Num desactivado"
+
+msgctxt "@title"
+msgid "General"
+msgstr "General"
+
+msgctxt "@label"
+msgid "Keys:"
+msgstr "Teclas:"
+
+msgctxt "@option:radio"
+msgid "Caps Lock and Num Lock"
+msgstr "Bloq Mayús y Bloq Num"
+
+msgctxt "@info"
+msgid "Num Lock is turned on at login."
+msgstr "Bloq Num se activa al iniciar sesión."
+
+msgctxt "@option:radio"
+msgid "Caps Lock only"
+msgstr "Solo Bloq Mayús"
+
+msgctxt "@info"
+msgid "For keyboards without a numeric keypad. Num Lock is left as it is at login."
+msgstr "Para teclados sin bloque numérico. Bloq Num se deja como está al iniciar sesión."

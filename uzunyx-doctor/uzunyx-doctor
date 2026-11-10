@@ -1,0 +1,717 @@
+#!/usr/bin/python3
+"""Uzunyx Doctor: updates the system and checks that Uzunyx still works.
+
+Without arguments it does the whole routine, asking only when it has to:
+checks, snapshot, simulated upgrade, upgrade, rebuild of the effects tied to
+the KWin version, and a last round of checks after the next login.
+
+  uzunyx-doctor                 the whole routine
+  uzunyx-doctor --check         only the checks (no password, changes nothing)
+  uzunyx-doctor --build         also build every package of the source tree
+  uzunyx-doctor --after-login   the checks and questions after logging in
+  uzunyx-doctor --login-hook    what the autostart entry runs
+"""
+
+import datetime
+import glob
+import json
+import os
+import re
+import shlex
+import shutil
+import struct
+import subprocess
+import sys
+
+HOME = os.path.expanduser("~")
+STATE_DIR = os.path.join(HOME, ".local/state/uzunyx-doctor")
+STATE_FILE = os.path.join(STATE_DIR, "state.json")
+SOURCE = os.environ.get("UZUNYX_SOURCE", os.path.join(HOME, "claude/waifbian"))
+TSUNYX_SOURCE = os.environ.get("TSUNYX_SOURCE", os.path.join(HOME, "claude/tsunyx-launcher"))
+REMINDER_DAYS = 30
+
+# Built against the installed KWin and tied to its exact version.
+PINNED = {"uzunyx-outline": "uzunyx-outline",
+          "uzunyx-openclose": "uzunyx-openclose",
+          "uzunyx-genie": "uzunyx-genie",
+    "uzunyx-altguard": "uzunyx-altguard",
+          "uzunyx-altguard": "uzunyx-altguard"}
+BUILD_DEPS = ["kwin-dev", "cmake", "extra-cmake-modules", "libdrm-dev", "pkgconf", "libkf6config-dev"]
+
+# Package -> folder of the source tree.
+PACKAGES = {
+    "edge-gaps": "edge-gaps",
+    "uzunyx-deco": "uzunyx-deco",
+    "uzunyx-plasmatheme": "uzunyx-plasmatheme",
+    "uzunyx-colors": "uzunyx-colors",
+    "kora-icon-theme": "kora-icons",
+    "lunyx": "lunyx",
+    "uzunyx-wallpapers": "uzunyx-wallpapers",
+    "uzunyx-lookandfeel": "uzunyx-lnf",
+    "uzunyx-editions": "uzunyx-editions",
+    "uzunyx-buttons": "uzunyx-buttons",
+    "uzunyx-lockkeys": "uzunyx-lockkeys",
+    "uzunyx-tasks": "uzunyx-tasks",
+    "uzunyx-shortcuts": "uzunyx-shortcuts",
+    "uzunyx-outline": "uzunyx-outline",
+    "uzunyx-openclose": "uzunyx-openclose",
+    "uzunyx-genie": "uzunyx-genie",
+    "uzunyx-plymouth": "uzunyx-plymouth",
+    "uzunyx-grub": "uzunyx-grub",
+    "uzunyx-desktop": "uzunyx-desktop",
+    "uzunyx-doctor": "uzunyx-doctor",
+    "uzunyx-pager": "uzunyx-pager",
+    "uzunyx-clock": "uzunyx-clock",
+    "uzunyx-timer": "uzunyx-timer",
+    "uzunyx-keys": "uzunyx-keys",
+    "uzunyx-welcome": "uzunyx-welcome",
+    "uzunyx-logout": "uzunyx-logout",
+    "uzunyx-terminal": "uzunyx-terminal",
+    "uzunyx-tiling": "uzunyx-tiling",
+    "uzunyx-controlcenter": "uzunyx-controlcenter",
+}
+# Need a download first (make fetch): only built when already fetched.
+NEEDS_FETCH = {"kora-icons": "../kora-upstream", "lunyx": "wheels-cache",
+               "uzunyx-terminal": "../zsh-autocomplete-upstream"}
+OURS = set(PACKAGES) | {"tsunyx-launcher"}
+
+EFFECTS = ["uzunyxoutline", "uzunyxopenclose", "genieanywhere"]
+# KWin plugins (not effects): package -> plugin id.
+PLUGINS = {"uzunyx-altguard": "uzunyxaltguard"}
+SCRIPTS = ["softmaximize", "panelconfigretry", "macfullscreen", "tsunyxlauncherskiptaskbar", "uzunyxtiling", "uzunyxdesktops", "uzunyxgestures"]
+OUR_WIDGETS = ("org.uzunyx.", "local.tsunyx")
+PRIVATE_MODULES = ["org/kde/taskmanager", "org/kde/pipewire", "org/kde/kcmutils",
+                   "org/kde/plasma/private/kicker",
+                   "org/kde/plasma/private/keyboardindicator",
+                   "org/kde/plasma/private/brightnesscontrolplugin",
+                   "org/kde/plasma/private/volume",
+                   "org/kde/plasma/private/mpris",
+                   "org/kde/plasma/private/sessions",
+                   "org/kde/plasma/private/systemtray",
+                   "org/kde/plasma/private/bluetooth",
+                   "org/kde/plasma/private/clipboard"]
+
+# An upgrade of any of these can change the desktop: log out afterwards.
+DESKTOP_RE = re.compile(r"^(kwin|plasma|libplasma|libkf6|kf6|qt6|libqt6|qml6|qml-|kde|libkde|"
+                        r"dolphin|sddm|plymouth|grub|linux-image|mesa|libwayland|xwayland)")
+# Removing any of these is never routine.
+CRITICAL_RE = re.compile(r"^(kwin|plasma-|sddm|systemd|sudo|apt|dpkg|linux-image|grub|konsole|dolphin)")
+
+OK, WARN, FAIL = "ok", "warn", "fail"
+BOLD, GREEN, YELLOW, RED, END = "\033[1m", "\033[32m", "\033[33m", "\033[31m", "\033[0m"
+MARK = {OK: GREEN + "  ✓ " + END, WARN: YELLOW + "  ! " + END, FAIL: RED + "  ✗ " + END}
+
+
+class Check:
+    def __init__(self, status, text, fix=""):
+        self.status, self.text, self.fix = status, text, fix
+
+
+def run(*cmd):
+    """Output of a command, "" if it can't run."""
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=120).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+
+
+def installed_version(package):
+    return run("dpkg-query", "-W", "-f=${db:Status-Status} ${Version}", package).partition("installed ")[2]
+
+
+def candidate_version(package):
+    match = re.search(r"Candidat[eo]:\s*(\S+)", run("apt-cache", "policy", package))
+    return match.group(1) if match else ""
+
+
+def upstream(version):
+    """6.7.4 from 4:6.7.4-2+b1."""
+    return re.sub(r"-[^-]*$", "", re.sub(r"^\d+:", "", version))
+
+
+def makefile_version(folder):
+    """The version `make deb` would produce, without the +kwin part."""
+    return run("make", "-s", "-C", os.path.join(SOURCE, folder), "--eval=_pv:\n\t@echo $(VERSION)", "_pv")
+
+
+def load_state():
+    try:
+        with open(STATE_FILE) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(state):
+    os.makedirs(STATE_DIR, exist_ok=True)
+    with open(STATE_FILE, "w") as f:
+        json.dump(state, f, indent=2)
+
+
+# --- Checks ---------------------------------------------------------------
+
+def check_packages():
+    results = []
+    kwin = upstream(installed_version("kwin-wayland"))
+    panel = applet_plugins()
+    for package, folder in PACKAGES.items():
+        version = installed_version(package)
+        if package in ("uzunyx-doctor",) and not version:
+            continue
+        if not version:
+            if package == "uzunyx-tasks" and "org.uzunyx.tasks" not in panel:
+                continue
+            if os.path.isdir(os.path.join(HOME, ".local/share/plasma/plasmoids/org.uzunyx.tasks")) and package == "uzunyx-tasks":
+                results.append(Check(WARN, "uzunyx-tasks se usa desde una copia de prueba, sin instalar",
+                                     "Pídele a Claude que lo deje instalado como paquete."))
+                continue
+            results.append(Check(FAIL, package + " no está instalado", "Reinstálalo desde su carpeta con make deb."))
+            continue
+        if package in PINNED and "+kwin" + kwin not in version:
+            results.append(Check(FAIL, f"{package} {version} no corresponde a KWin {kwin}",
+                                 "Ejecuta uzunyx-doctor: lo recompila."))
+            continue
+        if os.path.isdir(os.path.join(SOURCE, folder)):
+            wanted = makefile_version(folder)
+            if wanted and not version.startswith(wanted):
+                results.append(Check(WARN, f"{package} instalado {version}, el repositorio tiene {wanted}",
+                                     f"Instálalo con make deb en {folder}/."))
+    if not any(r.status != OK for r in results):
+        results.append(Check(OK, f"Paquetes instalados y al día (KWin {kwin})"))
+    return results
+
+
+def check_local_copies():
+    found = []
+    for pattern in ("plasma/plasmoids/org.uzunyx.*", "plasma/plasmoids/local.tsunyx*",
+                    "kwin/scripts/*", "kwin-wayland/scripts/*", "kwin/decorations/uzunyx*",
+                    "plasma/desktoptheme/uzunyx*", "plasma/look-and-feel/org.uzunyx*"):
+        found += glob.glob(os.path.join(HOME, ".local/share", pattern))
+    if found:
+        return [Check(WARN, "Copias de prueba que tapan al sistema: " + ", ".join(os.path.basename(f) for f in found),
+                      "Bórralas cuando el paquete esté instalado.")]
+    return [Check(OK, "Sin copias de prueba en ~/.local")]
+
+
+def check_session():
+    if not os.environ.get("WAYLAND_DISPLAY") or not run("pgrep", "-x", "kwin_wayland"):
+        return [Check(WARN, "No hay una sesión de Plasma aquí: se saltan las comprobaciones de la sesión")]
+    results = []
+    bad = [e for e in EFFECTS if run("qdbus6", "org.kde.KWin", "/Effects", "org.kde.kwin.Effects.isEffectLoaded", e) != "true"]
+    results.append(Check(FAIL, "Efectos sin cargar: " + ", ".join(bad), "Ejecuta uzunyx-doctor y cierra sesión.")
+                   if bad else Check(OK, "Efectos de KWin cargados"))
+    loaded = run("qdbus6", "org.kde.KWin", "/Plugins", "org.kde.KWin.Plugins.LoadedPlugins").split()
+    bad = [p for pkg, p in PLUGINS.items() if installed_version(pkg) and p not in loaded]
+    results.append(Check(FAIL, "Plugins de KWin sin cargar: " + ", ".join(bad), "Ejecuta uzunyx-doctor y cierra sesión.")
+                   if bad else Check(OK, "Plugins de KWin cargados"))
+    bad = [s for s in SCRIPTS if run("qdbus6", "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.isScriptLoaded", s) != "true"]
+    results.append(Check(FAIL, "Scripts de KWin sin cargar: " + ", ".join(bad), "Cierra sesión y vuelve a entrar.")
+                   if bad else Check(OK, "Scripts de KWin cargados"))
+    results.append(Check(OK, "edge-gaps funcionando") if run("pgrep", "-f", "edge-gaps")
+                   else Check(FAIL, "edge-gaps no está corriendo", "Cierra sesión y vuelve a entrar."))
+    results.append(Check(OK, "Plasma funcionando") if run("pgrep", "-x", "plasmashell")
+                   else Check(FAIL, "plasmashell no está corriendo", "Ejecuta: systemctl --user restart plasma-plasmashell"))
+    theme = run("kreadconfig6", "--file", "kdeglobals", "--group", "KDE", "--key", "LookAndFeelPackage")
+    results.append(Check(OK, "Tema global " + theme) if theme.startswith("org.uzunyx")
+                   else Check(WARN, f"Tema global: {theme or 'desconocido'}", "Aplica una edición en Preferencias."))
+    deco = run("kreadconfig6", "--file", "kwinrc", "--group", "org.kde.kdecoration2", "--key", "theme")
+    results.append(Check(OK, "Decoración uzunyx") if "uzunyx" in deco
+                   else Check(WARN, f"Decoración de ventanas: {deco or 'desconocida'}"))
+    exe = run("readlink", "/proc/" + run("pgrep", "-x", "kwin_wayland").split("\n")[0] + "/exe")
+    if exe.endswith("(deleted)"):
+        results.append(Check(WARN, "KWin se actualizó y sigue corriendo la versión anterior", "Cierra sesión y vuelve a entrar."))
+    return results
+
+
+def applet_plugins():
+    try:
+        with open(os.path.join(HOME, ".config/plasma-org.kde.plasma.desktop-appletsrc")) as f:
+            return set(re.findall(r"^plugin=(\S+)", f.read(), re.M))
+    except OSError:
+        return set()
+
+
+def check_widgets():
+    roots = ["/usr/share/plasma/plasmoids", os.path.join(HOME, ".local/share/plasma/plasmoids")]
+    missing = [p for p in applet_plugins() if p.startswith(OUR_WIDGETS)
+               and not any(os.path.isfile(os.path.join(r, p, "metadata.json")) for r in roots)]
+    if missing:
+        return [Check(FAIL, "Widgets del panel sin instalar: " + ", ".join(missing), "Reinstala su paquete.")]
+    return [Check(OK, "Widgets propios del panel instalados")]
+
+
+def session_start():
+    session = os.environ.get("XDG_SESSION_ID", "")
+    stamp = run("loginctl", "show-session", session, "-p", "Timestamp", "--value") if session else ""
+    match = re.search(r"\d{4}-\d\d-\d\d \d\d:\d\d:\d\d", stamp)
+    return match.group(0) if match else "-1h"
+
+
+def check_journal():
+    # Only the running plasmashell: restarting it leaves errors from widgets
+    # being destroyed, which say nothing about how they work now.
+    pid = run("pgrep", "-xo", "plasmashell")
+    match = ["_PID=" + pid] if pid else []
+    log = run("journalctl", "--user", "--since", session_start(), "--no-pager", "-o", "cat", "-q", *match)
+    errors = {line[:160] for line in log.splitlines()
+              if re.search(r"org\.uzunyx|uzunyx|tsunyx", line, re.I)
+              and re.search(r"error when loading|TypeError|ReferenceError|is not installed|unavailable", line)}
+    if errors:
+        return [Check(FAIL, f"Errores de QML en esta sesión ({len(errors)})",
+                      "Pásale el informe a Claude.\n        " + "\n        ".join(sorted(errors)[:8]))]
+    return [Check(OK, "Sin errores de QML de Uzunyx en esta sesión")]
+
+
+def check_modules():
+    found = glob.glob("/usr/lib/*/qt6/qml")
+    root = found[0] if found else "/usr/lib/qt6/qml"
+    missing = [m for m in PRIVATE_MODULES if not os.path.isfile(os.path.join(root, m, "qmldir"))]
+    if missing:
+        return [Check(FAIL, "Módulos de Plasma que ya no están: " + ", ".join(missing),
+                      "Plasma cambió algo que usamos: pásale el informe a Claude.")]
+    return [Check(OK, "Módulos de Plasma que usamos presentes")]
+
+
+def mo_messages(path):
+    with open(path, "rb") as f:
+        data = f.read()
+    count, offset = struct.unpack("<II", data[8:16])
+    keys = set()
+    for i in range(count):
+        length, start = struct.unpack("<II", data[offset + i * 8:offset + i * 8 + 8])
+        keys.add(data[start:start + length].decode(errors="replace").split("\0")[0])
+    return keys
+
+
+def missing_translations(qml_root, mo_path):
+    """Texts of Plasma's task manager that its translation no longer has."""
+    known = mo_messages(mo_path)
+    missing = []
+    for path in glob.glob(os.path.join(qml_root, "**/*.qml"), recursive=True):
+        with open(path, encoding="utf-8") as f:
+            source = f.read()
+        pattern = r'i18ndc\([\w.]*domain,\s*"((?:[^"\\]|\\.)*)",\s*"((?:[^"\\]|\\.)*)"'
+        for context, text in re.findall(pattern, source):
+            if context + "\x04" + text not in known:
+                missing.append(text)
+    return sorted(set(missing))
+
+
+def check_translations():
+    roots = [os.path.join(HOME, ".local/share/plasma/plasmoids/org.uzunyx.tasks"),
+             "/usr/share/plasma/plasmoids/org.uzunyx.tasks"]
+    root = next((r for r in roots if os.path.isdir(r)), None)
+    lang = os.environ.get("LANG", "").split("_")[0].split(".")[0]
+    mo = f"/usr/share/locale/{lang}/LC_MESSAGES/plasma_applet_org.kde.plasma.taskmanager.mo"
+    if not root or not os.path.isfile(mo):
+        return []
+    missing = missing_translations(root, mo)
+    if missing:
+        return [Check(WARN, f"{len(missing)} textos del gestor de tareas saldrán en inglés: " + "; ".join(missing[:4]),
+                      "Plasma cambió esos textos: pásale el informe a Claude.")]
+    return [Check(OK, "Textos del gestor de tareas traducidos")]
+
+
+def check_dolphin():
+    state = load_state()
+    version = installed_version("dolphin")
+    known = state.get("dolphin")
+    if known and known != version:
+        return [Check(WARN, f"Dolphin cambió de {known} a {version}",
+                      "Comprueba que siga el botón «Arriba». Si no está, hay que actualizar dolphinui.rc.")]
+    return []
+
+
+def check_grub():
+    if not installed_version("uzunyx-grub"):
+        return []
+    if "10_linux" not in run("dpkg-divert", "--list", "/etc/grub.d/10_linux"):
+        return [Check(FAIL, "El desvío de GRUB (10_linux) ya no está", "Reinstala uzunyx-grub.")]
+    try:
+        with open("/etc/grub.d/10_linux") as f:
+            if 'quiet_boot="1"' not in f.read():
+                return [Check(WARN, "GRUB volverá a escribir «Loading Linux…»", "Reinstala uzunyx-grub.")]
+    except OSError:
+        pass
+    return [Check(OK, "GRUB con el arranque silencioso")]
+
+
+def check_source():
+    if not os.path.isdir(os.path.join(SOURCE, ".git")):
+        return []
+    results = []
+    for name, path in (("Uzunyx", SOURCE), ("Tsunyx", TSUNYX_SOURCE)):
+        if not os.path.isdir(os.path.join(path, ".git")):
+            continue
+        ahead = run("git", "-C", path, "rev-list", "--count", "@{upstream}..HEAD")
+        if ahead.isdigit() and int(ahead) > 0:
+            results.append(Check(WARN, f"{name}: {ahead} commits sin subir, solo están en este PC",
+                                 f"Ejecuta: git -C {path} push"))
+    return results or [Check(OK, "Repositorios subidos")]
+
+
+def all_checks():
+    results = []
+    for check in (check_packages, check_local_copies, check_session, check_widgets, check_journal,
+                  check_modules, check_translations, check_dolphin, check_grub, check_source):
+        try:
+            results += check()
+        except Exception as error:  # A broken check must not stop the routine.
+            results.append(Check(WARN, f"No se pudo comprobar ({check.__name__}): {error}"))
+    return results
+
+
+def show(results, report):
+    for result in results:
+        line = MARK[result.status] + result.text
+        print(line)
+        report.append(f"[{result.status}] {result.text}")
+        if result.fix:
+            print("      → " + result.fix)
+            report.append("      -> " + result.fix)
+
+
+def problems(results):
+    return [r for r in results if r.status == FAIL]
+
+
+# --- Upgrade plan ---------------------------------------------------------
+
+class Plan:
+    def __init__(self):
+        self.upgrades = []        # names
+        self.removals = []        # names
+        self.expected = []        # removals we handle ourselves
+        self.ours = []            # our packages that would go away
+        self.critical = []        # removals that are never routine
+        self.others = []          # other removals
+        self.desktop = False      # the desktop changes: log out afterwards
+        self.kwin = False         # KWin changes: rebuild the effects
+
+    @property
+    def needs_question(self):
+        return bool(self.others)
+
+    @property
+    def blocked(self):
+        return bool(self.ours or self.critical)
+
+
+def make_plan(simulation, kwin_update=False):
+    """What an `apt-get -s dist-upgrade` output means for Uzunyx."""
+    plan = Plan()
+    plan.kwin = kwin_update
+    for line in simulation.splitlines():
+        match = re.match(r"^(Inst|Remv) (\S+)", line)
+        if not match:
+            continue
+        action, name = match.groups()
+        if action == "Inst":
+            plan.upgrades.append(name)
+            if name in ("kwin-wayland", "kwin-common", "libkwin6", "kwin-dev") or name.startswith("libkwin"):
+                plan.kwin = True
+        else:
+            plan.removals.append(name)
+            if name in PINNED:
+                plan.expected.append(name)
+                plan.kwin = True
+            elif name in OURS:
+                plan.ours.append(name)
+            elif CRITICAL_RE.match(name):
+                plan.critical.append(name)
+            else:
+                plan.others.append(name)
+    plan.desktop = plan.kwin or any(DESKTOP_RE.match(n) for n in plan.upgrades + plan.removals)
+    return plan
+
+
+# --- Steps that change the system -----------------------------------------
+
+class Stop(Exception):
+    pass
+
+
+def title(text):
+    print("\n" + BOLD + text + END)
+
+
+def ask(question, default=False):
+    hint = "S/n" if default else "s/N"
+    try:
+        answer = input(f"{question} [{hint}] ").strip().lower()
+    except EOFError:
+        answer = ""
+    return answer.startswith(("s", "y")) if answer else default
+
+
+def logged(command, log):
+    """Runs a command in the terminal (it can ask things) and logs its output."""
+    print(BOLD + "$ " + END + " ".join(command))
+    code = subprocess.run(["script", "-qefa", "-c", shlex.join(command), log]).returncode
+    return code == 0
+
+
+def apt_sim():
+    env = dict(os.environ, LC_ALL="C")
+    return subprocess.run(["apt-get", "-s", "dist-upgrade"], capture_output=True, text=True, env=env).stdout
+
+
+def take_snapshot(log):
+    title("Copia de seguridad del sistema")
+    if shutil.which("timeshift") and os.path.isfile("/etc/timeshift/timeshift.json"):
+        if not logged(["sudo", "timeshift", "--create", "--comments", "uzunyx-doctor", "--scripted"], log):
+            if not ask("La copia falló. ¿Seguir sin copia?"):
+                raise Stop("Actualización cancelada: la copia falló.")
+        return
+    print(YELLOW + "  ! No hay copias automáticas configuradas." + END)
+    print("    Si una actualización rompe el sistema, no podrás volver atrás en minutos.")
+    print("    Para tenerlas: sudo apt install timeshift, ábrelo una vez y sigue su asistente.")
+    if not ask("¿Seguir sin copia?", default=True):
+        raise Stop("Actualización cancelada para configurar las copias.")
+
+
+def rebuild_pinned(log):
+    """Builds the effects against the installed KWin and installs them."""
+    title("Recompilando los efectos para este KWin")
+    if not os.path.isdir(SOURCE):
+        raise Stop(f"No está el código en {SOURCE}: sin él no se pueden recompilar los efectos. "
+                   "El escritorio funciona sin ellos.")
+    wanted = [p for p in BUILD_DEPS if not installed_version(p)]
+    if wanted and not logged(["sudo", "apt-get", "install", "-y"] + wanted, log):
+        raise Stop("No se pudieron instalar las herramientas de compilación.")
+    debs = []
+    for package, folder in PINNED.items():
+        path = os.path.join(SOURCE, folder)
+        if not logged(["make", "-C", path, "deb"], log):
+            raise Stop(f"{package} no compila con este KWin. El escritorio funciona sin ese efecto.\n"
+                       "   Puede que haya que adaptar su código: pásale el informe a Claude.")
+        debs += glob.glob(os.path.join(path, "build", package + "_*.deb"))
+    if not logged(["sudo", "apt-get", "install", "-y", "--reinstall"] + debs, log):
+        raise Stop("Los efectos compilaron, pero no se pudieron instalar.")
+
+
+def build_all(log):
+    """Builds every package in the source tree; nothing gets installed."""
+    title("Compilando todos los paquetes (no instala nada)")
+    results = []
+    folders = sorted(set(PACKAGES.values()))
+    if not os.path.isdir(SOURCE):
+        return [Check(WARN, f"No está el código en {SOURCE}: se salta la compilación")]
+    for folder in folders:
+        path = os.path.join(SOURCE, folder)
+        if not os.path.isfile(os.path.join(path, "Makefile")):
+            continue
+        fetched = NEEDS_FETCH.get(folder)
+        if fetched and not os.path.exists(os.path.join(path, fetched)):
+            results.append(Check(WARN, f"{folder}: sin descargar, no se compila", f"Ejecuta make fetch en {folder}/."))
+            continue
+        print(f"  {folder}…", flush=True)
+        done = subprocess.run(["make", "-C", path, "deb"], capture_output=True, text=True)
+        with open(log, "a") as f:
+            f.write(f"\n--- make deb {folder}\n{done.stdout}{done.stderr}")
+        if done.returncode != 0:
+            tail = "\n        ".join(done.stderr.strip().splitlines()[-3:])
+            results.append(Check(FAIL, f"{folder} no compila", tail))
+    if not any(r.status == FAIL for r in results):
+        results.append(Check(OK, "Los paquetes compilan"))
+    return results
+
+
+def write_report(report, log=None):
+    os.makedirs(STATE_DIR, exist_ok=True)
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    path = os.path.join(STATE_DIR, f"informe-{stamp}.txt")
+    with open(path, "w") as f:
+        f.write(f"Uzunyx Doctor, {stamp}\nKWin {installed_version('kwin-wayland')}, "
+                f"Plasma {installed_version('plasma-workspace')}\n\n")
+        f.write("\n".join(report) + "\n")
+        if log and os.path.isfile(log):
+            f.write("\nRegistro completo: " + log + "\n")
+    return path
+
+
+def finish(report, log=None, failed=False):
+    path = write_report(report, log)
+    warnings = sum(line.startswith("[warn]") for line in report)
+    state = load_state()
+    state["last_run"] = datetime.date.today().isoformat()
+    if not failed:
+        state["dolphin"] = installed_version("dolphin")
+    save_state(state)
+    print()
+    if failed:
+        print(RED + BOLD + "Hay problemas." + END + " Dile a Claude: «revisa " + path + "»")
+    elif warnings:
+        print(YELLOW + BOLD + f"Funciona, con {warnings} avisos." + END + " Revisa los «!» de arriba. Informe: " + path)
+    else:
+        print(GREEN + BOLD + "Todo bien." + END + " Informe: " + path)
+    return 1 if failed else 0
+
+
+def wait_key():
+    if os.environ.get("UZUNYX_DOCTOR_WINDOW"):
+        try:
+            input("\nPulsa Intro para cerrar. ")
+        except EOFError:
+            pass
+
+
+def routine():
+    os.makedirs(STATE_DIR, exist_ok=True)
+    log = os.path.join(STATE_DIR, "registro-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S") + ".txt")
+    report = []
+    pinned_removed = False
+    try:
+        title("1. Revisando cómo está todo antes de actualizar")
+        before = all_checks()
+        show(before, report)
+        if problems(before) and not ask("Ya hay problemas antes de actualizar. ¿Seguir igual?"):
+            raise Stop("Actualización cancelada para revisar los problemas.")
+
+        title("2. Buscando actualizaciones")
+        if not logged(["sudo", "apt-get", "update"], log):
+            raise Stop("No se pudo consultar las actualizaciones. ¿Hay internet?")
+        kwin_now, kwin_next = installed_version("kwin-wayland"), candidate_version("kwin-wayland")
+        kwin_update = bool(kwin_next) and kwin_next != kwin_now
+        plan = make_plan(apt_sim(), kwin_update)
+        if not plan.upgrades and not plan.removals and not kwin_update:
+            print(GREEN + "  ✓ El sistema ya está al día." + END)
+            return finish(report, log, bool(problems(before)))
+
+        print(f"  {len(plan.upgrades)} paquetes para actualizar, {len(plan.removals)} para eliminar.")
+        if kwin_update:
+            print(f"  KWin pasa de {kwin_now} a {kwin_next}: hay que recompilar los efectos, lo hago yo.")
+        if plan.blocked:
+            names = ", ".join(plan.ours + plan.critical)
+            raise Stop(f"La actualización quiere eliminar {names}. No la hago.\n"
+                       "   Suele pasar cuando Debian está a mitad de un cambio: vuelve a intentarlo en unos días,\n"
+                       "   y si sigue igual, pásale el informe a Claude.")
+        if plan.needs_question:
+            print("  También quiere eliminar: " + ", ".join(plan.others))
+            if not ask("¿Los eliminamos? Si dudas, responde que no y pregúntale a Claude."):
+                raise Stop("Actualización cancelada por los paquetes a eliminar.")
+        if not ask("¿Actualizo?", default=True):
+            raise Stop("Actualización cancelada.")
+
+        take_snapshot(log)
+
+        title("3. Actualizando")
+        if kwin_update:
+            installed = [p for p in PINNED if installed_version(p)]
+            if installed:
+                if not logged(["sudo", "apt-get", "remove", "-y"] + installed, log):
+                    raise Stop("No se pudieron quitar los efectos para actualizar KWin.")
+                pinned_removed = True
+            # Without them apt may see more changes: look again before going on.
+            plan2 = make_plan(apt_sim(), kwin_update)
+            if plan2.blocked or plan2.needs_question:
+                names = ", ".join(plan2.ours + plan2.critical + plan2.others)
+                raise Stop(f"Ahora la actualización quiere eliminar {names}. No la hago.")
+        if not logged(["sudo", "apt-get", "dist-upgrade", "-y"], log):
+            raise Stop("La actualización falló.")
+        if kwin_update or plan.kwin:
+            rebuild_pinned(log)
+            pinned_removed = False
+
+        title("4. Comprobando después de actualizar")
+        results = build_all(log) if plan.desktop else []
+        results += check_modules() + check_grub()
+        show(results, report)
+        failed = bool(problems(results))
+
+        if plan.desktop:
+            state = load_state()
+            state["pending_after_login"] = True
+            save_state(state)
+            code = finish(report, log, failed)
+            title("5. Falta una cosa: cierra sesión y vuelve a entrar")
+            print("   El escritorio se actualizó. Al volver a entrar se abre esta ventana sola")
+            print("   y termina de comprobar todo.")
+            return code
+        return finish(report, log, failed)
+    except Stop as stop:
+        print("\n" + RED + BOLD + str(stop) + END)
+        report.append("DETENIDO: " + str(stop))
+        if pinned_removed:
+            # The effects were removed but KWin didn't change: put them back.
+            try:
+                rebuild_pinned(log)
+            except Stop as second:
+                print(RED + str(second) + END)
+                report.append("DETENIDO: " + str(second))
+        return finish(report, log, failed=True)
+
+
+CHECKLIST = ["¿Se ven bien las ventanas, con su borde y sus esquinas?",
+             "Abre una ventana y minimízala: ¿se anima hacia su icono?",
+             "Clic derecho en un icono del panel: ¿sale el menú con sus opciones?",
+             "Clic en una app con dos ventanas: ¿salen las miniaturas?",
+             "En Dolphin: ¿sigue el botón «Arriba» en la barra?"]
+
+
+def after_login():
+    report = []
+    title("Comprobando el escritorio después de la actualización")
+    results = all_checks()
+    show(results, report)
+    failed = bool(problems(results))
+    title("Unas preguntas rápidas")
+    for question in CHECKLIST:
+        answer = ask("  " + question, default=True)
+        report.append(f"[{'ok' if answer else 'fail'}] {question}")
+        failed = failed or not answer
+    state = load_state()
+    state.pop("pending_after_login", None)
+    save_state(state)
+    return finish(report, failed=failed)
+
+
+def login_hook():
+    """After an update, opens the last checks; otherwise, reminds once a month."""
+    state = load_state()
+    if state.get("pending_after_login"):
+        subprocess.Popen(["konsole", "-e", "env", "UZUNYX_DOCTOR_WINDOW=1", sys.argv[0], "--after-login"])
+        return 0
+    last = state.get("last_run")
+    if last:
+        days = (datetime.date.today() - datetime.date.fromisoformat(last)).days
+    else:
+        state["last_run"] = datetime.date.today().isoformat()
+        save_state(state)
+        days = 0
+    if days >= REMINDER_DAYS:
+        subprocess.Popen(["kdialog", "--title", "Uzunyx Doctor", "--passivepopup",
+                          f"Hace {days} días que no actualizas. Abre «Uzunyx Doctor» desde el menú.", "30"])
+    return 0
+
+
+def main():
+    args = sys.argv[1:]
+    if "--help" in args or "-h" in args:
+        print(__doc__)
+        return 0
+    if "--login-hook" in args:
+        return login_hook()
+    if "--after-login" in args:
+        code = after_login()
+        wait_key()
+        return code
+    if "--check" in args or "--build" in args:
+        report = []
+        title("Comprobaciones de Uzunyx")
+        results = all_checks()
+        show(results, report)
+        if "--build" in args:
+            os.makedirs(STATE_DIR, exist_ok=True)
+            log = os.path.join(STATE_DIR, "compilacion.txt")
+            built = build_all(log)
+            show(built, report)
+            results += built
+        return finish(report, failed=bool(problems(results)))
+    code = routine()
+    wait_key()
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

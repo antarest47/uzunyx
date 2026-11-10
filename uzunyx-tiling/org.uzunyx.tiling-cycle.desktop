@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Change tiling mode
+Name[es]=Cambiar el modo de mosaico
+Exec=uzunyx-tiling cycle
+Icon=view-grid
+NoDisplay=true
+OnlyShowIn=KDE;
+X-KDE-Shortcuts=Meta+C
+X-KDE-StartupNotify=false

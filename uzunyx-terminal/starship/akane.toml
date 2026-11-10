@@ -1,0 +1,82 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[](fg:#e62967)\
+$username\
+[](fg:#e62967 bg:#8f1d45)\
+$directory\
+[](fg:#8f1d45 bg:#343944)\
+$git_branch\
+$git_status\
+$python\
+$nodejs\
+$rust\
+$golang\
+$java\
+$c\
+$docker_context\
+$time\
+[ ](fg:#343944)\
+"""
+
+[username]
+show_always = true
+style_user = "bg:#e62967 fg:#ffffff bold"
+style_root = "bg:#e62967 fg:#ffffff bold"
+format = "[ $user ]($style)"
+
+[directory]
+style = "bg:#8f1d45 fg:#ffe6ee"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:#343944 fg:#ff8fb3"
+format = "[ $symbol $branch ]($style)"
+
+[git_status]
+style = "bg:#343944 fg:#ff8fb3"
+format = "[($all_status$ahead_behind )]($style)"
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ ♥ $time ]($style)"
+
+[python]
+symbol = ""
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ $symbol ($version) ]($style)"
+
+[nodejs]
+symbol = ""
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ $symbol ($version) ]($style)"
+
+[rust]
+symbol = ""
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ $symbol ($version) ]($style)"
+
+[golang]
+symbol = ""
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ $symbol ($version) ]($style)"
+
+[java]
+symbol = ""
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ $symbol ($version) ]($style)"
+
+[c]
+symbol = ""
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ $symbol ($version) ]($style)"
+
+[docker_context]
+symbol = ""
+style = "bg:#343944 fg:#f2f2f7"
+format = "[ $symbol $context ]($style)"

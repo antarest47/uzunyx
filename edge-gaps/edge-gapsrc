@@ -1,0 +1,15 @@
+# System defaults for edge-gaps. Override per user in ~/.config/edge-gapsrc,
+# e.g.: kwriteconfig6 --file edge-gapsrc --group General --key Gap 12
+# Changes apply the next time edge-gaps starts, or right away with
+# uzunyx-mode or its D-Bus "reload" action (see the edge-gaps script).
+[General]
+# false: no gaps at all (uzunyx-mode's focus mode writes it per user).
+Enabled=true
+# Gap in px between maximized windows and the top, left and right edges.
+Gap=8
+# Gap reserved above the bottom panel. With a floating Plasma panel (8px
+# floating padding) it must be at least 17 for the panel to keep floating
+# over maximized windows; the visible gap is then BottomGap - 8.
+BottomGap=17
+# Scrolling with the pointer against the bottom edge changes the volume.
+VolumeEdge=true

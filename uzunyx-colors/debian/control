@@ -1,0 +1,14 @@
+Package: uzunyx-colors
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plasma-workspace (>= 4:6.7)
+Recommends: uzunyx-terminal
+Description: Uzunyx color schemes (Akane and Sora)
+ Two dark KDE color schemes for the Uzunyx desktop that share the same
+ blue-grey neutrals and differ only in their accent: Uzunyx Akane
+ (crimson, matching the Uzunyx logo) and Uzunyx Sora
+ (cyan). GTK applications follow them through kde-gtk-config. Also Konsole
+ color schemes and profiles for both editions.

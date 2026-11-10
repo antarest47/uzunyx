@@ -1,0 +1,14 @@
+Package: uzunyx-tiling
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: kwin-wayland (>= 4:6.7), plasma-workspace (>= 4:6.7), qml6-module-org-kde-plasma-plasma5support, libkf6config-bin, systemd, edge-gaps, python3-gi, gir1.2-gtk-3.0, gir1.2-gtklayershell-0.1
+Recommends: uzunyx-outline (>= 0.3.0)
+Description: Optional automatic tiling for Uzunyx (main and stack, spiral)
+ A KWin script and a system tray icon to choose between no tiling (the
+ default), main and stack (MonadTall in Qtile), and spiral (dwindle in Hyprland).
+ It follows the Uzunyx modes: 2 px between windows inside the margins in the
+ normal mode, no separation at all in the focus mode. Tiled windows lose
+ their decoration; uzunyx-outline keeps them rounded and with their border.

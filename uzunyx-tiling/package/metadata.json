@@ -1,0 +1,24 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "Windows and Tasks",
+        "Description": "Rotates the automatic tiling of windows; its menu also has the normal and focus modes",
+        "Description[es]": "Rota el mosaico automático de las ventanas; su menú también trae los modos normal y enfoque",
+        "EnabledByDefault": true,
+        "Icon": "view-grid",
+        "Id": "org.uzunyx.tiling",
+        "License": "GPL-2.0-or-later",
+        "Name": "Tiling",
+        "Name[es]": "Mosaico",
+        "Version": "0.6.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-NotificationArea": "true",
+    "X-Plasma-NotificationAreaCategory": "SystemServices"
+}

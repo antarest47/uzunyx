@@ -1,0 +1,11 @@
+#!/bin/sh
+# The login screen background chosen with uzunyx-edition --sddm lives in the
+# uzunyx SDDM theme's folder (not a file of any package): drop it so the
+# theme goes back to its default (Akane).
+set -e
+
+case "$1" in
+    remove|purge)
+        rm -f /usr/share/sddm/themes/uzunyx/theme.conf.user /usr/share/sddm/themes/uzunyx/colors/current
+        ;;
+esac

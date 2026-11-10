@@ -1,0 +1,15 @@
+{
+    "KPlugin": {
+        "Category": "Appearance",
+        "Name": "Genie Anywhere",
+        "Name[es]": "Lámpara mágica libre",
+        "Description": "Magic lamp minimize animation that can target any spot of a panel (Super+Ctrl+L to pick)",
+        "Description[es]": "Lámpara mágica al minimizar, apuntando a cualquier ítem del panel (Super+Ctrl+L para elegir)",
+        "EnabledByDefault": true,
+        "License": "GPL-2.0-or-later",
+        "Version": "0.1.0"
+    },
+    "org.kde.kwin.effect": {
+        "exclusiveGroup": "minimize"
+    }
+}

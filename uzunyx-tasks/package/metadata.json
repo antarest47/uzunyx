@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "Windows and Tasks",
+        "Description": "Task manager with glass buttons and one dot per window",
+        "Description[es]": "Gestor de tareas con botones de vidrio y un punto por ventana",
+        "Icon": "preferences-system-windows",
+        "Id": "org.uzunyx.tasks",
+        "License": "GPL-2.0-or-later",
+        "Name": "Uzunyx Tasks",
+        "Name[es]": "Tareas de Uzunyx",
+        "Version": "0.4.7"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

@@ -1,0 +1,5 @@
+# System default (installed by uzunyx-lockkeys): turn Num Lock on at login.
+# KWin reads it when the session starts (0 on, 1 off, 2 leave as is). The
+# lock keys widget's "Caps Lock only" option writes the user's own value.
+[Keyboard]
+NumLock=0

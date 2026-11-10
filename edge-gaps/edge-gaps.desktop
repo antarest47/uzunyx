@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Edge gaps
+Name[es]=Márgenes de pantalla
+Comment=Invisible margins between maximized windows and the screen edges
+Comment[es]=Márgenes invisibles entre las ventanas maximizadas y los bordes de pantalla
+Exec=edge-gaps
+TryExec=edge-gaps
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=1

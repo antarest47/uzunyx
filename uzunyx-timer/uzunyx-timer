@@ -1,0 +1,154 @@
+#!/usr/bin/python3
+"""Timers of the Uzunyx desktop.
+
+uzunyx-timer start <duration> [label]   duration: 300, 90s, 5m, 1h30m
+uzunyx-timer list                       the running timers, as JSON
+uzunyx-timer cancel <id>
+uzunyx-timer wait                       waits for a change, then as «list»
+uzunyx-timer ring <id>                  (systemd runs this when one ends)
+
+Each timer is a transient systemd user timer, so it needs nothing running and
+ends with the session, like the list in $XDG_RUNTIME_DIR that uzunyx-clock
+shows. «wait» is how the clock hears of changes without polling.
+"""
+
+import fcntl
+import json
+import os
+import re
+import secrets
+import shutil
+import subprocess
+import sys
+import time
+
+import gi
+
+gi.require_version("Gio", "2.0")
+from gi.repository import Gio, GLib  # noqa: E402
+
+DIR = os.path.join(os.environ.get("XDG_RUNTIME_DIR") or GLib.get_user_runtime_dir(), "uzunyx-timer")
+STATE = os.path.join(DIR, "timers.json")
+SOUND = "/usr/share/sounds/ocean/stereo/alarm-clock-elapsed.oga"
+WAIT_SECONDS = 30  # So a «wait» left behind by a dead plasmashell ends by itself.
+
+
+def read():
+    try:
+        with open(STATE) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return []
+
+
+def change(edit):
+    """Rewrites the list atomically: «wait» sees only finished files."""
+    os.makedirs(DIR, exist_ok=True)
+    with open(os.path.join(DIR, "lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        timers = edit(read())
+        tmp = STATE + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(timers, f)
+        os.replace(tmp, STATE)
+
+
+def parse_duration(text):
+    if text.isdigit():
+        return int(text)
+    if not re.fullmatch(r"(\d+[hms])+", text):
+        raise ValueError(f"Duración no válida: {text}")
+    units = {"h": 3600, "m": 60, "s": 1}
+    return sum(int(n) * units[u] for n, u in re.findall(r"(\d+)([hms])", text))
+
+
+def human(seconds):
+    parts = []
+    for size, unit in ((3600, "h"), (60, "min"), (1, "s")):
+        if seconds >= size:
+            parts.append(f"{seconds // size} {unit}")
+            seconds %= size
+    return " ".join(parts)
+
+
+def unit(timer_id):
+    return f"uzunyx-timer-{timer_id}"
+
+
+def start(duration, label):
+    seconds = parse_duration(duration)
+    if seconds <= 0:
+        raise ValueError("La duración debe ser mayor que cero")
+    timer_id = secrets.token_hex(4)
+    entry = {"id": timer_id, "label": label, "seconds": seconds, "end": int((time.time() + seconds) * 1000)}
+    subprocess.run(["systemd-run", "--user", "--quiet", "--collect", f"--unit={unit(timer_id)}",
+                    f"--on-active={seconds}s", "--timer-property=AccuracySec=1s",
+                    "--description=Uzunyx timer", os.path.abspath(sys.argv[0]), "ring", timer_id], check=True)
+    change(lambda timers: timers + [entry])
+    print(timer_id)
+
+
+def cancel(timer_id):
+    subprocess.run(["systemctl", "--user", "stop", unit(timer_id) + ".timer"], stderr=subprocess.DEVNULL)
+    change(lambda timers: [t for t in timers if t["id"] != timer_id])
+
+
+def ring(timer_id):
+    timer = next((t for t in read() if t["id"] == timer_id), None)
+    change(lambda timers: [t for t in timers if t["id"] != timer_id])
+    if timer is None:
+        return
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+    # Critical: stays until it's closed, and shows in Do Not Disturb.
+    bus.call_sync("org.freedesktop.Notifications", "/org/freedesktop/Notifications",
+                  "org.freedesktop.Notifications", "Notify",
+                  GLib.Variant("(susssasa{sv}i)", ("Temporizador", 0, "chronometer",
+                                                   timer["label"] or "¡Tiempo!",
+                                                   f"Terminó el temporizador de {human(timer['seconds'])}",
+                                                   [], {"urgency": GLib.Variant("y", 2)}, 0)),
+                  None, Gio.DBusCallFlags.NONE, -1, None)
+    player = shutil.which("pw-play") or shutil.which("paplay")
+    if player and os.path.exists(SOUND):
+        subprocess.run([player, SOUND], stderr=subprocess.DEVNULL)
+
+
+def wait():
+    os.makedirs(DIR, exist_ok=True)
+    loop = GLib.MainLoop()
+    monitor = Gio.File.new_for_path(DIR).monitor_directory(Gio.FileMonitorFlags.NONE, None)
+
+    def changed(_monitor, file, _other, _event):
+        if file.get_path() == STATE:
+            loop.quit()
+
+    monitor.connect("changed", changed)
+    GLib.timeout_add_seconds(WAIT_SECONDS, loop.quit)
+    loop.run()
+    print(json.dumps(read()))
+
+
+def main():
+    args = sys.argv[1:]
+    command = args[0] if args else ""
+    try:
+        if command == "start" and len(args) in (2, 3):
+            start(args[1], args[2] if len(args) == 3 else "")
+        elif command == "list" and len(args) == 1:
+            print(json.dumps(read()))
+        elif command == "cancel" and len(args) == 2:
+            cancel(args[1])
+        elif command == "ring" and len(args) == 2:
+            ring(args[1])
+        elif command == "wait" and len(args) == 1:
+            wait()
+        else:
+            print(__doc__.strip(), file=sys.stderr)
+            return 2
+    except (ValueError, subprocess.CalledProcessError) as e:
+        print(e, file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

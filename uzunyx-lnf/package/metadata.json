@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "",
+        "Description": "Uzunyx dark theme, Akane edition (crimson)",
+        "Description[es]": "Tema oscuro de Uzunyx, edición Akane (carmesí)",
+        "Id": "org.uzunyx.desktop",
+        "License": "GPL-2.0-or-later",
+        "Name": "Uzunyx Akane",
+        "Version": "0.18.0"
+    }
+}

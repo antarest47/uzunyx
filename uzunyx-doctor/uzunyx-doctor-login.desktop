@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Uzunyx Doctor login check
+Exec=/usr/bin/uzunyx-doctor --login-hook
+Icon=system-software-update
+NoDisplay=true
+OnlyShowIn=KDE;
+X-KDE-autostart-phase=2

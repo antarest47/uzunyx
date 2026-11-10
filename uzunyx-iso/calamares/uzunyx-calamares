@@ -1,0 +1,4 @@
+#!/bin/sh
+export QT_QPA_PLATFORMTHEME=kde
+export XDG_CONFIG_HOME=/etc/calamares/theme
+exec calamares "$@"

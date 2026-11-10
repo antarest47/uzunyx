@@ -1,0 +1,155 @@
+# Tema Plymouth de Uzunyx (el mismo script para Akane y Sora; cambian las
+# imágenes). Icono fijo, el nombre debajo con un brillo que lo recorre cada
+# pocos segundos (cuadros shine-NN.png generados por gen-theme.py) y destellos
+# que titilan sobre sus estrellas. Las imágenes vienen al tamaño de una
+# pantalla de 1200 px de alto y al doble («@2x», HiDPI): se usa el juego más
+# cercano y solo se escala lo que falta, porque Plymouth escala mal la
+# transparencia (bordes dentados y con puntos oscuros).
+
+W = Window.GetWidth();
+H = Window.GetHeight();
+if (H >= 1800) { SUFFIX = "@2x"; BASE = 2; } else { SUFFIX = ""; BASE = 1; }
+S = H / 1200 / BASE;
+# Diferencias de pocos píxeles no valen el escalado.
+if (S > 0.95 && S < 1.05) S = 1;
+
+FRAMES = 36;
+TICKS_PER_FRAME = 2;          # el refresco va a 50 Hz: el brillo, a 25 cuadros/s
+PAUSE = 110;                  # ticks entre pasadas (2,2 s)
+CYCLE = FRAMES * TICKS_PER_FRAME + PAUSE;
+FADE_IN = 25;                 # ticks del fundido de entrada
+
+fun scaled(name) {
+    img = Image(name + SUFFIX + ".png");
+    if (S == 1) return img;
+    return img.Scale(Math.Int(img.GetWidth() * S + 0.5), Math.Int(img.GetHeight() * S + 0.5));
+}
+
+# Fondo liso #111318, el de la paleta de la distro.
+Window.SetBackgroundTopColor(0.067, 0.075, 0.094);
+Window.SetBackgroundBottomColor(0.067, 0.075, 0.094);
+
+# Icono y nombre, centrados como grupo un poco por encima de la mitad.
+icon_img = scaled("icon");
+logo_img = scaled("logo");
+GAP = Math.Int(24 * H / 1200);
+group_h = icon_img.GetHeight() + GAP + logo_img.GetHeight();
+top = Math.Int((H - group_h) / 2 - H * 0.03);
+
+icon = Sprite(icon_img);
+icon.SetPosition(Math.Int((W - icon_img.GetWidth()) / 2), top, 10);
+
+LX = Math.Int((W - logo_img.GetWidth()) / 2);
+LY = top + icon_img.GetHeight() + GAP;
+logo = Sprite(logo_img);
+logo.SetPosition(LX, LY, 10);
+
+# Cuadros del brillo
+for (i = 0; i < FRAMES; i++) {
+    if (i < 10) n = "0" + i; else n = "" + i;
+    shine_img[i] = scaled("shine-" + n);
+}
+shine = Sprite();
+shine.SetPosition(LX, LY, 11);
+shine.SetOpacity(0);
+
+# Destellos sobre las estrellas y perlas del logo: posición relativa al logo
+# (0..1) y tamaño.
+gx[0] = 0.0925; gy[0] = 0.5925; gs[0] = 1.0;
+gx[1] = 0.5401; gy[1] = 0.7196; gs[1] = 1.0;
+gx[2] = 0.9406; gy[2] = 0.4461; gs[2] = 0.6;
+gx[3] = 0.9558; gy[3] = 0.5580; gs[3] = 0.45;
+gx[4] = 0.1326; gy[4] = 0.6823; gs[4] = 0.45;
+gx[5] = 0.6552; gy[5] = 0.6823; gs[5] = 0.45;
+GLINTS = 6;
+glint_src = Image("glint" + SUFFIX + ".png");
+for (i = 0; i < GLINTS; i++) {
+    d = Math.Int(glint_src.GetWidth() * S * gs[i] + 0.5);
+    glint[i] = Sprite(glint_src.Scale(d, d));
+    glint[i].SetPosition(Math.Int(LX + gx[i] * logo_img.GetWidth() - d / 2),
+                         Math.Int(LY + gy[i] * logo_img.GetHeight() - d / 2), 12);
+    glint[i].SetOpacity(0);
+}
+
+icon.SetOpacity(0);
+logo.SetOpacity(0);
+
+# Animación (en las funciones, las variables globales que cambian llevan
+# «global.»; leerlas no lo necesita).
+tick = 0;
+fun refresh() {
+    global.tick++;
+    fade = Math.Min(tick / FADE_IN, 1);
+    icon.SetOpacity(fade);
+    logo.SetOpacity(fade);
+
+    t = tick % CYCLE;
+    f = Math.Int(t / TICKS_PER_FRAME);
+    if (tick > FADE_IN && f < FRAMES) {
+        shine.SetImage(shine_img[f]);
+        shine.SetOpacity(1);
+    } else {
+        shine.SetOpacity(0);
+    }
+
+    # Cada destello titila una vez por ciclo, escalonados.
+    for (i = 0; i < GLINTS; i++) {
+        p = ((tick + i * 31) % 160) / 40;      # dura 40 ticks de cada 160
+        if (p < 1) a = Math.Sin(p * Math.Pi); else a = 0;
+        glint[i].SetOpacity(a * a * fade);
+    }
+}
+Plymouth.SetRefreshFunction(refresh);
+
+# Contraseña (disco cifrado)
+entry_img = scaled("entry");
+bullet_img = scaled("bullet");
+EX = Math.Int((W - entry_img.GetWidth()) / 2);
+EY = LY + logo_img.GetHeight() + Math.Int(32 * H / 1200);
+entry = Sprite(entry_img);
+entry.SetPosition(EX, EY, 20);
+entry.SetOpacity(0);
+prompt = Sprite();
+prompt.SetZ(20);
+bullets = [];
+nbullets = 0;
+
+fun hide_password() {
+    entry.SetOpacity(0);
+    prompt.SetOpacity(0);
+    for (i = 0; i < nbullets; i++) bullets[i].SetOpacity(0);
+}
+
+fun display_password(text, count) {
+    entry.SetOpacity(1);
+    if (text == "") text = "Contraseña";
+    img = Image.Text(text, 0.95, 0.95, 0.97, 1);
+    prompt.SetImage(img);
+    prompt.SetPosition(Math.Int((W - img.GetWidth()) / 2), EY - img.GetHeight() - Math.Int(10 * H / 1200), 20);
+    prompt.SetOpacity(1);
+    step = Math.Int(bullet_img.GetWidth() * 1.8);
+    room = Math.Int((entry_img.GetWidth() - 2 * step) / step);
+    shown = Math.Min(count, room);
+    x0 = Math.Int((W - shown * step) / 2 + (step - bullet_img.GetWidth()) / 2);
+    y0 = Math.Int(EY + (entry_img.GetHeight() - bullet_img.GetHeight()) / 2);
+    for (i = 0; i < shown; i++) {
+        if (!global.bullets[i]) global.bullets[i] = Sprite(bullet_img);
+        bullets[i].SetPosition(x0 + i * step, y0, 21);
+        bullets[i].SetOpacity(1);
+    }
+    for (i = shown; i < nbullets; i++) bullets[i].SetOpacity(0);
+    if (shown > nbullets) global.nbullets = shown;
+}
+
+Plymouth.SetDisplayPasswordFunction(display_password);
+Plymouth.SetDisplayNormalFunction(hide_password);
+
+# Mensajes del sistema (p. ej. fsck), abajo y discretos.
+message = Sprite();
+message.SetZ(30);
+fun show_message(text) {
+    img = Image.Text(text, 0.95, 0.95, 0.97, 0.6);
+    message.SetImage(img);
+    message.SetPosition(Math.Int((W - img.GetWidth()) / 2), H - img.GetHeight() - Math.Int(48 * H / 1200), 30);
+}
+Plymouth.SetMessageFunction(show_message);

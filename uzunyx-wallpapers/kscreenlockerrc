@@ -1,0 +1,9 @@
+# System default lock screen wallpaper (installed by uzunyx-wallpapers).
+# Plasma's global theme doesn't write kscreenlockerrc to kdedefaults, so this
+# applies to every user who hasn't picked their own.
+[Greeter]
+WallpaperPlugin=org.kde.image
+
+[Greeter][Wallpaper][org.kde.image][General]
+Image=/usr/share/wallpapers/UzunyxAkaneSky/
+PreviewImage=/usr/share/wallpapers/UzunyxAkaneSky/

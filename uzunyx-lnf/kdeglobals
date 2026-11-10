@@ -1,0 +1,17 @@
+# System default global theme (installed by uzunyx-lookandfeel).
+# Users who pick another global theme keep theirs: ~/.config/kdeglobals wins.
+[KDE]
+LookAndFeelPackage=org.uzunyx.desktop
+
+[Icons]
+# Also for the login screen: its user has no ~/.config/kdedefaults.
+Theme=uzunyx
+
+[General]
+font=Nunito,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+menuFont=Nunito,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+toolBarFont=Nunito,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+smallestReadableFont=Nunito,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+
+[WM]
+activeFont=Nunito,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1

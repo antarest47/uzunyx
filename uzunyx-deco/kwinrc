@@ -1,0 +1,24 @@
+# System defaults for KWin (installed by uzunyx-deco). The global theme only
+# writes the window decoration keys to ~/.config/kdedefaults/kwinrc, so these
+# apply to every user who hasn't changed them.
+[Plugins]
+# Minimize with the macOS-like "magic lamp" effect instead of "squash"
+# (both are in KWin's exclusive "minimize" group).
+magiclampEnabled=true
+squashEnabled=false
+
+[Windows]
+# Each screen changes desktop on its own, like GNOME (Plasma 6.7; off by default).
+PerOutputVirtualDesktops=true
+
+[TabBox]
+# Alt+Tab shows the windows of every virtual desktop: with macfullscreen each
+# fullscreen window is alone on its desktop.
+DesktopMode=0
+# Our Cover style switcher (kwin/tabbox/uzunyx_cover).
+LayoutName=uzunyx_cover
+
+[Effect-magiclamp]
+# 300 ms, like macOS's genie effect (KWin's default is 250 ms). It is still
+# scaled by the global animation speed.
+AnimationDuration=300

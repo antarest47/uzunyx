@@ -1,0 +1,11 @@
+Package: uzunyx-pager
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plasma-workspace (>= 4:6.7), plasma-desktop-data, qml6-module-org-kde-taskmanager, qml6-module-org-kde-pipewire, qml6-module-org-kde-plasma-workspace, qml6-module-org-kde-plasma-plasma5support
+Description: Virtual desktop pager for the Plasma panel, in the Uzunyx style
+ Plasma widget (org.uzunyx.pager): a glass pill with a dot per virtual desktop
+ and the current one in the edition's accent colour. It hides while there is
+ only one desktop. Hovering a dot shows that desktop's windows live.

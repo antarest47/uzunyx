@@ -1,0 +1,15 @@
+Package: kora-icon-theme
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: breeze-icon-theme
+Homepage: https://github.com/bikass/kora
+Description: Kora icon theme (rounded, colorful SVG icons with depth)
+ SVG icon theme for GNU/Linux with rounded shapes, gradients and depth, and
+ rounded blue folders. Includes the "Kora" and "Kora Grey" (grey folders)
+ variants. Missing icons are inherited from Breeze.
+ .
+ Packaged from upstream git (no upstream releases); see the version for
+ the commit.

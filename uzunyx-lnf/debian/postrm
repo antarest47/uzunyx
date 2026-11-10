@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+if [ "$1" = remove ] || [ "$1" = abort-install ]; then
+    rm -f /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml /usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml
+    dpkg-divert --package uzunyx-lookandfeel --remove --rename --divert /usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml.distrib /usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml
+    dpkg-divert --package uzunyx-lookandfeel --remove --rename --divert /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml.distrib /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml
+    dpkg-divert --package uzunyx-lookandfeel --remove --rename --divert /etc/skel/.face.distrib /etc/skel/.face
+    dpkg-divert --package uzunyx-lookandfeel --remove --rename --divert /usr/share/sddm/faces/.face.icon.distrib /usr/share/sddm/faces/.face.icon
+fi

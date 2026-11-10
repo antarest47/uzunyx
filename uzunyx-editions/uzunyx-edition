@@ -1,0 +1,238 @@
+#!/usr/bin/python3
+"""Cambia entre las ediciones de Uzunyx (Akane y Sora).
+
+Uso:
+    uzunyx-edition status
+    uzunyx-edition set akane|sora [--no-theme] [--no-wallpaper] [--no-lock]
+                                  [--no-launcher] [--no-konsole] [--sddm]
+                                  [--plymouth]
+
+«set» aplica, sin tocar los paneles:
+  - el tema global de la edición (colores, carpetas, decoración…; sin su
+    disposición);
+  - su fondo de escritorio, en todos los escritorios;
+  - su fondo de pantalla de bloqueo (kscreenlockerrc del usuario);
+  - su logo en el botón del lanzador (Tsunyx o Kickoff) del panel;
+  - su perfil de Konsole, salvo si el usuario eligió otro;
+  - con --sddm, su fondo en la pantalla de inicio de sesión, y con
+    --plymouth, su pantalla de arranque (regenera el initramfs: tarda). Son
+    de todo el sistema, así que se hacen como root con pkexec, en una sola
+    llamada (pide contraseña una vez).
+
+Hace falta porque Plasma 6.7 solo aplica el fondo de un tema global junto
+con su disposición del escritorio, que reemplaza los paneles.
+
+«status» escribe la edición del tema global actual (akane, sora u other).
+"""
+
+import argparse
+import glob
+import json
+import os
+import subprocess
+import sys
+
+from gi.repository import Gio, GLib
+
+EDITIONS = {
+    "akane": {"lnf": "org.uzunyx.desktop", "wallpaper": "UzunyxAkane",
+              "sky": "UzunyxAkaneSky", "logo": "uzunyx-akane", "settings_icon": "uzunyx-config-akane",
+              "konsole": "UzunyxAkane.profile", "konsole_name": "Uzunyx Akane"},
+    "sora": {"lnf": "org.uzunyx.sora", "wallpaper": "UzunyxSora",
+             "sky": "UzunyxSoraSky", "logo": "uzunyx-sora", "settings_icon": "uzunyx-config-sora",
+             "konsole": "UzunyxSora.profile", "konsole_name": "Uzunyx Sora"},
+}
+WALLPAPERS = "/usr/share/wallpapers"
+SYSTEM_HELPER = "/usr/libexec/uzunyx-system-edition"
+SETTINGS_DESKTOP = "org.uzunyx.settings.desktop"
+LAUNCHERS = ("local.tsunyxlauncher", "org.kde.plasma.kickoff")
+
+# Plasma desktop script: the logo on every launcher button.
+LAUNCHER_SCRIPT = """
+var types = %s;
+panels().forEach(function (p) {
+    p.widgets().forEach(function (w) {
+        if (types.indexOf(w.type) === -1) return;
+        w.currentConfigGroup = ["General"];
+        w.writeConfig("icon", %s);
+        w.reloadConfig();
+    });
+});
+"""
+
+
+def current_edition():
+    out = subprocess.run(["kreadconfig6", "--file", "kdeglobals", "--group", "KDE",
+                          "--key", "LookAndFeelPackage"], capture_output=True, text=True).stdout.strip()
+    for name, ed in EDITIONS.items():
+        if out == ed["lnf"]:
+            return name
+    return "other"
+
+
+def run(cmd):
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError((result.stderr or result.stdout).strip() or f"{cmd[0]} falló")
+
+
+def apply_theme(ed):
+    run(["plasma-apply-lookandfeel", "--apply", ed["lnf"]])
+
+
+def apply_settings_icon(ed):
+    """The menu entry of the module shows the edition's config icon: Akane is the
+    packaged file, any other a copy of it in the user's applications."""
+    data = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    path = os.path.join(data, "applications", SETTINGS_DESKTOP)
+    with open(os.path.join("/usr/share/applications", SETTINGS_DESKTOP)) as f:
+        packaged = f.read()
+    wanted = packaged.replace("Icon=uzunyx-config-akane", "Icon=" + ed["settings_icon"])
+    try:
+        with open(path) as f:
+            current = f.read()
+    except OSError:
+        current = None
+    if wanted == packaged and current is None or wanted == current:
+        return
+    if wanted == packaged:
+        os.remove(path)
+    else:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(wanted)
+    run(["kbuildsycoca6"])
+
+
+def apply_wallpaper(ed):
+    run(["plasma-apply-wallpaperimage", os.path.join(WALLPAPERS, ed["wallpaper"])])
+
+
+def apply_lock(ed):
+    path = os.path.join(WALLPAPERS, ed["sky"]) + "/"
+    base = ["kwriteconfig6", "--file", "kscreenlockerrc", "--group", "Greeter"]
+    run(base + ["--key", "WallpaperPlugin", "org.kde.image"])
+    image = base + ["--group", "Wallpaper", "--group", "org.kde.image", "--group", "General"]
+    run(image + ["--key", "Image", path])
+    run(image + ["--key", "PreviewImage", path])
+
+
+def apply_launcher(ed):
+    script = LAUNCHER_SCRIPT % (json.dumps(list(LAUNCHERS)), json.dumps(ed["logo"]))
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+    bus.call_sync("org.kde.plasmashell", "/PlasmaShell", "org.kde.PlasmaShell", "evaluateScript",
+                  GLib.Variant("(s)", (script,)), None, Gio.DBusCallFlags.NONE, -1)
+
+
+def konsole_services(bus):
+    reply = bus.call_sync("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "ListNames",
+                          None, None, Gio.DBusCallFlags.NONE, -1)
+    return [n for n in reply.unpack()[0] if n.startswith("org.kde.konsole-")]
+
+
+def konsole_sessions(bus, service):
+    reply = bus.call_sync(service, "/Sessions", "org.freedesktop.DBus.Introspectable", "Introspect",
+                          None, None, Gio.DBusCallFlags.NONE, -1)
+    node = Gio.DBusNodeInfo.new_for_xml(reply.unpack()[0])
+    return [f"/Sessions/{n.path}" for n in node.nodes]
+
+
+def konsole_user_profiles():
+    """Names of the user's own profiles (the built-in one's name is translated)."""
+    names = set()
+    data = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    for path in glob.glob(os.path.join(data, "konsole", "*.profile")):
+        with open(path, errors="replace") as f:
+            names.update(line[5:].strip() for line in f if line.startswith("Name="))
+    return names
+
+
+def apply_konsole(ed):
+    current = subprocess.run(["kreadconfig6", "--file", "konsolerc", "--group", "Desktop Entry",
+                              "--key", "DefaultProfile"], capture_output=True, text=True).stdout.strip()
+    if current and current not in ("UzunyxAkane.profile", "UzunyxSora.profile"):
+        return  # the user chose another profile
+    run(["kwriteconfig6", "--file", "konsolerc", "--group", "Desktop Entry",
+         "--key", "DefaultProfile", ed["konsole"]])
+    # Open tabs too, unless they use a profile of the user's. Konsole answers
+    # AccessDenied here but changes the profile; new windows are right anyway.
+    own = konsole_user_profiles()
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+    interface = "org.kde.konsole.Session"
+    for service in konsole_services(bus):
+        try:
+            sessions = konsole_sessions(bus, service)
+        except GLib.Error:
+            continue
+        for path in sessions:
+            try:
+                profile = bus.call_sync(service, path, interface, "profile", None, None,
+                                        Gio.DBusCallFlags.NONE, -1).unpack()[0]
+                if profile not in own:
+                    bus.call_sync(service, path, interface, "setProfile", GLib.Variant("(s)", (ed["konsole_name"],)),
+                                  None, Gio.DBusCallFlags.NONE, -1)
+            except GLib.Error:
+                pass
+
+
+def apply_system(name, parts):
+    run(["pkexec", SYSTEM_HELPER, name] + parts)
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="uzunyx-edition", description="Cambia entre las ediciones de Uzunyx.")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("status", help="edición del tema global actual")
+    sub.add_parser("sync", help="ajusta el icono del menú a la edición del tema global")
+    s = sub.add_parser("set", help="aplica una edición")
+    s.add_argument("edition", choices=sorted(EDITIONS))
+    s.add_argument("--no-theme", action="store_true", help="no cambiar el tema global")
+    s.add_argument("--no-wallpaper", action="store_true", help="no cambiar el fondo de escritorio")
+    s.add_argument("--no-lock", action="store_true", help="no cambiar la pantalla de bloqueo")
+    s.add_argument("--no-launcher", action="store_true", help="no cambiar el icono del lanzador")
+    s.add_argument("--no-konsole", action="store_true", help="no cambiar el perfil de Konsole")
+    s.add_argument("--sddm", action="store_true", help="cambiar también la pantalla de inicio de sesión (root)")
+    s.add_argument("--plymouth", action="store_true", help="cambiar también la pantalla de arranque (root)")
+    args = parser.parse_args()
+
+    if args.command == "status":
+        print(current_edition())
+        return 0
+
+    if args.command == "sync":
+        name = current_edition()
+        if name in EDITIONS:
+            apply_settings_icon(EDITIONS[name])
+        return 0
+
+    ed = EDITIONS[args.edition]
+    steps = []
+    if not args.no_theme:
+        steps.append(("tema", lambda: apply_theme(ed)))
+        steps.append(("icono del menú", lambda: apply_settings_icon(ed)))
+    if not args.no_wallpaper:
+        steps.append(("fondo", lambda: apply_wallpaper(ed)))
+    if not args.no_lock:
+        steps.append(("bloqueo", lambda: apply_lock(ed)))
+    if not args.no_launcher:
+        steps.append(("lanzador", lambda: apply_launcher(ed)))
+    if not args.no_konsole:
+        steps.append(("konsole", lambda: apply_konsole(ed)))
+    system = [part for part, on in (("sddm", args.sddm), ("plymouth", args.plymouth)) if on]
+    if system:
+        steps.append(("inicio de sesión y arranque" if len(system) > 1 else
+                      "inicio de sesión" if args.sddm else "arranque",
+                      lambda: apply_system(args.edition, system)))
+
+    failed = False
+    for label, step in steps:
+        try:
+            step()
+        except (RuntimeError, OSError, GLib.Error) as e:
+            print(f"uzunyx-edition: {label}: {e}", file=sys.stderr)
+            failed = True
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

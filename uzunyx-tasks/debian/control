@@ -1,0 +1,15 @@
+Package: uzunyx-tasks
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plasma-workspace (>= 4:6.7), plasma-desktop-data, qml6-module-org-kde-taskmanager, qml6-module-org-kde-pipewire, qml6-module-org-kde-plasma-workspace, qml6-module-org-kde-kcmutils, qml6-module-org-kde-notificationmanager, qml6-module-org-kde-plasma-plasma5support, qdbus-qt6, python3, python3-gi
+Recommends: plasma-pa
+Description: Task manager for the Plasma panel, in the Uzunyx style
+ Plasma widget (org.uzunyx.tasks), written in QML only: glass buttons in the
+ edition's accent colour for running apps, and a dot per window, up to three.
+ .
+ Clicking activates or minimizes a window; on a group it shows live
+ thumbnails, with media and volume controls. Pinned apps can be dragged to
+ reorder, and files dropped on a button open with that app.

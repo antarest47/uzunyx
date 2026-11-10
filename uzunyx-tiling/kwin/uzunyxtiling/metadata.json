@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Automatic tiling main and stack, or spiral, off until chosen in the system tray",
+        "Description[es]": "Mosaico automático principal y pila, o espiral, apagado hasta elegirlo en la bandeja",
+        "EnabledByDefault": true,
+        "Icon": "view-grid",
+        "Id": "uzunyxtiling",
+        "License": "GPL-3.0-or-later",
+        "Name": "Uzunyx tiling",
+        "Name[es]": "Mosaico de Uzunyx",
+        "Version": "0.7.1"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

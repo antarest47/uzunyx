@@ -1,0 +1,21 @@
+Package: uzunyx-genie
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: @ARCH@
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: kwin-wayland (>= @KWIN@), kwin-wayland (<< @KWIN@.~)
+Conflicts: kwin-effect-genieanywhere
+Replaces: kwin-effect-genieanywhere
+Description: macOS-like genie minimize animation for Uzunyx
+ Genie Anywhere, a KWin effect based on KWin's Magic Lamp: minimized
+ windows pour into their task manager button like macOS's genie (the
+ window first narrows into a funnel towards the button, then slides down
+ into it), drawn above the other windows while animating. The target can be
+ any spot of a panel, per app or for every window (Super+Ctrl+L to pick).
+ It also animates Tsunyx Launcher's opening and closing in its "magic lamp"
+ mode.
+ .
+ While loaded it replaces KWin's Magic Lamp, which stays enabled as a
+ fallback. Built against one exact KWin version: KWin refuses to load it in
+ any other, so it must be rebuilt after every KWin update.

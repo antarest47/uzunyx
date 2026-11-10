@@ -1,0 +1,16 @@
+Package: uzunyx-plymouth
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: plymouth, plymouth-label
+Recommends: initramfs-tools
+Description: Uzunyx boot splash
+ Plymouth themes for the two Uzunyx editions, "uzunyx-akane" and
+ "uzunyx-sora": the edition's icon and name on the distribution's dark
+ background (#111318), with a shine that sweeps over the name and glints
+ on its stars, and a password field in the style of Uzunyx windows for
+ encrypted disks. Uzunyx Akane is made the default theme on first install,
+ and "splash" is added to the kernel command line through
+ /etc/default/grub.d so it is shown.

@@ -1,0 +1,21 @@
+// System default; ~/.config/fastfetch/config.jsonc takes over if it exists.
+// /etc/os-release stays Debian's: its NAME decides GRUB's EFI folder. In the
+// Konsole schemes of Uzunyx, ANSI green is the accent of the edition.
+{
+    "logo": {
+        "type": "file",
+        "source": "/usr/share/uzunyx-terminal/logo.txt",
+        "color": { "1": "white", "2": "green" }
+    },
+    "display": {
+        "color": { "keys": "green", "title": "green" }
+    },
+    "modules": [
+        "title", "separator",
+        { "type": "os", "format": "Uzunyx {codename} {arch}" },
+        "host", "kernel", "uptime", "packages", "shell", "display", "de", "wm",
+        "wmtheme", "theme", "icons", "font", "cursor", "terminal", "terminalfont",
+        "cpu", "gpu", "memory", "swap", "disk", "localip", "battery",
+        "poweradapter", "locale", "break", "colors"
+    ]
+}

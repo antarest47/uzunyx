@@ -1,0 +1,3 @@
+# grub2-common updated 10_linux (at its diverted path): make the quiet copy again.
+interest-noawait /etc/grub.d/10_linux.dpkg-uzunyx
+interest-noawait /etc/grub.d/10_linux

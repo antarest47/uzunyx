@@ -1,0 +1,23 @@
+Package: uzunyx-shortcuts
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: python3, systemd, libkf6config-bin, kwin-wayland (>= 4:6.7), plasma-workspace (>= 4:6.7)
+Conflicts: waifbian-shortcuts
+Replaces: waifbian-shortcuts
+Description: Uzunyx global keyboard shortcuts for Plasma
+ Adds these global shortcuts at login, next to the existing ones:
+ .
+  Alt+W / Alt+S         volume up / down
+  Alt+2                 maximize window
+  Alt+1 / Alt+3         tile window left / right
+  Alt+Escape            close window
+  Alt+X                 play / pause
+  Alt+Z / Alt+C         previous / next track
+  Ctrl+Shift+S          rectangular region screenshot (Spectacle)
+  Super+Escape          lock screen (taken from the System Monitor)
+ .
+ They are applied through kglobalaccel once per version of the list, so
+ later changes in System Settings are kept.

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standard/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standard/kcfg/1.0
+      http://www.kde.org/standard/kcfg/1.0/kcfg.xsd">
+    <kcfgfile name=""/>
+    <group name="General">
+        <entry name="showNumLock" type="Bool">
+            <label>Show Num Lock too and turn it on at login (off: Caps Lock only, for keyboards without a numeric keypad).</label>
+            <default>true</default>
+        </entry>
+        <entry name="appliedNumLock" type="String">
+            <label>Internal: showNumLock value last written to kcminputrc ("" until the widget first loads).</label>
+            <default></default>
+        </entry>
+    </group>
+</kcfg>

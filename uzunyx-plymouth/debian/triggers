@@ -1,0 +1,2 @@
+# Plymouth runs from the initramfs: rebuild it whenever the themes change.
+activate-noawait update-initramfs

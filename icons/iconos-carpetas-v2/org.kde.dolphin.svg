@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="gb" x1="0" y1="0" x2="1" y2="0.5">
+      <stop offset="0" stop-color="#0a3fb8"/><stop offset="1" stop-color="#1a7dff"/>
+    </linearGradient>
+    <linearGradient id="gf" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#4fd2ff"/><stop offset=".5" stop-color="#1a8cff"/><stop offset="1" stop-color="#0a56e6"/>
+    </linearGradient>
+    <linearGradient id="gd" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cfe6ff"/>
+    </linearGradient>
+    <linearGradient id="gfin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eaf5ff"/><stop offset="1" stop-color="#b4d9ff"/>
+    </linearGradient>
+    <path id="pf" d="M28,94 Q28,80 42,80 L97,80 Q101,80 104,77 L108,72 Q111,68 116,68 L214,68 Q228,68 228,82 L228,210 Q228,224 214,224 L42,224 Q28,224 28,210 Z"/>
+    <g id="body">
+      <!-- aleta dorsal -->
+      <path d="M560,200 C640,160 720,135 780,150 C805,160 805,180 780,195 C750,210 735,235 725,250 Z"/>
+      <!-- cuerpo con cola -->
+      <path d="M5,655 C0,630 25,600 50,580 C60,420 180,270 400,215 C500,195 600,195 720,235
+               C900,320 1040,560 1060,830 C1100,850 1180,930 1200,985 C1160,1000 1130,965 1075,975
+               L1050,985 C1010,1000 985,1020 960,1048 C930,1050 920,1020 930,975
+               C940,920 960,890 975,870 C900,760 800,625 640,600 C500,580 400,580 300,595
+               C200,640 80,700 25,695 C10,690 5,675 5,655 Z"/>
+    </g>
+  </defs>
+  <path d="M28,50 Q28,36 42,36 L90,36 Q95,36 98,39 L111,51 Q114,54 119,54 L214,54 Q228,54 228,68 L228,210 Q228,224 214,224 L42,224 Q28,224 28,210 Z" fill="url(#gb)"/>
+  <path d="M28,50 Q28,36 42,36 L90,36 Q95,36 98,39 L111,51 Q114,54 119,54 L214,54 Q228,54 228,68 L228,210 Q228,224 214,224 L42,224 Q28,224 28,210 Z" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2"/>
+  <use href="#pf" fill="url(#gf)"/>
+  <use href="#pf" fill="none" stroke="#e8f4ff" stroke-width="2.5"/>
+  <g transform="translate(58,82) scale(0.117)">
+    <!-- sombra -->
+    <use href="#body" fill="#000" fill-opacity=".25" transform="translate(0,26)"/>
+    <!-- cuerpo -->
+    <use href="#body" fill="url(#gd)"/>
+    <!-- vientre -->
+    <path d="M22,692 C150,640 300,560 400,525 C500,500 580,508 640,520 C820,560 980,720 1018,925 L975,870 C900,760 800,625 640,600 C500,580 400,580 300,595 C200,640 80,700 25,695 Z" fill="#a9d8ff"/>
+    <!-- aleta pectoral trasera -->
+    <path d="M300,595 C340,580 400,570 420,580 C430,610 445,630 448,648 C400,655 340,630 300,595 Z" fill="#8cc8f5"/>
+    <!-- aleta pectoral delantera -->
+    <path d="M395,492 C420,475 480,470 540,480 C580,490 640,540 650,640 C640,652 600,652 570,642 C520,625 450,580 395,495 Z" fill="url(#gfin)"/>
+    <!-- ojo -->
+    <circle cx="212" cy="538" r="14" fill="#0a2f8f"/>
+  </g>
+</svg>

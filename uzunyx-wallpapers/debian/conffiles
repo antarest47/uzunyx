@@ -1,0 +1,3 @@
+/etc/sddm.conf.d/uzunyx.conf
+/etc/xdg/kscreenlockerrc
+/etc/sddm.conf.d/zz-uzunyx-wayland.conf

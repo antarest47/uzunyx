@@ -1,0 +1,253 @@
+#!/usr/bin/python3
+"""Reserve an invisible gap on every screen edge (Wayland layer-shell).
+
+Each edge of every monitor gets a 1px transparent, click-through layer-shell
+surface whose margin + exclusive zone add up to the gap, so maximized windows
+keep that distance from the screen edges and from any panel (KWin stacks
+exclusive zones of lower layers inside those of panels). The surface sits at
+the inner side of the gap, so it never touches a panel and doesn't stop a
+floating Plasma panel from floating.
+
+The last pixel row of each screen is also a strip for the mouse wheel: scrolling
+with the pointer against the bottom edge changes the volume.
+
+Configuration (KConfig/INI style, later files win):
+    $XDG_CONFIG_DIRS/edge-gapsrc   (default /etc/xdg/edge-gapsrc)
+    $XDG_CONFIG_HOME/edge-gapsrc   (default ~/.config/edge-gapsrc)
+
+    [General]
+    Enabled=true
+    Gap=8
+    BottomGap=17
+    VolumeEdge=true
+
+Enabled=false reserves no gaps and has no strip (uzunyx-mode's focus mode, where
+the panel reaches the edge). Command line
+overrides the gaps: edge-gaps [GAP] [BOTTOM_GAP]
+
+The running instance re-reads the configuration when its "reload" action is
+activated:
+    busctl --user call org.uzunyx.EdgeGaps /org/uzunyx/EdgeGaps \
+        org.gtk.Actions Activate 'sava{sv}' reload 0 0
+"""
+import configparser
+import os
+import sys
+
+import gi
+
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+gi.require_version("GtkLayerShell", "0.1")
+import cairo
+from gi.repository import Gdk, Gio, GLib, Gtk, GtkLayerShell
+
+APP_ID = "org.uzunyx.EdgeGaps"
+CONFIG_NAME = "edge-gapsrc"
+DEFAULT_GAP = 8
+# A floating Plasma panel's geometry is its thickness plus 8px floating
+# padding on each side, but it only reserves its thickness. A window inside
+# that padding counts as touching and makes the panel stop floating, so the
+# bottom gap has to cover 2 * 8 + 1 px.
+DEFAULT_BOTTOM_GAP = 17
+
+E = GtkLayerShell.Edge
+# edge -> edges to anchor (the edge itself plus both neighbours, to span it)
+EDGES = {
+    E.TOP: (E.TOP, E.LEFT, E.RIGHT),
+    E.BOTTOM: (E.BOTTOM, E.LEFT, E.RIGHT),
+    E.LEFT: (E.LEFT, E.TOP, E.BOTTOM),
+    E.RIGHT: (E.RIGHT, E.TOP, E.BOTTOM),
+}
+
+
+def config_paths():
+    dirs = os.environ.get("XDG_CONFIG_DIRS") or "/etc/xdg"
+    home = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
+    # Lowest priority first; configparser lets later files override.
+    paths = [os.path.join(d, CONFIG_NAME) for d in reversed(dirs.split(":")) if d]
+    paths.append(os.path.join(home, CONFIG_NAME))
+    return paths
+
+
+def load_gaps(argv):
+    """(enabled, gap, bottom gap, volume edge) from the configuration and command line."""
+    cfg = configparser.ConfigParser(interpolation=None, strict=False)
+    cfg.read(config_paths())
+    general = cfg["General"] if cfg.has_section("General") else {}
+    enabled = str(general.get("enabled", "true")).strip().lower() not in ("false", "0", "no", "off")
+
+    def get(key, default):
+        try:
+            return max(1, int(general.get(key, default)))
+        except ValueError:
+            print(f"edge-gaps: ignoring invalid {key}", file=sys.stderr)
+            return default
+
+    gap = get("gap", DEFAULT_GAP)
+    bottom = get("bottomgap", DEFAULT_BOTTOM_GAP)
+    if len(argv) > 1:
+        gap = max(1, int(argv[1]))
+    if len(argv) > 2:
+        bottom = max(1, int(argv[2]))
+    volume_edge = str(general.get("volumeedge", "true")).strip().lower() not in ("false", "0", "no", "off")
+    return enabled, gap, bottom, volume_edge
+
+
+def make_spacer(app, monitor, edge, anchors, gap):
+    win = Gtk.Window(application=app)
+    win.set_app_paintable(True)
+    visual = win.get_screen().get_rgba_visual()
+    if visual:
+        win.set_visual(visual)
+
+    GtkLayerShell.init_for_window(win)
+    GtkLayerShell.set_namespace(win, "edge-gaps")
+    GtkLayerShell.set_monitor(win, monitor)
+    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.BACKGROUND)
+    GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.NONE)
+    for a in anchors:
+        GtkLayerShell.set_anchor(win, a, True)
+    # KWin adds the margin to the exclusive zone: margin + 1 == gap.
+    GtkLayerShell.set_margin(win, edge, gap - 1)
+    GtkLayerShell.set_exclusive_zone(win, 1)
+
+    if edge in (E.TOP, E.BOTTOM):
+        win.set_size_request(-1, 1)
+    else:
+        win.set_size_request(1, -1)
+
+    def draw(_w, cr):
+        cr.set_operator(cairo.OPERATOR_CLEAR)
+        cr.paint()
+        return True
+
+    def realize(w):
+        # Empty input region: clicks go through to whatever is below.
+        w.get_window().input_shape_combine_region(cairo.Region(), 0, 0)
+
+    win.connect("draw", draw)
+    win.connect("realize", realize)
+    win.show_all()
+    return win
+
+
+def change_volume(action):
+    # The volume applet's own shortcuts: same step and on-screen display.
+    Gio.bus_get_sync(Gio.BusType.SESSION).call(
+        "org.kde.kglobalaccel", "/component/kmix", "org.kde.kglobalaccel.Component",
+        "invokeShortcut", GLib.Variant("(s)", (action,)), None,
+        Gio.DBusCallFlags.NONE, -1, None, None)
+
+
+def make_volume_strip(app, monitor):
+    """One pixel row against the bottom edge that takes the mouse wheel. In the
+    overlay layer, as the floating panel's window covers the edge along its width."""
+    win = Gtk.Window(application=app)
+    win.set_app_paintable(True)
+    visual = win.get_screen().get_rgba_visual()
+    if visual:
+        win.set_visual(visual)
+
+    GtkLayerShell.init_for_window(win)
+    GtkLayerShell.set_namespace(win, "edge-gaps-volume")
+    GtkLayerShell.set_monitor(win, monitor)
+    GtkLayerShell.set_layer(win, GtkLayerShell.Layer.OVERLAY)
+    GtkLayerShell.set_keyboard_mode(win, GtkLayerShell.KeyboardMode.NONE)
+    for a in EDGES[E.BOTTOM]:
+        GtkLayerShell.set_anchor(win, a, True)
+    # -1: at the screen's edge. With the default it stays out of the other
+    # surfaces' exclusive zones, inside the area for windows.
+    GtkLayerShell.set_exclusive_zone(win, -1)
+    win.set_size_request(-1, 1)
+    win.add_events(Gdk.EventMask.SCROLL_MASK | Gdk.EventMask.SMOOTH_SCROLL_MASK)
+
+    # Touchpads scroll in small steps: add them up to whole wheel clicks.
+    pending = [0.0]
+
+    def scroll(_w, event):
+        if event.direction == Gdk.ScrollDirection.UP:
+            pending[0] -= 1
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            pending[0] += 1
+        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+            pending[0] += event.get_scroll_deltas()[2]
+        while abs(pending[0]) >= 1:
+            change_volume("decrease_volume" if pending[0] > 0 else "increase_volume")
+            pending[0] -= 1 if pending[0] > 0 else -1
+        return True
+
+    def draw(_w, cr):
+        cr.set_operator(cairo.OPERATOR_CLEAR)
+        cr.paint()
+        return True
+
+    win.connect("scroll-event", scroll)
+    win.connect("draw", draw)
+    win.show_all()
+    return win
+
+
+class EdgeGaps(Gtk.Application):
+    def __init__(self, argv):
+        # Default flags make it single-instance via D-Bus.
+        super().__init__(application_id=APP_ID)
+        self.argv = argv
+        self.enabled, self.gap, self.bottom_gap, self.volume_edge = load_gaps(argv)
+        self.spacers = []
+        self.rebuild_pending = False
+
+    def do_startup(self):
+        Gtk.Application.do_startup(self)
+        self.hold()  # keep running even while there are no monitors
+        display = Gdk.Display.get_default()
+        display.connect("monitor-added", self.schedule_rebuild)
+        display.connect("monitor-removed", self.schedule_rebuild)
+        reload = Gio.SimpleAction.new("reload", None)
+        reload.connect("activate", self.reload)
+        self.add_action(reload)
+        self.rebuild()
+
+    def reload(self, *_args):
+        self.enabled, self.gap, self.bottom_gap, self.volume_edge = load_gaps(self.argv)
+        self.rebuild()
+
+    def do_activate(self):
+        pass  # a second launch just activates the running instance
+
+    def schedule_rebuild(self, *_args):
+        # Monitors come and go in bursts (dock/undock): rebuild once.
+        if not self.rebuild_pending:
+            self.rebuild_pending = True
+            GLib.timeout_add(500, self.rebuild)
+
+    def rebuild(self):
+        self.rebuild_pending = False
+        for w in self.spacers:
+            w.destroy()
+        if not self.enabled:
+            self.spacers = []
+            return GLib.SOURCE_REMOVE
+        display = Gdk.Display.get_default()
+        self.spacers = [
+            make_spacer(self, display.get_monitor(i), edge, anchors,
+                        self.bottom_gap if edge == E.BOTTOM else self.gap)
+            for i in range(display.get_n_monitors())
+            for edge, anchors in EDGES.items()
+        ]
+        if self.volume_edge:
+            self.spacers += [make_volume_strip(self, display.get_monitor(i))
+                             for i in range(display.get_n_monitors())]
+        return GLib.SOURCE_REMOVE
+
+
+def main():
+    if not GtkLayerShell.is_supported():
+        # X11 or a compositor without layer-shell: nothing to do.
+        print("edge-gaps: layer-shell not supported, exiting", file=sys.stderr)
+        return 0
+    return EdgeGaps(sys.argv).run([sys.argv[0]])
+
+
+if __name__ == "__main__":
+    sys.exit(main())

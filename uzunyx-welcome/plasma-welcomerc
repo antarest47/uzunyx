@@ -1,0 +1,4 @@
+# KDE's own welcome stays away: uzunyx-welcome takes its place. It opens when this is
+# older than the running Plasma, so any higher number keeps it closed.
+[General]
+LastSeenVersion=99.0.0

@@ -1,0 +1,33 @@
+---
+componentName: uzunyx
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 800px,580px
+windowPlacement: center
+strings:
+    productName:         Uzunyx
+    shortProductName:    Uzunyx
+    version:             "0.1"
+    shortVersion:        "0.1"
+    versionedName:       Uzunyx
+    shortVersionedName:  Uzunyx
+    bootloaderEntryName: Uzunyx
+    productUrl:          ""
+    supportUrl:          ""
+    knownIssuesUrl:      ""
+    releaseNotesUrl:     ""
+    donateUrl:           ""
+sidebar: qml
+navigation: widget
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    productWelcome:      "slides/akane-sora.png"
+slideshow:               "show.qml"
+style:
+   SidebarBackground:    "#111318"
+   SidebarText:          "#F2F2F7"
+   SidebarTextCurrent:   "#F2F2F7"
+   SidebarBackgroundCurrent: "#343944"
+slideshowAPI: 2

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if [ "$1" = install ] || [ "$1" = upgrade ]; then
+    dpkg-divert --package uzunyx-lookandfeel --add --rename --divert /etc/skel/.face.distrib /etc/skel/.face
+    dpkg-divert --package uzunyx-lookandfeel --add --rename --divert /usr/share/sddm/faces/.face.icon.distrib /usr/share/sddm/faces/.face.icon
+    dpkg-divert --package uzunyx-lookandfeel --add --rename --divert /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml.distrib /usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreenUi.qml
+    dpkg-divert --package uzunyx-lookandfeel --add --rename --divert /usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml.distrib /usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml
+fi

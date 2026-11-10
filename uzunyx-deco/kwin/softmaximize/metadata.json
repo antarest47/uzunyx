@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Windows that draw their own frame stay floating when maximized, so they keep their rounded corners",
+        "Description[es]": "Las ventanas que dibujan su propio marco siguen flotantes al maximizar, para mantener sus esquinas redondeadas",
+        "EnabledByDefault": true,
+        "Icon": "window-maximize",
+        "Id": "softmaximize",
+        "License": "GPL-3.0-or-later",
+        "Name": "Soft maximize",
+        "Name[es]": "Maximizado suave",
+        "Version": "0.4.6"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}

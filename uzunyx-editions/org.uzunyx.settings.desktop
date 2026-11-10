@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Uzunyx
+Comment=Choose the Uzunyx edition
+Comment[es]=Elige la edición de Uzunyx
+Exec=systemsettings kcm_uzunyx_editions
+Icon=uzunyx-config-akane
+Categories=Qt;KDE;Settings;
+OnlyShowIn=KDE;

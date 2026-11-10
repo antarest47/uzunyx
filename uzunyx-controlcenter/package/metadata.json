@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "A pill with network, volume and battery that opens quick settings",
+        "Description[es]": "Una píldora con red, volumen y batería que abre los ajustes rápidos",
+        "Icon": "preferences-system",
+        "Id": "org.uzunyx.controlcenter",
+        "License": "GPL-2.0-or-later",
+        "Name": "Control center",
+        "Name[es]": "Centro de control",
+        "Version": "0.9.5"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

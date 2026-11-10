@@ -1,0 +1,165 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: es\n"
+
+msgid "No tiling"
+msgstr "Sin mosaico"
+
+msgid "Wi-Fi"
+msgstr "Wifi"
+
+msgid "Bluetooth"
+msgstr "Bluetooth"
+
+msgid "Off"
+msgstr "Apagado"
+
+msgid "On"
+msgstr "Activo"
+
+msgid "Focus"
+msgstr "Enfoque"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Tiling"
+msgstr "Mosaico"
+
+msgid "Do not disturb"
+msgstr "No molestar"
+
+msgid "Night light"
+msgstr "Luz nocturna"
+
+msgid "System settings"
+msgstr "Configuración del sistema"
+
+msgid "Lock"
+msgstr "Bloquear"
+
+msgid "Leave…"
+msgstr "Salir…"
+
+msgid "Not set up"
+msgstr "Sin configurar"
+
+msgctxt "@title"
+msgid "General"
+msgstr "General"
+
+msgctxt "@label"
+msgid "Keys:"
+msgstr "Teclas:"
+
+msgctxt "@option:radio"
+msgid "Caps Lock and Num Lock"
+msgstr "Bloq Mayús y Bloq Num"
+
+msgctxt "@info"
+msgid "Num Lock is turned on at login."
+msgstr "Bloq Num se activa al iniciar sesión."
+
+msgctxt "@info"
+msgid "For keyboards without a numeric keypad. Num Lock is left as it is at login."
+msgstr "Para teclados sin bloque numérico. Bloq Num se deja como está al iniciar sesión."
+
+msgid "Connected"
+msgstr "Conectado"
+
+msgid "Connecting…"
+msgstr "Conectando…"
+
+msgid "Disconnect"
+msgstr "Desconectar"
+
+msgid "Connect"
+msgstr "Conectar"
+
+msgid "Network settings"
+msgstr "Ajustes de red"
+
+msgid "No paired devices"
+msgstr "Sin dispositivos vinculados"
+
+msgid "Bluetooth is off"
+msgstr "Bluetooth está apagado"
+
+msgid "Add device…"
+msgstr "Agregar dispositivo…"
+
+msgid "Sound"
+msgstr "Sonido"
+
+msgid "Output"
+msgstr "Salida"
+
+msgid "Input"
+msgstr "Entrada"
+
+msgid "No input devices"
+msgstr "Sin dispositivos de entrada"
+
+msgid "Sound devices"
+msgstr "Dispositivos de sonido"
+
+msgid "Apps in the background"
+msgstr "Apps en segundo plano"
+
+msgid "This app has no menu"
+msgstr "Esta app no tiene menú"
+
+msgid "Clipboard"
+msgstr "Portapapeles"
+
+msgid "The clipboard is empty"
+msgstr "El portapapeles está vacío"
+
+msgid "Clear history"
+msgstr "Vaciar historial"
+
+msgid "Devices"
+msgstr "Dispositivos"
+
+msgid "The drive is in use"
+msgstr "El dispositivo está en uso"
+
+msgid "No removable devices"
+msgstr "Sin dispositivos extraíbles"
+
+msgid "Eject"
+msgstr "Expulsar"
+
+msgid "More"
+msgstr "Más"
+
+msgid "Remove"
+msgstr "Quitar"
+
+msgid "Main and stack"
+msgstr "Principal y pila"
+
+msgid "Spiral"
+msgstr "Espiral"
+
+msgid "Battery"
+msgstr "Batería"
+
+msgid "%1 h %2 min"
+msgstr "%1 h %2 min"
+
+msgid "%1 min"
+msgstr "%1 min"
+
+msgid "Blocked from the control center"
+msgstr "Bloqueado desde el centro de control"
+
+msgid "Configure available widgets…"
+msgstr "Configurar los elementos gráficos disponibles…"
+
+msgid "Wired"
+msgstr "Cable"
+
+msgid "Disconnected"
+msgstr "Desconectado"

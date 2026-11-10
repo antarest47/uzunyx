@@ -1,0 +1,13 @@
+[SddmGreeterTheme]
+Name=Uzunyx
+Description=Breeze with the Uzunyx background
+Author=emi
+License=CC-BY-SA
+Type=sddm-theme
+Version=0.1
+Screenshot=preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=uzunyx
+Theme-API=2.0
+QtVersion=6

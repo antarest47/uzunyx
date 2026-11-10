@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Uzunyx</vendor>
+  <action id="org.uzunyx.edition.system">
+    <description>Change the login and boot screens to an Uzunyx edition</description>
+    <description xml:lang="es">Cambiar las pantallas de inicio de sesión y de arranque a una edición de Uzunyx</description>
+    <message>Authentication is required to change the login and boot screens for all users</message>
+    <message xml:lang="es">Se necesita autenticación para cambiar las pantallas de inicio de sesión y de arranque de todos los usuarios</message>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/uzunyx-system-edition</annotate>
+  </action>
+</policyconfig>
