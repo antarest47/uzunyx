@@ -3,15 +3,16 @@
 </p>
 
 <p align="center">
-  Un escritorio propio sobre <b>KDE Plasma 6.7 (Wayland)</b> y <b>Debian testing</b>,
-  empaquetado entero en <code>.deb</code>.
+  Una distribución basada en <b>Debian testing</b> con <b>KDE Plasma (Wayland)</b>
+  y un escritorio propio.
 </p>
 
 ![Uzunyx Akane](uzunyx-lnf/package/contents/previews/fullscreenpreview.jpg)
 
-Uzunyx no es un tema para instalar a mano: es un conjunto de paquetes que deja un
-Plasma recién instalado con su aspecto y su comportamiento, sin pasos en la interfaz.
-Funciona en cualquier Plasma 6.7 o superior y no depende de la KDE Store.
+Uzunyx se instala desde su ISO, que arranca una sesión en vivo para probarla sin
+tocar el disco y trae su propio instalador. El sistema que queda es Debian testing
+con el escritorio de Uzunyx ya listo: tema, panel, ventanas, terminal, arranque e
+inicio de sesión, sin configurar nada a mano.
 
 Viene en dos ediciones que comparten todo salvo el color: **Akane** (carmesí) y
 **Sora** (cian). Se cambia de una a otra en un clic, sin tocar el panel.
@@ -55,27 +56,33 @@ ejecuta comandos, calcula e inicia temporizadores (repositorio aparte).
 
 ## Instalar
 
-Hace falta Debian testing (`forky`) con Plasma 6.7 o superior, o un Debian estable que
-se pueda pasar a testing.
+1. Descarga la ISO de las [releases](https://github.com/antarest47/uzunyx/releases)
+   (unos 2 GB, PC de 64 bits, BIOS o UEFI).
+2. Grábala en un USB, por ejemplo con Balena Etcher, Impression o `dd`.
+3. Arranca desde el USB. Se abre la sesión en vivo y, sobre ella, el instalador
+   (Calamares): idioma, teclado, disco, usuario y, si hay internet, una selección
+   ampliada de aplicaciones (LibreOffice, Thunderbird, VLC, GIMP…).
+4. Al reiniciar, la bienvenida te deja elegir entre Akane y Sora.
 
-- **En un Debian ya instalado:** `uzunyx-installer` es un solo `.deb` con un repositorio
-  APT local con todos los paquetes. `uzunyx-install` pasa el sistema a `forky` si hace
-  falta (pregunta antes y guarda copia), instala Plasma si falta y después Uzunyx.
+Secure Boot todavía no está probado: si la ISO no arranca, desactívalo.
 
-  ```bash
-  sudo apt install ./uzunyx-installer_*.deb
-  ```
+### En un Debian que ya tienes
 
-  ```bash
-  sudo uzunyx-install
-  ```
+Si prefieres no reinstalar, `uzunyx-installer` es un solo `.deb` que lleva todos los
+paquetes de Uzunyx. Pasa el sistema a Debian testing si hace falta (pregunta antes y
+guarda copia), instala Plasma si falta y después el escritorio.
 
-- **Desde cero:** `uzunyx-iso` arma una ISO en vivo e instalable (BIOS y UEFI) con
-  Calamares. Ver [uzunyx-iso/README.md](uzunyx-iso/README.md).
+```bash
+sudo apt install ./uzunyx-installer_*.deb
+```
+
+```bash
+sudo uzunyx-install
+```
 
 Los efectos de KWin escritos en C++ (`uzunyx-outline`, `uzunyx-openclose`,
-`uzunyx-genie`, `uzunyx-altguard`) se compilan contra una versión exacta de KWin. Son
-`Recommends`: si el sistema tiene otra versión, apt los omite y el resto funciona.
+`uzunyx-genie`, `uzunyx-altguard`) se compilan contra una versión exacta de KWin. Si
+el sistema tiene otra, apt los omite y el resto funciona.
 
 ## Compilar
 
@@ -83,15 +90,22 @@ Cada carpeta es un paquete y se arma con `make deb`; el `.deb` queda en su `buil
 Las dependencias de compilación de cada uno están en su README.
 
 ```bash
-make -C uzunyx-desktop deb
+make -C uzunyx-installer deb
 ```
 
-`make -C uzunyx-installer deb` junta los `.deb` de todas las carpetas en el instalador.
+```bash
+make -C uzunyx-iso iso
+```
+
+El primero junta los `.deb` de todas las carpetas en el instalador; el segundo arma la
+ISO sin root con `mmdebstrap`. Ver [uzunyx-iso/README.md](uzunyx-iso/README.md).
 
 ## Paquetes
 
 | Paquete | Qué hace |
 |---|---|
+| [`uzunyx-iso`](uzunyx-iso) | ISO en vivo e instalable |
+| [`uzunyx-installer`](uzunyx-installer) | Instalador en un solo `.deb` para un Debian existente |
 | [`uzunyx-desktop`](uzunyx-desktop) | Metapaquete: instala el escritorio completo |
 | [`uzunyx-lnf`](uzunyx-lnf) | Temas globales Akane y Sora, disposición del panel, pantallas de salir, bloqueo e inicio |
 | [`uzunyx-editions`](uzunyx-editions) | Cambia de edición (`uzunyx-edition`) y su módulo en Configuración del sistema |
@@ -122,8 +136,6 @@ make -C uzunyx-desktop deb
 | [`uzunyx-grub`](uzunyx-grub) | Tema y menú oculto de GRUB |
 | [`uzunyx-doctor`](uzunyx-doctor) | Actualizar y comprobar el sistema |
 | [`lunyx`](lunyx) | Receta para Lunyx, cliente de biblioteca de anime |
-| [`uzunyx-installer`](uzunyx-installer) | Instalador en un solo `.deb` |
-| [`uzunyx-iso`](uzunyx-iso) | ISO en vivo e instalable |
 
 ## Licencia
 
