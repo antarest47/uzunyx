@@ -75,6 +75,11 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   primera ISO, y otra vez si `libkpmcore` cambia de versión mayor en Debian.
 - Para publicarla: `make iso SOURCES=1` deja también `packages.txt` y las fuentes de los
   paquetes de Debian en partes de 1,9 GB (`missing.txt` lista las que no pudo bajar).
+  `make publish` sube la ISO, la lista, las fuentes y `SHA256SUMS` a Cloudflare R2
+  (`iso/<versión>/` del bucket `uzunyx`) con `rclone`; las claves quedan en el remoto
+  `CloudflareR2` de `rclone config` (`REMOTE=` para otro). El token solo llega a ese
+  bucket, así que va con `--s3-no-check-bucket`. Sin fuentes se niega, salvo con
+  `ALLOW_NO_SOURCES=1`.
 - El instalador se abre solo al entrar en la sesión en vivo (`/etc/xdg/autostart/uzunyx-install.desktop`,
   pedido por el usuario el 2026-11-08); el sistema instalado es una copia y también lo
   trae, así que solo corre con `boot=live`. La página «Aplicaciones» tiene su fondo
