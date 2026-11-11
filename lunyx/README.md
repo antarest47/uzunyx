@@ -5,7 +5,8 @@ fetch` lo clona en `~/claude/lunyx` la primera vez, lo pone en el commit fijado 
 las dependencias; `LUNYX_URL=` para otra dirección). Sin Flatpak:
 usa PySide6, libVLC y `keyring` de Debian, y lleva dentro `smbprotocol` y `pyspnego`,
 que no están en Debian (Python puro, con SHA256 en `fetch-wheels.py`). Para pasar a
-una versión nueva de Lunyx, cambiar `LUNYX_COMMIT` en el `Makefile`.
+una versión nueva de Lunyx, cambiar `LUNYX_COMMIT` y `LUNYX_DATE` (la fecha del commit, para
+que la versión suba: el hash solo no se ordena) en el `Makefile`.
 
 Corre en XWayland porque libVLC embebe el video por X11. El id de la ventana es el del
 Flatpak (`io.github.antarest47.Lunyx`), que Lunyx fija en `main.py`: el `.desktop` y el

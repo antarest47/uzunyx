@@ -4,7 +4,7 @@
 # they can be left out or removed (e.g. while a KWin update waits for the
 # effects to be rebuilt) without taking the rest away.
 NAME    := uzunyx-desktop
-VERSION := 0.1.18
+VERSION := 0.1.19
 
 BUILD := build
 DEB   := $(BUILD)/$(NAME)_$(VERSION)_all.deb

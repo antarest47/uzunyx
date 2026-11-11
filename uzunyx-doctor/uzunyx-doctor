@@ -41,6 +41,7 @@ BUILD_DEPS = ["kwin-dev", "cmake", "extra-cmake-modules", "libdrm-dev", "pkgconf
 # Package -> folder of the source tree.
 PACKAGES = {
     "edge-gaps": "edge-gaps",
+    "uzunyx-archive-keyring": "uzunyx-archive-keyring",
     "uzunyx-deco": "uzunyx-deco",
     "uzunyx-plasmatheme": "uzunyx-plasmatheme",
     "uzunyx-colors": "uzunyx-colors",

@@ -1,5 +1,5 @@
 NAME    := uzunyx-doctor
-VERSION := 0.1.20
+VERSION := 0.1.21
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=

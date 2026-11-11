@@ -3,7 +3,7 @@
 # the system to the Debian release Uzunyx is built for and installs the desktop.
 # Collects the .deb of each folder as it is: run `make deb` there first.
 NAME    := uzunyx-installer
-VERSION := 0.1.6
+VERSION := 0.1.7
 
 BUILD := build
 DEB   := $(BUILD)/$(NAME)_$(VERSION)_all.deb
@@ -11,7 +11,7 @@ ROOT  := $(BUILD)/root
 REPO  := $(ROOT)/usr/share/$(NAME)/repo
 
 # Folders with a package that goes in the repository.
-FOLDERS := edge-gaps kora-icons lunyx uzunyx-buttons uzunyx-clock \
+FOLDERS := edge-gaps kora-icons lunyx uzunyx-archive-keyring uzunyx-buttons uzunyx-clock \
 	uzunyx-altguard uzunyx-colors uzunyx-controlcenter uzunyx-deco uzunyx-desktop uzunyx-doctor \
 	uzunyx-editions uzunyx-genie uzunyx-grub uzunyx-keys uzunyx-welcome uzunyx-lnf \
 	uzunyx-lockkeys uzunyx-logout uzunyx-openclose uzunyx-outline uzunyx-pager \

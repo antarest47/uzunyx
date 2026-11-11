@@ -1,0 +1,11 @@
+Package: uzunyx-archive-keyring
+Version: @VERSION@
+Section: misc
+Priority: optional
+Architecture: all
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: apt (>= 2.4)
+Description: Uzunyx's APT repository and its signing key
+ Adds https://dl.uzunyx.com/repo to APT, signed with the Uzunyx archive key
+ (971A 62FD 88B6 D53B 860F  B7DD 05D1 9D02 8CE7 A0BC), so that the Uzunyx
+ packages update with the rest of the system.
