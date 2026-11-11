@@ -115,9 +115,24 @@ SOURCES
     apt-get update
     mkdir -p "$in/sources"
     cd "$in/sources"
-    awk '{print $3 "=" $4}' "$tree/packages.txt" | sort -u | while read -r source; do
+    # A Debian package rebuilt with a patch (calamares +uzunyx1): Debian's
+    # source; the patch is in calamares/ next to it.
+    awk '{print $3 "=" $4}' "$tree/packages.txt" | sed 's/+uzunyx[0-9]*$//' | sort -u |
+    while read -r source; do
         apt-get --download-only source "$source" || echo "$source" >> missing.txt
     done
+    # The rest isn't in Debian: where its code is.
+    cat > LEEME.txt <<README
+Código fuente de los paquetes de Debian que trae esta ISO (apt-get source).
+Los que no son de Debian (missing.txt) tienen el código en:
+
+- uzunyx-*, edge-gaps, recetas de kora-icon-theme y lunyx:
+  https://github.com/antarest47/uzunyx
+- tsunyx-launcher: https://github.com/antarest47/tsunyx-launcher
+- lunyx: https://github.com/antarest47/lunyx
+- kora-icon-theme: https://github.com/bikass/kora (commit en kora-icons/Makefile)
+- calamares: la fuente de Debian de arriba más legend-colours.patch
+README
     cd /
     rm /etc/apt/sources.list.d/uzunyx-src.list
     apt-get update
