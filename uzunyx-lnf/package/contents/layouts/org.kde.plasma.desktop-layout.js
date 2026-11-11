@@ -125,6 +125,10 @@ if (controlCenter) {
 var desktopsArray = desktopsForActivity(currentActivity())
 for (var j = 0; j < desktopsArray.length; j++) {
     desktopsArray[j].wallpaperPlugin = 'org.kde.image'
+    // Desktop icons in columns from the top right, as on macOS.
+    desktopsArray[j].currentConfigGroup = ["General"]
+    desktopsArray[j].writeConfig("arrangement", 1)
+    desktopsArray[j].writeConfig("alignment", 1)
 }
 
 // Notifications at the bottom right of the screen, whatever the panel's width.

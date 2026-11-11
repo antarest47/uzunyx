@@ -44,6 +44,15 @@ EOF
     # Nothing but Plasma and Dolphin on screen.
     printf '[General]\nLastSeenVersion=99.0.0\nShouldShow=false\n' > "$home/.config/plasma-welcomerc"
 
+    cat > "$tmp/move-dolphin.js" <<'EOF'
+// Dolphin to the top right corner of the maximize area, 8 px from the edges.
+workspace.windowList().forEach(function (w) {
+    if (String(w.resourceClass).indexOf("dolphin") === -1) return;
+    var a = workspace.clientArea(KWin.MaximizeArea, w.output, workspace.currentDesktop);
+    var f = w.frameGeometry;
+    w.frameGeometry = {x: a.x + a.width - f.width - 8, y: a.y + 8, width: f.width, height: f.height};
+});
+EOF
     cat > "$tmp/session.sh" <<'EOF'
 kwin_wayland --wayland-display "$WAYLAND_DISPLAY" --socket uzunyx-preview --width 1920 --height 1080 >/dev/null 2>&1 &
 sleep 4
@@ -53,11 +62,15 @@ plasmashell --no-respawn >/dev/null 2>&1 &
 sleep 15
 dolphin "$HOME" >/dev/null 2>&1 &
 sleep 6
+# Dolphin in the top right corner, so it doesn't cover the edition's girl.
+id=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript "$MOVE_SCRIPT" move-dolphin)
+qdbus6 org.kde.KWin /Scripting/Script$id org.kde.kwin.Script.run >/dev/null 2>&1
+sleep 2
 spectacle -b -n -f -o "$HOME/shot.png" >/dev/null 2>&1
 sleep 2
 kill $(jobs -p) 2>/dev/null
 EOF
-    HOME=$home XDG_CONFIG_HOME=$home/.config XDG_DATA_HOME=$home/.local/share \
+    MOVE_SCRIPT=$tmp/move-dolphin.js HOME=$home XDG_CONFIG_HOME=$home/.config XDG_DATA_HOME=$home/.local/share \
         XDG_CACHE_HOME=$home/.cache XDG_CONFIG_DIRS=$home/.config/kdedefaults:/etc/xdg \
         timeout 60 dbus-run-session bash "$tmp/session.sh" >/dev/null 2>&1 || true
 

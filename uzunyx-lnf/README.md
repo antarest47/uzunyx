@@ -36,7 +36,9 @@ edición sin ella, el botón conserva su icono.
   antes de la bandeja, y reloj en 24
   horas con fecha corta personalizada (`ddd, d 'de' MMM`). Al final, un botón
   «Salir…» (`lock_logout`) que abre la pantalla de apagar/reiniciar/cerrar
-  sesión. Se usa en el
+  sesión. En el escritorio, los iconos van en columnas desde arriba a la
+  derecha, como en macOS (`arrangement=1`, `alignment=1` en `[General]`;
+  desde 0.29.0). Se usa en el
   primer inicio de sesión de un usuario nuevo, o al aplicar el tema marcando
   «Usar la disposición del escritorio del tema» (eso reemplaza los paneles).
 - `uzunyx-lookandfeel-env.sh` → `/etc/xdg/plasma-workspace/env/`: Plasma
