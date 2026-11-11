@@ -8,6 +8,7 @@
 # build/uefi-vars.fd, where UEFI keeps the boot entry the installer writes (or
 # the installed system wouldn't boot in a later run); make iso deletes both
 # with the rest of build/.
+# The screen starts at 1440x900: at 640x480, Calamares doesn't fit.
 firmware=uefi
 case "$1" in uefi|bios) firmware=$1; shift ;; esac
 mode=iso
@@ -35,5 +36,6 @@ if [ "$firmware" = uefi ]; then
     bios="-machine q35 -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd
           -drive if=pflash,format=raw,file=$vars"
 fi
-exec qemu-system-x86_64 -enable-kvm -cpu host -smp 4 -m 6G -vga virtio $bios \
+exec qemu-system-x86_64 -enable-kvm -cpu host -smp 4 -m 6G $bios \
+    -device virtio-vga,xres=1440,yres=900 \
     -drive file="$disk",if=virtio $media -nic user,model=virtio "$@"
