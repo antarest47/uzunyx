@@ -32,8 +32,24 @@ apt-ftparchive \
     -o APT::FTPArchive::Release::Codename=$suite \
     -o APT::FTPArchive::Release::Architectures=amd64 \
     -o APT::FTPArchive::Release::Components=main \
+    -o APT::FTPArchive::Release::Acquire-By-Hash=yes \
     release "dists/$suite" > Release.tmp
 mv Release.tmp "dists/$suite/Release"
+# By hash, as Debian does: apt asks for by-hash/SHA256/<sum>, which never
+# changes, so Cloudflare's cache can't hand out an old Packages.gz with a new
+# InRelease (it did: "File has unexpected size"). apt asks by the strongest
+# hash in Release, SHA512. After Release, so that it doesn't list them.
+index=dists/$suite/main/binary-amd64
+for h in SHA256 SHA512; do
+    mkdir -p "$index/by-hash/$h"
+    for f in Packages Packages.gz; do
+        case $h in
+            SHA256) sum=$(sha256sum "$index/$f") ;;
+            SHA512) sum=$(sha512sum "$index/$f") ;;
+        esac
+        cp "$index/$f" "$index/by-hash/$h/${sum%% *}"
+    done
+done
 gpg --batch --yes --default-key "$key" --clearsign -o "dists/$suite/InRelease" "dists/$suite/Release"
 gpg --batch --yes --default-key "$key" -abs -o "dists/$suite/Release.gpg" "dists/$suite/Release"
 echo "$(ls pool/main | wc -l) paquetes en $out"

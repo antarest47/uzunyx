@@ -15,7 +15,14 @@ dice solo `amd64` (con `all`, apt buscaría un índice `binary-all`). Firma `InR
 `Release.gpg` con la clave `971A62FD88B6D53B860FB7DD05D19D028CE7A0BC`, cuya parte
 privada no está en git.
 
-Al subir, primero se copian los paquetes nuevos, después el índice y al final se borran
+Cloudflare guarda en caché los `.gz` y los `.deb` durante horas: un `Packages.gz` viejo
+con un `InRelease` nuevo hizo fallar a apt («File has unexpected size») y con él el
+armado de la ISO. Por eso el índice también va por su hash (`Acquire-By-Hash: yes`,
+copias en `by-hash/SHA256` y `by-hash/SHA512`; apt pide por el más fuerte), como en
+Debian: esas direcciones nunca cambian de contenido. Por lo mismo, **un paquete
+publicado no se vuelve a armar con la misma versión**: la caché seguiría dando el viejo.
+
+Al subir, primero se copian los paquetes nuevos y las copias por hash, después el índice y al final se borran
 los viejos, para que el índice nunca nombre un archivo que no está. Solo queda la última
 versión de cada paquete.
 

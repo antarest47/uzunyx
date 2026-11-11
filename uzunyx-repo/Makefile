@@ -12,10 +12,11 @@ all:
 repo:
 	./make-repo.sh $(KEY)
 
-# The pool goes up first and loses its old files last, so the index never
-# names a file that isn't there. The R2 token only reaches this bucket.
+# The pool and the by-hash files go up first, the pool loses its old files
+# last, so the index never names a file that isn't there. The R2 token only reaches this bucket.
 publish: repo
 	rclone copy --s3-no-check-bucket build/repo/pool $(REMOTE)/repo/pool
+	rclone copy --s3-no-check-bucket build/repo/dists $(REMOTE)/repo/dists --include '*/by-hash/**'
 	rclone sync --s3-no-check-bucket build/repo/dists $(REMOTE)/repo/dists
 	rclone sync --s3-no-check-bucket build/repo/pool $(REMOTE)/repo/pool
 
