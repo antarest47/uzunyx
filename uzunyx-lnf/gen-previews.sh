@@ -14,7 +14,10 @@ shoot() {
     trap 'rm -rf "$tmp"' RETURN
     home=$tmp/home
     mkdir -p "$home/.config/kdedefaults" "$home/.local/share" "$home/.cache" "$out" \
-        "$home/Documentos" "$home/Descargas" "$home/Imágenes" "$home/Música" "$home/Vídeos"
+        "$home/Escritorio" "$home/Documentos" "$home/Descargas" "$home/Imágenes" "$home/Música" "$home/Vídeos"
+    # Spanish folder names, as xdg-user-dirs leaves them; without it Plasma makes "Desktop".
+    printf 'XDG_%s_DIR="$HOME/%s"\n' DESKTOP Escritorio DOWNLOAD Descargas DOCUMENTS Documentos \
+        PICTURES Imágenes MUSIC Música VIDEOS Vídeos > "$home/.config/user-dirs.dirs"
     python3 -I - "/usr/share/plasma/look-and-feel/$theme/contents/defaults" \
         "$home/.config/kdedefaults" <<'EOF'
 import re, sys

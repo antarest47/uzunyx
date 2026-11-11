@@ -45,6 +45,20 @@ printf '[General]\nLastSeenVersion=99.0.0\nShouldShow=false\n' > "$home/.config/
 
 if [ -z "$shot" ]; then
 shot=$home/shot.png
+# Only the apps of the ISO's default install: the others are hidden, going by
+# the package list of the last ISO built (or PACKAGES=list).
+packages=${PACKAGES:-$(ls -t "$here"/../build/uzunyx-*-packages.txt 2>/dev/null | head -n1)}
+if [ -n "$packages" ]; then
+    mkdir -p "$home/.local/share/applications"
+    for f in /usr/share/applications/*.desktop; do
+        pkg=$(dpkg -S "$f" 2>/dev/null | cut -d: -f1)
+        if [ -z "$pkg" ] || ! grep -q "^$pkg " "$packages"; then
+            # A full copy: Kicker skips a stub with only Hidden=true.
+            sed -e '/^\(Hidden\|NoDisplay\)=/d' -e '/^\[Desktop Entry\]/a NoDisplay=true' \
+                "$f" > "$home/.local/share/applications/${f##*/}"
+        fi
+    done
+fi
 cat > "$tmp/session.sh" <<'EOF'
 kwin_wayland --wayland-display "$WAYLAND_DISPLAY" --socket uzunyx-slides --width 1920 --height 1080 >/dev/null 2>&1 &
 sleep 4
@@ -61,6 +75,7 @@ sleep 2
 EOF
 HOME=$home XDG_CONFIG_HOME=$home/.config XDG_DATA_HOME=$home/.local/share \
     XDG_CACHE_HOME=$home/.cache XDG_CONFIG_DIRS=$home/.config/kdedefaults:/etc/xdg \
+    XDG_DATA_DIRS=/usr/local/share:/usr/share \
     timeout 60 dbus-run-session bash "$tmp/session.sh" >/dev/null 2>&1 || true
 fi
 
