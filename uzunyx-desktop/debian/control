@@ -30,7 +30,6 @@ Depends: uzunyx-lookandfeel (>= 0.24.0), uzunyx-archive-keyring,
  systemd-zram-generator
 Recommends: uzunyx-outline,
  uzunyx-altguard,
- uzunyx-doctor,
  lunyx,
  uzunyx-openclose,
  uzunyx-genie,

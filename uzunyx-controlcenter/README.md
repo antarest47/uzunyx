@@ -12,7 +12,7 @@ Red por cable (0.9.6, pedido por el usuario el 2026-11-08): las interfaces salen
 está. En el centro, el interruptor de wifi solo si hay wifi, y el de «Cable» si hay
 cable conectado o si no hay wifi (abre la configuración de red).
 
-Usa módulos de Plasma (algunos privados, en la lista de `uzunyx-doctor`). Luz
+Usa módulos de Plasma (algunos privados). Luz
 nocturna sin configurar abre su módulo. Wifi y Bluetooth tienen una flecha que abre la lista de
 redes y dispositivos, y la barra de volumen otra con la salida y la entrada de
 sonido. Trae también las apps en segundo plano (clic abre, clic derecho muestra su menú), el

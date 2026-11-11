@@ -27,7 +27,7 @@ sin el plugin Alt+W (con un atajo de maximizar) abre la barra de menú; con
 
 Como `uzunyx-outline`: se compila contra el KWin instalado (`kwin-dev`), solo
 carga en esa versión exacta y el paquete depende de ella. Recompilar e
-instalar tras cada actualización de KWin (`uzunyx-doctor` lo hace). Necesita
+publicar tras cada actualización de KWin. Necesita
 `kwin-dev cmake extra-cmake-modules libdrm-dev pkgconf`.
 
 KWin carga sus plugins al iniciar la sesión: tras instalar, cerrar sesión.

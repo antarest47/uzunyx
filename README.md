@@ -51,8 +51,7 @@ ejecuta comandos, calcula e inicia temporizadores (repositorio aparte).
   Plymouth y GRUB a juego.
 - Terminal: zsh con Oh My Zsh, autocompletado en vivo, Atuin y un prompt de Starship
   por edición, sin tocar el shell del usuario.
-- Bienvenida para usuarios nuevos, una ventana con todos los atajos (`Super+Espacio`)
-  y **Uzunyx Doctor**, que actualiza el sistema y comprueba que todo siga en su lugar.
+- Bienvenida para usuarios nuevos y una ventana con todos los atajos (`Super+Espacio`).
 
 ## Instalar
 
@@ -137,7 +136,6 @@ ISO sin root con `mmdebstrap`. Ver [uzunyx-iso/README.md](uzunyx-iso/README.md).
 | [`uzunyx-welcome`](uzunyx-welcome) | Bienvenida |
 | [`uzunyx-plymouth`](uzunyx-plymouth) | Pantalla de arranque |
 | [`uzunyx-grub`](uzunyx-grub) | Tema y menú oculto de GRUB |
-| [`uzunyx-doctor`](uzunyx-doctor) | Actualizar y comprobar el sistema |
 | [`lunyx`](lunyx) | Receta para Lunyx, cliente de biblioteca de anime |
 
 ## Estado del proyecto

@@ -16,9 +16,8 @@ No lo hace el `postinst` porque dpkg tiene el bloqueo de apt mientras corre, y
 porque cambiar de versión de Debian no debe pasar sin preguntar.
 
 Los efectos en C++ van fijados a una versión de KWin. Si el sistema tiene otra,
-apt los omite (son `Recommends`) y `uzunyx-install` lo avisa. Sin el código en
-`~/claude/waifbian`, `uzunyx-doctor` tampoco puede recompilarlos: en otros PC
-hace falta un `uzunyx-installer` nuevo cuando cambia KWin.
+apt los omite (son `Recommends`) y `uzunyx-install` lo avisa. Cuando Debian sube
+KWin, hay que recompilarlos y publicarlos en el repositorio (`../uzunyx-repo`).
 
 `make deb` recoge el `.deb` de cada carpeta en la versión de su `Makefile` y falla
 si falta alguno.
