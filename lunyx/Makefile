@@ -5,7 +5,7 @@
 # inside the package.
 NAME         := lunyx
 LUNYX_URL    ?= https://github.com/antarest47/lunyx.git
-LUNYX_COMMIT := 75a7169cce0d48e17467bab1850acbf478253ef6
+LUNYX_COMMIT := 89081dd0285060d029d39934507e7c2df4bfc626
 # The revision counts changes to this recipe on the same commit.
 VERSION      := 0.1.0+git$(shell echo $(LUNYX_COMMIT) | cut -c1-7)-1
 PREFIX       ?= /usr
