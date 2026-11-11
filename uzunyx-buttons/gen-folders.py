@@ -5,13 +5,17 @@ Uso: gen-folders.py <iconos-carpetas-v2> <salida>
 
 Escribe <salida>/akane y <salida>/sora. Toma el emblema (el grupo con
 fill="url(#gg)") de cada SVG de iconos-carpetas-v2, y el delfín de Dolphin, y
-los pone sobre la carpeta (Dolphin va en una bola, ver dolphin()): pestaña de atrás en el acento, frente gris oscuro
+los pone sobre la carpeta: pestaña de atrás en el acento, frente gris oscuro
 con brillo arriba, curvas blanca y del acento abajo a la derecha (como los
 mechones del logo) y borde blanco tenue. Modelo del usuario (2026-11-08);
-colores de los logos de cada edición, variante «C» de la maqueta, elegida
-por el usuario el mismo día.
+variante «C» de la maqueta, elegida por el usuario el mismo día.
+
+La carpeta común y Dolphin llevan los colores del logo de cada edición; las
+carpetas de la carpeta personal, un color propio cada una, el mismo en las
+dos ediciones (PLACES; elegido por el usuario el 2026-11-10).
 """
 
+import colorsys
 import os
 import re
 import sys
@@ -25,6 +29,34 @@ LOGO = {
              "accent": "#2AA9D6", "bright": "#0EE8F9", "dark": "#0B689E", "deep": "#144063",
              "ink": "#30353D", "ink2": "#1C1F25"},
 }
+
+# Un color por lugar, igual en Akane y Sora, con un gris neutro en el frente
+PLACES = {
+    "user-home": "#F5B700",           # ámbar
+    "user-desktop": "#6366F1",        # índigo
+    "folder-documents": "#3B82F6",    # azul
+    "folder-download": "#22C55E",     # verde
+    "folder-music": "#FF7A1F",        # naranja
+    "folder-pictures": "#A855F7",     # violeta
+    "folder-videos": "#EF4444",       # rojo
+    "folder-publicshare": "#14B8A6",  # turquesa
+    "folder-templates": "#84CC16",    # lima
+}
+NEUTRAL_INK = ("#36353A", "#201F23")
+
+
+def place_colours(hexc):
+    """Los mismos tonos que LOGO, sacados de un solo color."""
+    r, g, b = (int(hexc[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+
+    def tone(light, sat=s):
+        r, g, b = colorsys.hls_to_rgb(h, max(0, min(1, light)), max(0, min(1, sat)))
+        return "#%02X%02X%02X" % (round(r * 255), round(g * 255), round(b * 255))
+
+    return {"white": tone(.97, .6), "pearl": tone(.92, .5), "shade": tone(.80, .55),
+            "accent": hexc, "bright": tone(l + .10), "dark": tone(l - .22),
+            "deep": tone(l - .32), "ink": NEUTRAL_INK[0], "ink2": NEUTRAL_INK[1]}
 
 
 def palette(c):
@@ -89,49 +121,26 @@ TEMPLATE = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" widt
 EMBLEM = re.compile(r'(  <g transform="translate\(0,-16\)">.*?\n  </g>\n)', re.S)
 
 
-BALL = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <defs>
-    <radialGradient id="ub" cx=".5" cy=".38" r=".62">
-      <stop offset="0" stop-color="{ink}"/><stop offset="1" stop-color="{ink2}"/>
-    </radialGradient>
-    <linearGradient id="ur" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="{bright}"/><stop offset="1" stop-color="{dark}"/>
-    </linearGradient>
-    <radialGradient id="uw" cx=".5" cy="1" r=".6">
-      <stop offset="0" stop-color="{bright}" stop-opacity=".45"/><stop offset="1" stop-color="{bright}" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="uk" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".45"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
-    </linearGradient>
-{body}  </defs>
-  <circle cx="128" cy="128" r="110" fill="url(#ur)"/>
-  <circle cx="128" cy="128" r="96" fill="url(#ub)"/>
-  <circle cx="128" cy="128" r="96" fill="url(#uw)"/>
-  <path d="M44,170 Q120,200 212,150" fill="none" stroke="{accent}" stroke-width="10" stroke-linecap="round" stroke-opacity=".9"/>
-  <path d="M50,186 Q126,214 206,170" fill="none" stroke="{white}" stroke-width="5" stroke-linecap="round" stroke-opacity=".8"/>
-{dolphin}  <ellipse cx="128" cy="72" rx="70" ry="40" fill="url(#uk)"/>
-  <circle cx="128" cy="128" r="110" fill="none" stroke="#FFFFFF" stroke-opacity=".35" stroke-width="2"/>
-</svg>
-"""
-
-
 def dolphin(text, c):
-    """Icono de Dolphin: el delfín blanco sobre una bola brillante oscura con aro
-    del acento y agua, como los botones de ventana, para que se distinga de las
-    carpetas (idea «3» de la maqueta, elegida por el usuario el 2026-11-08)."""
+    """Icono de Dolphin: la carpeta al revés, con el frente del acento y el
+    delfín blanco, para que se distinga de las demás (idea «4» de la maqueta,
+    elegida por el usuario el 2026-11-10; en 0.8.2 era una bola)."""
     defs = re.search(r'(    <g id="body">.*?</g>\n)', text, re.S).group(1)
     body = re.search(r'(  <g transform="translate\(58,82\).*?\n  </g>\n)', text, re.S).group(1)
     body = (body.replace('transform="translate(58,82) scale(0.117)"',
-                         'transform="translate(130,118) rotate(-10) scale(0.125) translate(-600,-592)"')
+                         'transform="translate(128,152) rotate(-8) scale(0.13) translate(-600,-592)"')
             .replace("url(#gd)", c["white"]).replace("#a9d8ff", c["shade"])
             .replace("#8cc8f5", c["shade"]).replace("url(#gfin)", c["white"])
-            .replace("#0a2f8f", c["ink2"]))
-    return BALL.format(body=defs, dolphin=body, **c)
+            .replace("#0a2f8f", c["dark"]))
+    p = palette(c)
+    p.update(front0=c["bright"], front1=c["dark"], back0=c["ink"], back1=c["ink2"],
+             sw1=c["white"], sw1b=c["shade"], sw2=c["ink2"], edgea=".45")
+    return TEMPLATE.format(back=BACK, front=FRONT, swoosh=SWOOSH, swoosh2=SWOOSH2,
+                           emblem="  <defs>\n" + defs + "  </defs>\n" + body, **p)
 
 
 def main(src, out):
-    for ed, c in LOGO.items():
-        p = palette(c)
+    for ed, logo in LOGO.items():
         d = os.path.join(out, ed)
         os.makedirs(d, exist_ok=True)
         for name in sorted(os.listdir(src)):
@@ -139,7 +148,10 @@ def main(src, out):
                 continue
             with open(os.path.join(src, name)) as f:
                 text = f.read()
-            if name == "org.kde.dolphin.svg":
+            icon = name[:-len(".svg")]
+            c = place_colours(PLACES[icon]) if icon in PLACES else logo
+            p = palette(c)
+            if icon == "org.kde.dolphin":
                 svg = dolphin(text, c)
             else:
                 m = EMBLEM.search(text)
