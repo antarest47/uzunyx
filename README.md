@@ -140,6 +140,13 @@ ISO sin root con `mmdebstrap`. Ver [uzunyx-iso/README.md](uzunyx-iso/README.md).
 | [`uzunyx-doctor`](uzunyx-doctor) | Actualizar y comprobar el sistema |
 | [`lunyx`](lunyx) | Receta para Lunyx, cliente de biblioteca de anime |
 
+## Estado del proyecto
+
+Uzunyx es un proyecto personal y experimental, hecho en mi tiempo libre. Se ofrece
+tal cual, sin garantía: úsalo bajo tu propia responsabilidad y con copia de tus datos.
+Los issues y las propuestas son bienvenidos, pero no hay soporte garantizado y puede
+que no responda a todos.
+
 ## Licencia
 
 El código es GPL-3.0-or-later y las imágenes CC0-1.0. Las partes adaptadas de KDE y
