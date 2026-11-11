@@ -1,8 +1,8 @@
 # lunyx
 
-Receta del paquete de Lunyx (repo aparte, todavía no público; `make fetch
-LUNYX_URL=<dirección>` lo clona en `~/claude/lunyx` la primera vez, lo pone en el commit
-fijado y baja las dependencias). Sin Flatpak:
+Receta del paquete de Lunyx (repo aparte, https://github.com/antarest47/lunyx; `make
+fetch` lo clona en `~/claude/lunyx` la primera vez, lo pone en el commit fijado y baja
+las dependencias; `LUNYX_URL=` para otra dirección). Sin Flatpak:
 usa PySide6, libVLC y `keyring` de Debian, y lleva dentro `smbprotocol` y `pyspnego`,
 que no están en Debian (Python puro, con SHA256 en `fetch-wheels.py`). Para pasar a
 una versión nueva de Lunyx, cambiar `LUNYX_COMMIT` en el `Makefile`.

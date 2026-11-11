@@ -1,11 +1,11 @@
-# Debian package for Lunyx (GPL-3.0-only), from a pinned commit of its own repo,
-# which isn't public yet: `make fetch` clones it next to this one, from
-# LUNYX_URL (make fetch LUNYX_URL=...) the first time. smbprotocol and
+# Debian package for Lunyx (GPL-3.0-only), from a pinned commit of its own repo
+# on GitHub: `make fetch` clones it next to this one the first time and fetches
+# from LUNYX_URL. smbprotocol and
 # pyspnego aren't in Debian, so their wheels (pure Python, checked by SHA256) go
 # inside the package.
 NAME         := lunyx
-LUNYX_URL    ?=
-LUNYX_COMMIT := a289fddbf685cb043eaaf06e913abf3e4bac7ab3
+LUNYX_URL    ?= https://github.com/antarest47/lunyx.git
+LUNYX_COMMIT := 60745bf4a2982b9550337c0c53a5396efa02bb8d
 # The revision counts changes to this recipe on the same commit.
 VERSION      := 0.1.0+git$(shell echo $(LUNYX_COMMIT) | cut -c1-7)-1
 PREFIX       ?= /usr
@@ -25,9 +25,8 @@ all:
 	@echo "Targets: fetch, install, deb, clean"
 
 fetch:
-	test -d $(LUNYX_SRC)/.git || { test -n "$(LUNYX_URL)" || { echo "Falta LUNYX_URL"; exit 1; }; \
-	    git clone $(LUNYX_URL) $(LUNYX_SRC); }
-	git -C $(LUNYX_SRC) fetch --quiet origin
+	test -d $(LUNYX_SRC)/.git || git clone $(LUNYX_URL) $(LUNYX_SRC)
+	git -C $(LUNYX_SRC) fetch --quiet $(LUNYX_URL)
 	git -C $(LUNYX_SRC) checkout --quiet $(LUNYX_COMMIT)
 	python3 fetch-wheels.py $(WHEELS)
 
