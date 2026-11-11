@@ -56,8 +56,11 @@ ejecuta comandos, calcula e inicia temporizadores (repositorio aparte).
 
 ## Instalar
 
-1. Descarga la ISO de las [releases](https://github.com/antarest47/uzunyx/releases)
-   (unos 2 GB, PC de 64 bits, BIOS o UEFI).
+1. Descarga la [ISO de Uzunyx 0.2.0](https://dl.uzunyx.com/iso/0.2.0/uzunyx-0.2.0-amd64.iso)
+   (unos 2 GB, PC de 64 bits, BIOS o UEFI) y comprueba la descarga con sus
+   [sumas SHA256](https://dl.uzunyx.com/iso/0.2.0/uzunyx-0.2.0-SHA256SUMS). El código
+   fuente de los paquetes de Debian que trae está en la
+   [release v0.2.0](https://github.com/antarest47/uzunyx/releases/tag/v0.2.0).
 2. Grábala en un USB, por ejemplo con Balena Etcher, Impression o `dd`.
 3. Arranca desde el USB. Se abre la sesión en vivo y, sobre ella, el instalador
    (Calamares): idioma, teclado, disco, usuario y, si hay internet, una selección

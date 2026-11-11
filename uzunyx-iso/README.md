@@ -75,11 +75,14 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   primera ISO, y otra vez si `libkpmcore` cambia de versión mayor en Debian.
 - Para publicarla: `make iso SOURCES=1` deja también `packages.txt` y las fuentes de los
   paquetes de Debian en partes de 1,9 GB (`missing.txt` lista las que no pudo bajar).
-  `make publish` sube la ISO, la lista, las fuentes y `SHA256SUMS` a Cloudflare R2
-  (`iso/<versión>/` del bucket `uzunyx`) con `rclone`; las claves quedan en el remoto
-  `CloudflareR2` de `rclone config` (`REMOTE=` para otro). El token solo llega a ese
-  bucket, así que va con `--s3-no-check-bucket`. Sin fuentes se niega, salvo con
-  `ALLOW_NO_SOURCES=1`.
+  `make publish` sube primero las fuentes, la lista y `SHA256SUMS` a la release
+  `v<versión>` de GitHub (con `gh`; `GITHUB=` para otro repositorio) y después la ISO,
+  `SHA256SUMS` y `FUENTES.txt` (con el enlace a la release) a Cloudflare R2, en
+  `iso/<versión>/` del bucket `uzunyx`, servido en `https://dl.uzunyx.com`. Las claves
+  quedan en `gh auth login` y en el remoto `CloudflareR2` de `rclone config` (`REMOTE=`
+  para otro); el token de R2 solo llega a ese bucket, así que va con
+  `--s3-no-check-bucket`. Sin fuentes se niega: la GPL pide publicarlas con la ISO, y
+  no se borra una release mientras su ISO siga publicada.
 - El instalador se abre solo al entrar en la sesión en vivo (`/etc/xdg/autostart/uzunyx-install.desktop`,
   pedido por el usuario el 2026-11-08); el sistema instalado es una copia y también lo
   trae, así que solo corre con `boot=live`. La página «Aplicaciones» tiene su fondo

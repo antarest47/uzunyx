@@ -1,9 +1,11 @@
 # Live and installable Uzunyx ISO (BIOS and UEFI), built without root.
 # Needs: mmdebstrap uidmap squashfs-tools xorriso mtools grub-pc-bin
 # grub-efi-amd64-bin, subuid/subgid for the user, and uzunyx-installer built.
-VERSION := 0.1.0
+VERSION := 0.2.0
 # rclone remote and bucket for make publish (Cloudflare R2).
 REMOTE ?= CloudflareR2:uzunyx
+# GitHub repository whose release v$(VERSION) carries the sources.
+GITHUB ?= antarest47/uzunyx
 
 .PHONY: all calamares iso publish test test-fresh test-installed vm-delete clean
 
@@ -17,9 +19,9 @@ calamares:
 iso:
 	./build-iso.sh $(VERSION)
 
-# Uploads the ISO, its sources and SHA256SUMS to $(REMOTE)/iso/$(VERSION)/.
+# Sources to the GitHub release v$(VERSION), then the ISO to $(REMOTE)/iso/$(VERSION)/.
 publish:
-	./publish.sh $(VERSION) $(REMOTE)
+	./publish.sh $(VERSION) $(REMOTE) $(GITHUB)
 
 # Boots the ISO in a VM with an empty disk (test-vm.sh bios for BIOS).
 test:

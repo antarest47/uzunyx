@@ -30,6 +30,13 @@ if [ "$SOURCES" = 1 ]; then
     sources_out="sync-out /tmp/uzunyx-iso/sources $build/sources"
 fi
 
+# mmdebstrap builds the system in TMPDIR, usually /tmp: a tmpfs that the
+# sources fill (with 12 GB, 185 of them failed and apt broke after them). On
+# disk, out of the home folder, which the namespace's root can't enter. There
+# dpkg syncs every file it writes: 7 hours for half the install. Without that
+# (force-unsafe-io, only while building; mmdebstrap removes it at the end).
+export TMPDIR="${TMPDIR_ISO:-/var/tmp}"
+
 # With Recommends, as a normal Debian: mmdebstrap leaves them out by default
 # (the ISO lacked xdg-user-dirs, Plasma's addons…). The heaviest are kept out
 # while building only (iso-excludes.pref).
@@ -37,6 +44,7 @@ mmdebstrap --mode=unshare --variant=important --architectures=amd64 \
     --components="main contrib non-free non-free-firmware" \
     --include=apt-utils,ca-certificates,dbus,systemd-sysv \
     --aptopt='Apt::Install-Recommends "true"' \
+    --dpkgopt=force-unsafe-io \
     --setup-hook='mkdir -p "$1/etc/apt/preferences.d"' \
     --setup-hook="upload $ISO_DIR/iso-excludes.pref /etc/apt/preferences.d/uzunyx-iso" \
     --customize-hook='mkdir "$1/tmp/uzunyx-iso"' \
