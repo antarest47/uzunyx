@@ -13,7 +13,7 @@ include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 
-find_package(Qt6 CONFIG REQUIRED COMPONENTS Core Qml)
+find_package(Qt6 CONFIG REQUIRED COMPONENTS Core DBus Qml)
 find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Config CoreAddons I18n KCMUtils)
 
 add_definitions(-DTRANSLATION_DOMAIN=\"kcm_uzunyx_editions\")
@@ -25,6 +25,7 @@ add_definitions(-DTRANSLATION_DOMAIN=\"kcm_uzunyx_editions\")
 kcmutils_add_qml_kcm(kcm_uzunyx_editions)
 target_sources(kcm_uzunyx_editions PRIVATE src/kcm.cpp)
 target_link_libraries(kcm_uzunyx_editions PRIVATE
+    Qt6::DBus
     Qt6::Qml
     KF6::ConfigCore
     KF6::CoreAddons

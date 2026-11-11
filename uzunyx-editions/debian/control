@@ -4,7 +4,7 @@ Section: x11
 Priority: optional
 Architecture: @ARCH@
 Maintainer: emi <285864120+antarest47@users.noreply.github.com>
-Depends: uzunyx-lookandfeel (>= 0.18.0), uzunyx-wallpapers (>= 0.7.0), uzunyx-colors (>= 0.2.0), plasma-workspace (>= 4:6.7), systemsettings, libkf6config-bin, python3, python3-gi, pkexec, libkf6kcmutilsquick6, libkf6i18n6, libkf6configcore6, libkf6coreaddons6, libqt6qml6, libqt6core6t64
+Depends: uzunyx-lookandfeel (>= 0.18.0), uzunyx-wallpapers (>= 0.7.0), uzunyx-colors (>= 0.2.0), plasma-workspace (>= 4:6.7), systemsettings, libkf6config-bin, python3, python3-gi, pkexec, libkf6kcmutilsquick6, libkf6i18n6, libkf6configcore6, libkf6coreaddons6, libqt6qml6, libqt6dbus6, libqt6core6t64
 Recommends: tsunyx-launcher, uzunyx-plymouth, uzunyx-keys
 Description: switch between the Uzunyx editions (Akane and Sora)
  A System Settings module, "Uzunyx Edition" (Colors & Themes), with a card

@@ -49,3 +49,15 @@ msgstr "Aplicando…"
 
 msgid "Keyboard shortcuts…"
 msgstr "Atajos de teclado…"
+
+msgid "Window focus:"
+msgstr "Foco de las ventanas:"
+
+msgid "Click to focus"
+msgstr "Clic para enfocar"
+
+msgid "Focus follows the mouse"
+msgstr "El foco sigue al ratón"
+
+msgid "Focus follows the mouse and raises the window"
+msgstr "El foco sigue al ratón y la ventana pasa al frente"

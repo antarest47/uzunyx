@@ -64,7 +64,15 @@ normal solo cambian los colores y la decoración.
   pantalla de arranque (desmarcadas: afectan a todos y piden contraseña;
   la de arranque solo aparece si está `uzunyx-plymouth`). Ni SDDM ni
   Plymouth se leen para marcar la edición actual: siempre se ofrecen. «Aplicar» ejecuta
-  `uzunyx-edition` y muestra su error si falla. Textos en inglés con
+  `uzunyx-edition` y muestra su error si falla.
+  Debajo, desde 0.4.0, **«Foco de las ventanas»**: clic para enfocar (el de
+  KWin), el foco sigue al ratón (`[Windows] FocusPolicy=FocusFollowsMouse`
+  en el `kwinrc` del usuario: la ventana recibe el teclado pero no sube al
+  frente hasta el clic; al pasar al escritorio o al panel la última conserva
+  el foco) o además pasa al frente (`AutoRaise=true`,
+  `AutoRaiseInterval=300`; KWin trae 750 ms). Volver al clic borra esas
+  claves. Se aplica en caliente con la señal `reloadConfig` de `/KWin`, sin
+  ejecutar `uzunyx-edition` si no cambió la edición. Textos en inglés con
   traducción `po/es.po` (dominio `kcm_uzunyx_editions`).
 
 Compilado contra KF6 (no depende de la versión de KWin): solo hay que
@@ -76,7 +84,7 @@ Necesita `cmake extra-cmake-modules qt6-base-dev qt6-declarative-dev
 libkf6kcmutils-dev libkf6i18n-dev libkf6config-dev gettext`.
 
     make deb
-    sudo apt install ./build/uzunyx-editions_0.2.2_amd64.deb
+    sudo apt install ./build/uzunyx-editions_0.4.0_amd64.deb
 
 Para probar el módulo sin instalarlo (`make compile` antes):
 

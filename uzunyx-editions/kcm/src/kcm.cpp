@@ -5,6 +5,8 @@
 #include <KPluginFactory>
 #include <KSharedConfig>
 
+#include <QDBusConnection>
+#include <QDBusMessage>
 #include <QDir>
 #include <QFileInfo>
 #include <QProcess>
@@ -19,6 +21,10 @@ const QList<std::pair<QString, QString>> s_editions = {
     {QStringLiteral("akane"), QStringLiteral("org.uzunyx.desktop")},
     {QStringLiteral("sora"), QStringLiteral("org.uzunyx.sora")},
 };
+
+// Raise delay with FocusFollowsMouseRaise (KWin's default, 750 ms, feels
+// slow next to the 300 ms of the minimize animation).
+constexpr int s_autoRaiseInterval = 300;
 }
 
 UzunyxEditionsKcm::UzunyxEditionsKcm(QObject *parent, const KPluginMetaData &data)
@@ -67,6 +73,8 @@ void UzunyxEditionsKcm::load()
         Q_EMIT currentEditionChanged();
     }
     setSelectedEdition(m_current == QLatin1String("other") ? QStringLiteral("akane") : m_current);
+    m_savedFocus = loadFocusMode();
+    setFocusMode(m_savedFocus);
     setApplySddm(false);
     setApplyPlymouth(false);
     updateNeedsSave();
@@ -81,10 +89,19 @@ void UzunyxEditionsKcm::defaults()
     setApplyLauncher(true);
     setApplySddm(false);
     setApplyPlymouth(false);
+    setFocusMode(ClickToFocus);
 }
 
 void UzunyxEditionsKcm::save()
 {
+    if (m_focus != m_savedFocus) {
+        saveFocusMode();
+    }
+    if (!editionPending()) {
+        updateNeedsSave();
+        return;
+    }
+
     const QString program = QStandardPaths::findExecutable(QStringLiteral("uzunyx-edition"));
     if (program.isEmpty()) {
         setError(i18n("The uzunyx-edition command was not found."));
@@ -195,13 +212,68 @@ bool UzunyxEditionsKcm::plymouthAvailable() const
     return QFileInfo::exists(QStringLiteral("/usr/share/plymouth/themes/uzunyx-akane/uzunyx-akane.plymouth"));
 }
 
-void UzunyxEditionsKcm::updateNeedsSave()
+void UzunyxEditionsKcm::setFocusMode(int mode)
+{
+    if (mode == m_focus) {
+        return;
+    }
+    m_focus = mode;
+    Q_EMIT focusModeChanged();
+    updateNeedsSave();
+}
+
+int UzunyxEditionsKcm::loadFocusMode() const
+{
+    // kwinrc with its cascade. The policies that focus whatever is under
+    // the mouse (also the desktop) count as following it.
+    auto config = KSharedConfig::openConfig(QStringLiteral("kwinrc"));
+    config->reparseConfiguration();
+    const KConfigGroup windows = config->group(QStringLiteral("Windows"));
+    const QString policy = windows.readEntry("FocusPolicy", QStringLiteral("ClickToFocus"));
+    if (policy == QLatin1String("ClickToFocus")) {
+        return ClickToFocus;
+    }
+    return windows.readEntry("AutoRaise", false) ? FocusFollowsMouseRaise : FocusFollowsMouse;
+}
+
+void UzunyxEditionsKcm::saveFocusMode()
+{
+    // Back to click: remove the keys (not kwriteconfig6 --delete, whose
+    // [$d] marks would also hide a system value).
+    auto config = KSharedConfig::openConfig(QStringLiteral("kwinrc"));
+    KConfigGroup windows = config->group(QStringLiteral("Windows"));
+    if (m_focus == ClickToFocus) {
+        windows.revertToDefault("FocusPolicy");
+    } else {
+        windows.writeEntry("FocusPolicy", QStringLiteral("FocusFollowsMouse"));
+    }
+    if (m_focus == FocusFollowsMouseRaise) {
+        windows.writeEntry("AutoRaise", true);
+        windows.writeEntry("AutoRaiseInterval", s_autoRaiseInterval);
+    } else {
+        windows.revertToDefault("AutoRaise");
+        windows.revertToDefault("AutoRaiseInterval");
+    }
+    config->sync();
+    m_savedFocus = m_focus;
+
+    // KWin applies it right away, like its own settings modules.
+    QDBusConnection::sessionBus().send(
+        QDBusMessage::createSignal(QStringLiteral("/KWin"), QStringLiteral("org.kde.KWin"), QStringLiteral("reloadConfig")));
+}
+
+bool UzunyxEditionsKcm::editionPending() const
 {
     // Another edition, or the login or boot screen (not tracked: always
     // offered).
     const bool system = m_sddm || (m_plymouth && plymouthAvailable());
     const bool anything = m_theme || m_wallpaper || m_lock || m_launcher || system;
-    setNeedsSave(anything && (m_selected != m_current || system));
+    return anything && (m_selected != m_current || system);
+}
+
+void UzunyxEditionsKcm::updateNeedsSave()
+{
+    setNeedsSave(editionPending() || m_focus != m_savedFocus);
 }
 
 void UzunyxEditionsKcm::setBusy(bool busy)

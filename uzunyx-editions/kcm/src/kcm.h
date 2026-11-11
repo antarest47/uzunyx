@@ -8,7 +8,8 @@ class QProcess;
 
 // System Settings module that switches between the Uzunyx editions (Akane,
 // Sora). The work is done by the uzunyx-edition command; this only picks the
-// edition and the parts to change, and runs it on Apply.
+// edition and the parts to change, and runs it on Apply. It also picks how
+// windows get the focus (KWin's FocusPolicy and AutoRaise in kwinrc).
 class UzunyxEditionsKcm : public KQuickConfigModule
 {
     Q_OBJECT
@@ -21,6 +22,7 @@ class UzunyxEditionsKcm : public KQuickConfigModule
     Q_PROPERTY(bool applySddm READ applySddm WRITE setApplySddm NOTIFY optionsChanged)
     Q_PROPERTY(bool applyPlymouth READ applyPlymouth WRITE setApplyPlymouth NOTIFY optionsChanged)
     Q_PROPERTY(bool plymouthAvailable READ plymouthAvailable CONSTANT)
+    Q_PROPERTY(int focusMode READ focusMode WRITE setFocusMode NOTIFY focusModeChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     Q_PROPERTY(QString errorText READ errorText NOTIFY errorTextChanged)
 
@@ -48,6 +50,16 @@ public:
     // The boot splash themes (uzunyx-plymouth) are installed.
     bool plymouthAvailable() const;
 
+    // How windows get the focus.
+    enum FocusMode {
+        ClickToFocus = 0,
+        FocusFollowsMouse = 1, // and stays below until clicked
+        FocusFollowsMouseRaise = 2, // and comes to the front
+    };
+    Q_ENUM(FocusMode)
+    int focusMode() const { return m_focus; }
+    void setFocusMode(int mode);
+
     bool busy() const { return m_busy; }
     QString errorText() const { return m_error; }
 
@@ -65,6 +77,7 @@ public:
 Q_SIGNALS:
     void currentEditionChanged();
     void selectedEditionChanged();
+    void focusModeChanged();
     void optionsChanged();
     void busyChanged();
     void errorTextChanged();
@@ -72,6 +85,9 @@ Q_SIGNALS:
 private:
     void setOption(bool &option, bool on);
     void updateNeedsSave();
+    bool editionPending() const;
+    int loadFocusMode() const;
+    void saveFocusMode();
     void setBusy(bool busy);
     void setError(const QString &error);
 
@@ -83,6 +99,8 @@ private:
     bool m_launcher = true;
     bool m_sddm = false;
     bool m_plymouth = false;
+    int m_focus = ClickToFocus;
+    int m_savedFocus = ClickToFocus;
     bool m_busy = false;
     QProcess *m_process = nullptr;
     QString m_error;

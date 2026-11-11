@@ -138,6 +138,31 @@ KCM.GridViewKCM {
             onToggled: kcm.applyPlymouth = checked
         }
 
+        Kirigami.Separator {
+            Layout.fillWidth: true
+            Layout.topMargin: Kirigami.Units.smallSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
+        }
+
+        // Same order as UzunyxEditionsKcm::FocusMode.
+        RowLayout {
+            spacing: Kirigami.Units.smallSpacing
+            enabled: !kcm.busy
+
+            QQC2.Label {
+                text: i18n("Window focus:")
+            }
+            QQC2.ComboBox {
+                model: [
+                    i18n("Click to focus"),
+                    i18n("Focus follows the mouse"),
+                    i18n("Focus follows the mouse and raises the window"),
+                ]
+                currentIndex: kcm.focusMode
+                onActivated: index => kcm.focusMode = index
+            }
+        }
+
         QQC2.Button {
             visible: kcm.shortcutsAvailable()
             icon.name: "preferences-desktop-keyboard-shortcuts"
