@@ -19,8 +19,10 @@ Metapaquete que instala todo Uzunyx (para el instalador o la ISO).
   pantalla de arranque (`uzunyx-plymouth`) y GRUB (`uzunyx-grub`), que
   cambian cómo arranca el PC.
 
-Los paquetes no están en un repositorio: hay que construirlos (`make deb` en
-cada carpeta) e instalarlos juntos:
+Los paquetes están en el repositorio APT de Uzunyx (`https://dl.uzunyx.com/repo`,
+ver `uzunyx-archive-keyring`), que `uzunyx-installer` y la ISO dejan configurado.
+Para probar los que se construyen aquí (`make deb` en cada carpeta, y Tsunyx en
+su propio repositorio, al lado de este):
 
     sudo apt install ./uzunyx-desktop/build/uzunyx-desktop_*_all.deb \
-        ./*/build/*.deb ~/claude/tsunyx-launcher/build/*.deb
+        ./*/build/*.deb ../tsunyx-launcher/build/*.deb
