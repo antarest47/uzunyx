@@ -19,6 +19,19 @@ Viene en dos ediciones que comparten todo salvo el color: **Akane** (carmesí) y
 
 ![Uzunyx Sora](uzunyx-lnf/previews-sora/fullscreenpreview.jpg)
 
+## Hecho con IA
+
+Uzunyx está hecho con inteligencia artificial, y quiero que quede claro desde el
+principio. No soy desarrollador/a: tengo las ideas, decido cómo se ve y cómo se
+comporta cada cosa, y lo pruebo. El código lo escribió Claude (Anthropic), con Claude
+Code, a partir de esas decisiones. Las imágenes (fondos, logos, avatares) las generé
+con ChatGPT.
+
+Todo se probó en mi PC y en máquinas virtuales, pero nadie lo revisó como lo haría un
+equipo de desarrollo, ni hubo una auditoría de seguridad. Si lo vas a usar, pruébalo
+primero en una máquina o partición que no te importe. Como dice la licencia, se
+entrega sin garantías. Si encuentras un error, abre un Issue.
+
 ## Qué trae
 
 **Ventanas**
