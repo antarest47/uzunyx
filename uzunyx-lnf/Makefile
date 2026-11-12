@@ -1,5 +1,5 @@
 NAME    := uzunyx-lookandfeel
-VERSION := 0.29.0
+VERSION := 0.29.1
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -19,6 +19,7 @@ LOGOS    := uzunyx-akane:../icons/uzunyx-icon-akane.png uzunyx-sora:../icons/uzu
 HICOLOR  := $(PREFIX)/share/icons/hicolor
 
 LOCKDIR := $(PREFIX)/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen
+VIEWSDIR := $(PREFIX)/share/plasma/shells/org.kde.plasma.desktop/contents/views
 
 AVATARS := $(PREFIX)/share/plasma/avatars
 
@@ -57,6 +58,8 @@ install:
 	# Lock screen buttons; LockScreenUi.qml is made in postinst from Plasma's.
 	install -Dm644 lockscreen/UzunyxActionButton.qml $(DESTDIR)$(LOCKDIR)/UzunyxActionButton.qml
 	install -Dm644 lockscreen/ball.svg $(DESTDIR)$(LOCKDIR)/ball.svg
+	# Panel.qml is made in postinst from Plasma's and uses this.
+	install -Dm644 panel/UzunyxPanelWatch.qml $(DESTDIR)$(VIEWSDIR)/UzunyxPanelWatch.qml
 	# The default avatar, instead of Debian's (diverted in preinst).
 	python3 -I gen-avatar.py ../wallpapers/akane-profile.png $(DESTDIR)$(SYSCONFDIR)/skel/.face 256
 	install -d $(DESTDIR)$(PREFIX)/share/sddm/faces
@@ -76,6 +79,7 @@ uninstall:
 	rm -f $(DESTDIR)$(SYSCONFDIR)/xdg/kdeglobals $(DESTDIR)$(SYSCONFDIR)/skel/.face $(DESTDIR)$(PREFIX)/share/sddm/faces/.face.icon
 	rm -f "$(DESTDIR)$(AVATARS)"/Uzunyx*.png
 	rm -f $(DESTDIR)$(LOCKDIR)/UzunyxActionButton.qml $(DESTDIR)$(LOCKDIR)/ball.svg
+	rm -f $(DESTDIR)$(VIEWSDIR)/UzunyxPanelWatch.qml
 	rm -f $(DESTDIR)$(SYSCONFDIR)/xdg/mimeapps.list
 	rm -f $(DESTDIR)$(SYSCONFDIR)/xdg/plasma-workspace/env/uzunyx-lookandfeel.sh
 	rm -f $(DESTDIR)$(PREFIX)/share/kxmlgui5/dolphin/dolphinui.rc

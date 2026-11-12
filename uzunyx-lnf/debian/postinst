@@ -17,9 +17,11 @@ case "$1" in
         fi
         # A floating panel keeps floating when a window touches it: Plasma only
         # does that for panels that aren't always visible. If the line changes
-        # in a new Plasma, the panel is Plasma's own.
+        # in a new Plasma, the panel is Plasma's own. UzunyxPanelWatch asks
+        # again for the panel's size when its window kept an old one.
         if [ -f "$panel.distrib" ]; then
-            sed 's/^\(\s*\)if (panel\.visibilityMode != Panel\.Global\.NormalPanel && floating) {/\1if (floating) {/' \
+            sed -e 's/^\(\s*\)if (panel\.visibilityMode != Panel\.Global\.NormalPanel && floating) {/\1if (floating) {/' \
+                -e '$ s/^}$/    UzunyxPanelWatch {}\n}/' \
                 "$panel.distrib" > "$panel.uzunyx-tmp"
             chmod 644 "$panel.uzunyx-tmp"
             mv -f "$panel.uzunyx-tmp" "$panel"

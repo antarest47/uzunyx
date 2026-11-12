@@ -106,3 +106,11 @@ Plasma solo lo hace con los paneles que no son siempre visibles: el paquete desv
 `postinst` lo rehace con `sed` desde la copia de Plasma (`Panel.qml.distrib`),
 también por disparador cuando Plasma la actualiza. Si la línea cambia en un Plasma
 nuevo, queda el panel de Plasma tal cual.
+
+Desde 0.29.1, ese `Panel.qml` lleva además `UzunyxPanelWatch.qml` (se instala al
+lado): en Wayland, a veces la ventana del panel se queda con el tamaño viejo después
+de que Plasma pidió otro (hueco vacío al final del panel, visto al cerrarse una
+tarea) y Plasma no lo vuelve a pedir. Cada 2 s compara la ventana con la geometría
+que Plasma quiere (`panel.geometryByDistance(0)`) y, si no coinciden dos veces
+seguidas, mueve el largo un píxel y lo devuelve, que lo vuelve a pedir. Deja una
+línea `uzunyx: panel window is …` en el registro de `plasmashell`.
