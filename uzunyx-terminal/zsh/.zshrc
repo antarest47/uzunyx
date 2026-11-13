@@ -16,6 +16,10 @@ mkdir -p $ZSH_CACHE_DIR/completions ${XDG_DATA_HOME:-$HOME/.local/share}/zsh
 # Before Oh My Zsh: it takes over compinit, which Oh My Zsh would call.
 source /usr/share/uzunyx-terminal/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 source $ZSH/oh-my-zsh.sh
+# Down goes into the list of completions again: Oh My Zsh's key bindings had
+# taken it for the history.
+bindkey '^[[B' down-line-or-select
+bindkey '^[OB' down-line-or-select
 
 # The prompt follows the edition, also in open tabs; ~/.config/starship.toml wins.
 _uzunyx_edition() {
