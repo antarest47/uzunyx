@@ -1,7 +1,9 @@
 # uzunyx-repo
 
 El repositorio APT de Uzunyx, en `https://dl.uzunyx.com/repo` (bucket `uzunyx` de
-Cloudflare R2, carpeta `repo/`), suite `forky`, componente `main`. No es un paquete: los
+Cloudflare R2, carpeta `repo/`), suite `testing`, componente `main`. La suite `forky` lleva los mismos
+paquetes para los sistemas con `uzunyx-archive-keyring` anterior a 0.2.0, que al
+actualizar los pasa a `testing`; se puede quitar cuando ya no quede ninguno. No es un paquete: los
 sistemas lo usan por `uzunyx-archive-keyring`, que trae la clave pública y el `.sources`.
 
     make repo      # arma build/repo y lo firma (gpg pide la contraseña de la clave)
@@ -9,8 +11,8 @@ sistemas lo usan por `uzunyx-archive-keyring`, que trae la clave pública y el `
 
 Lleva el `.deb` de cada carpeta que lleva `uzunyx-installer` (su lista `FOLDERS`), en la
 versión de su `Makefile`: antes, `make deb` en cada una. `make-repo.sh` usa
-`apt-ftparchive` (ya en Debian, sin reprepro): `pool/main` y un solo índice,
-`dists/forky/main/binary-amd64`, que también trae los paquetes `all`; por eso `Release`
+`apt-ftparchive` (ya en Debian, sin reprepro): `pool/main` y un índice por suite,
+`dists/<suite>/main/binary-amd64`, que también trae los paquetes `all`; por eso `Release`
 dice solo `amd64` (con `all`, apt buscaría un índice `binary-all`). Firma `InRelease` y
 `Release.gpg` con la clave `971A62FD88B6D53B860FB7DD05D19D028CE7A0BC`, cuya parte
 privada no está en git.

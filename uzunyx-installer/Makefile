@@ -3,7 +3,7 @@
 # the system to the Debian release Uzunyx is built for and installs the desktop.
 # Collects the .deb of each folder as it is: run `make deb` there first.
 NAME    := uzunyx-installer
-VERSION := 0.1.8
+VERSION := 0.1.9
 
 BUILD := build
 DEB   := $(BUILD)/$(NAME)_$(VERSION)_all.deb

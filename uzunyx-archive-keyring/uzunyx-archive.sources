@@ -1,6 +1,6 @@
 # Uzunyx's packages, signed with its archive key.
 Types: deb
 URIs: https://dl.uzunyx.com/repo
-Suites: forky
+Suites: testing
 Components: main
 Signed-By: /usr/share/keyrings/uzunyx-archive-keyring.gpg

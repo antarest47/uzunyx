@@ -3,7 +3,7 @@
 # uzunyx-archive-keyring.gpg is the public key, exported once with
 # gpg --export 971A62FD88B6D53B860FB7DD05D19D028CE7A0BC.
 NAME    := uzunyx-archive-keyring
-VERSION := 0.1.0
+VERSION := 0.2.0
 PREFIX  ?= /usr
 DESTDIR ?=
 
@@ -23,6 +23,7 @@ deb: clean
 	$(MAKE) install DESTDIR=$(CURDIR)/$(BUILD)/root PREFIX=/usr
 	install -Dm644 debian/control $(BUILD)/root/DEBIAN/control
 	install -Dm644 debian/conffiles $(BUILD)/root/DEBIAN/conffiles
+	install -Dm755 debian/postinst $(BUILD)/root/DEBIAN/postinst
 	sed -i 's/@VERSION@/$(VERSION)/' $(BUILD)/root/DEBIAN/control
 	install -Dm644 README.md $(BUILD)/root/usr/share/doc/$(NAME)/README.md
 	install -Dm644 ../tools/copyright $(BUILD)/root/usr/share/doc/$(NAME)/copyright

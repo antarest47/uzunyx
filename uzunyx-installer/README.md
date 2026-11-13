@@ -7,7 +7,7 @@ Un solo `.deb` para instalar Uzunyx en un Debian normal:
 
 Trae todos los paquetes en un repositorio APT local
 (`/usr/share/uzunyx-installer/repo`, sin red para lo propio; lo demás sale de
-los espejos de Debian). `uzunyx-install` pasa los repositorios a `forky` si el
+los espejos de Debian). `uzunyx-install` pasa los repositorios a `testing` si el
 sistema está en otra versión (pregunta antes y guarda copia en `/var/backups`;
 los repositorios ajenos a Debian se quedan), instala Plasma si falta y después
 `uzunyx-desktop`.

@@ -20,14 +20,14 @@ mmdebstrap --mode=unshare --variant=buildd --architectures=amd64 \
         mkdir -p debian/patches
         cp /tmp/in/legend-colours.patch debian/patches/uzunyx-legend-colours.patch
         echo uzunyx-legend-colours.patch >> debian/patches/series
-        DEBFULLNAME=Uzunyx DEBEMAIL=uzunyx@localhost dch --local +uzunyx --distribution forky \"Partition legend in the palette colours.\"
+        DEBFULLNAME=Uzunyx DEBEMAIL=uzunyx@localhost dch --local +uzunyx --distribution testing \"Partition legend in the palette colours.\"
         DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -b -uc -us -Pnocheck
         mkdir /tmp/out
         cp ../calamares_*.deb /tmp/out/
     "' \
     --customize-hook="sync-out /tmp/out $out" \
-    forky /dev/null \
-    "deb http://deb.debian.org/debian forky main" \
-    "deb-src http://deb.debian.org/debian forky main"
+    testing /dev/null \
+    "deb http://deb.debian.org/debian testing main" \
+    "deb-src http://deb.debian.org/debian testing main"
 
 ls -l "$out"

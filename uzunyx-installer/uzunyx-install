@@ -4,7 +4,7 @@
 # /var/backups) and installs Plasma if it isn't there.
 set -e
 
-RELEASE=forky
+RELEASE=testing
 MIN_PLASMA=4:6.7
 MIRROR=http://deb.debian.org/debian
 SECURITY=http://deb.debian.org/debian-security

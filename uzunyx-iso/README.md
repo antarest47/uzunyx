@@ -1,6 +1,6 @@
 # uzunyx-iso
 
-ISO en vivo e instalable de Uzunyx sobre Debian `forky`, para BIOS y UEFI.
+ISO en vivo e instalable de Uzunyx sobre Debian `testing`, para BIOS y UEFI.
 Se construye sin root (`mmdebstrap --mode=unshare`, hacen falta `subuid` y `subgid`):
 
     sudo apt install mmdebstrap uidmap squashfs-tools xorriso mtools grub-pc-bin grub-efi-amd64-bin

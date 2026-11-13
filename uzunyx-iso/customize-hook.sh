@@ -30,10 +30,10 @@ for packages in "grub-pc" "grub-efi-amd64 grub-efi-amd64-signed shim-signed" "cr
     apt-get -y --download-only -o Dir::Cache::archives="$pool" install $packages
 done
 rm -rf "$pool/partial" "$pool/lock"
-mkdir -p "$tree/pool" "$tree/dists/forky/main/binary-amd64"
+mkdir -p "$tree/pool" "$tree/dists/testing/main/binary-amd64"
 mv "$pool"/*.deb "$tree/pool/"
 rmdir "$pool"
-(cd "$tree" && apt-ftparchive packages pool > dists/forky/main/binary-amd64/Packages)
+(cd "$tree" && apt-ftparchive packages pool > dists/testing/main/binary-amd64/Packages)
 
 # Calamares from Debian, as Uzunyx.
 cal=/etc/calamares
@@ -44,7 +44,7 @@ cp "$in/logo.png" "$cal/branding/uzunyx/logo.png"
 sed -i 's/^branding: .*/branding: uzunyx/' "$cal/settings.conf"
 sed -i 's/^\( *\)- .calamares-settings-debian.$/&\n\1- '"'"'calamares'"'"'/' "$cal/modules/packages.conf"
 helpers=/usr/share/calamares/helpers
-sed -i 's/^RELEASE=.*/RELEASE="forky"/' "$helpers/calamares-sources-media"
+sed -i 's/^RELEASE=.*/RELEASE="testing"/' "$helpers/calamares-sources-media"
 cp "$in/calamares/calamares-sources-final" "$helpers/calamares-sources-final"
 chmod 755 "$helpers/calamares-sources-final"
 # "Aplicaciones" page after Users, and the extended selection downloaded once
@@ -108,9 +108,9 @@ cp -r /boot/grub/themes/uzunyx "$tree/boot/grub/themes/uzunyx"
 dpkg-query -W -f '${Package} ${Version} ${source:Package} ${source:Version}\n' > "$tree/packages.txt"
 if [ -f "$in/with-sources" ]; then
     cat > /etc/apt/sources.list.d/uzunyx-src.list <<SOURCES
-deb-src http://deb.debian.org/debian forky main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian forky-updates main contrib non-free non-free-firmware
-deb-src http://deb.debian.org/debian-security forky-security main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian testing main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian testing-updates main contrib non-free non-free-firmware
+deb-src http://deb.debian.org/debian-security testing-security main contrib non-free non-free-firmware
 SOURCES
     apt-get update
     mkdir -p "$in/sources"

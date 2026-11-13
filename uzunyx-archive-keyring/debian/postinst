@@ -1,0 +1,79 @@
+#!/bin/sh
+# Uzunyx follows Debian testing (until 0.2.0 it followed forky, which becomes
+# stable in 2027). Once, on the first install or the upgrade from an older
+# version, Debian's own APT sources move from forky to testing; a backup goes
+# to /var/backups. Lines of other repositories and commented lines stay. If
+# the user goes back to forky afterwards, this doesn't run again.
+set -e
+
+APT=/etc/apt
+
+# One-line format: only "deb"/"deb-src" lines of a debian.org mirror.
+convert_list() {
+    sed -E '/^[[:space:]]*deb(-src)?[[:space:]].*debian\.org/s/([[:space:]])forky(-updates|-security)?([[:space:]]|$)/\1testing\2\3/g' "$1"
+}
+
+# deb822 format: the Suites line of each stanza whose URIs are a debian.org mirror.
+convert_sources() {
+    awk '
+        # mawk has no gensub: word by word.
+        function to_testing(line,   w, k, i, out) {
+            k = split(line, w, /[[:space:]]+/)
+            out = w[1]
+            for (i = 2; i <= k; i++) {
+                if (w[i] ~ /^forky(-updates|-security)?$/)
+                    sub(/^forky/, "testing", w[i])
+                out = out " " w[i]
+            }
+            return out
+        }
+        function flush(   i) {
+            for (i = 1; i <= n; i++) {
+                if (debian && lines[i] ~ /^Suites:/)
+                    lines[i] = to_testing(lines[i])
+                print lines[i]
+            }
+            n = 0; debian = 0
+        }
+        /^[[:space:]]*$/ { flush(); print; next }
+        { lines[++n] = $0; if ($0 ~ /^URIs:.*debian\.org/) debian = 1 }
+        END { flush() }
+    ' "$1"
+}
+
+move_to_testing() {
+    backup=
+    for f in "$APT/sources.list" "$APT"/sources.list.d/*.list "$APT"/sources.list.d/*.sources; do
+        [ -f "$f" ] || continue
+        case "$f" in
+            *.sources) convert_sources "$f" > "$f.uzunyx-new" ;;
+            *) convert_list "$f" > "$f.uzunyx-new" ;;
+        esac
+        if cmp -s "$f" "$f.uzunyx-new"; then
+            rm -f "$f.uzunyx-new"
+            continue
+        fi
+        if [ -z "$backup" ]; then
+            backup=/var/backups/uzunyx-archive-keyring-apt-$(date +%Y%m%d-%H%M%S)
+            mkdir -p "$backup/sources.list.d"
+        fi
+        case "$f" in
+            "$APT/sources.list") cp -p "$f" "$backup/" ;;
+            *) cp -p "$f" "$backup/sources.list.d/" ;;
+        esac
+        chmod --reference="$f" "$f.uzunyx-new"
+        mv "$f.uzunyx-new" "$f"
+        echo "uzunyx-archive-keyring: $f pasa de forky a testing"
+    done
+    [ -z "$backup" ] || echo "uzunyx-archive-keyring: copia de los repositorios en $backup"
+}
+
+case "$1" in
+    configure)
+        if [ -z "$2" ] || dpkg --compare-versions "$2" lt 0.2.0; then
+            move_to_testing
+        fi
+        ;;
+esac
+
+exit 0

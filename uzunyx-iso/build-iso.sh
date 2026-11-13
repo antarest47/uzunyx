@@ -53,10 +53,10 @@ mmdebstrap --mode=unshare --variant=important --architectures=amd64 \
     --customize-hook="sync-out /tmp/uzunyx-iso/tree $ISO_TREE" \
     --customize-hook="$sources_out" \
     --customize-hook='rm -rf "$1/tmp/uzunyx-iso" "$1/etc/apt/preferences.d/uzunyx-iso"' \
-    forky "$build/rootfs.tar" \
-    "deb http://deb.debian.org/debian forky main contrib non-free non-free-firmware" \
-    "deb http://deb.debian.org/debian forky-updates main contrib non-free non-free-firmware" \
-    "deb http://deb.debian.org/debian-security forky-security main contrib non-free non-free-firmware"
+    testing "$build/rootfs.tar" \
+    "deb http://deb.debian.org/debian testing main contrib non-free non-free-firmware" \
+    "deb http://deb.debian.org/debian testing-updates main contrib non-free non-free-firmware" \
+    "deb http://deb.debian.org/debian-security testing-security main contrib non-free non-free-firmware"
 
 sqfstar -comp zstd -Xcompression-level 15 "$ISO_TREE/live/filesystem.squashfs" < "$build/rootfs.tar"
 rm "$build/rootfs.tar"
