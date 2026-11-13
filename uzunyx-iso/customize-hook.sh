@@ -98,6 +98,9 @@ NoDisplay=true
 X-KDE-autostart-phase=2
 EOF
 
+# On shutdown, the medium is ejected without waiting for Enter.
+install -Dm644 "$in/calamares/live-tools.conf" /etc/live/tools.conf
+
 # What the bootloader on the ISO boots.
 cp -L /vmlinuz "$tree/live/vmlinuz"
 cp -L /initrd.img "$tree/live/initrd.img"
