@@ -1,7 +1,7 @@
 # Live and installable Uzunyx ISO (BIOS and UEFI), built without root.
 # Needs: mmdebstrap uidmap squashfs-tools xorriso mtools grub-pc-bin
 # grub-efi-amd64-bin, subuid/subgid for the user, and uzunyx-installer built.
-VERSION := 0.2.0
+VERSION := 0.2.1
 # rclone remote and bucket for make publish (Cloudflare R2).
 REMOTE ?= CloudflareR2:uzunyx
 # GitHub repository whose release v$(VERSION) carries the sources.

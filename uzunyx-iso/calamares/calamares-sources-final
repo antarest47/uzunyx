@@ -1,9 +1,19 @@
 #!/bin/sh
-# Writes the final APT sources. Debian's copy names a fixed older release.
+# Writes the final APT sources, as debian.sources (deb822, what apt
+# modernize-sources would leave). Debian's copy names a fixed older release.
 CHROOT=$(mount | grep proc | grep calamares | awk '{print $3}' | sed -e "s#/proc##g")
-cat > "$CHROOT/etc/apt/sources.list" <<SOURCES
-deb http://deb.debian.org/debian testing main contrib non-free non-free-firmware
-deb http://deb.debian.org/debian testing-updates main contrib non-free non-free-firmware
-deb http://deb.debian.org/debian-security testing-security main contrib non-free non-free-firmware
+rm -f "$CHROOT/etc/apt/sources.list"
+cat > "$CHROOT/etc/apt/sources.list.d/debian.sources" <<SOURCES
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: testing testing-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: http://deb.debian.org/debian-security
+Suites: testing-security
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 SOURCES
 exit 0

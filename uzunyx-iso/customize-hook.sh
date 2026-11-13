@@ -42,7 +42,10 @@ cp "$in/calamares/locale.conf" "$cal/modules/locale.conf"
 cp -r "$in/calamares/branding.desc" "$in/calamares/show.qml" "$in/calamares/slides" "$cal/branding/uzunyx/"
 cp "$in/logo.png" "$cal/branding/uzunyx/logo.png"
 sed -i 's/^branding: .*/branding: uzunyx/' "$cal/settings.conf"
-sed -i 's/^\( *\)- .calamares-settings-debian.$/&\n\1- '"'"'calamares'"'"'/' "$cal/modules/packages.conf"
+# The installed system leaves out Calamares and uzunyx-installer (its local
+# repository is the live session's; the system updates from dl.uzunyx.com).
+sed -i 's/^\( *\)- .calamares-settings-debian.$/&\n\1- '"'"'calamares'"'"'\n\1- '"'"'uzunyx-installer'"'"'/' "$cal/modules/packages.conf"
+grep -q "^ *- 'uzunyx-installer'$" "$cal/modules/packages.conf"
 helpers=/usr/share/calamares/helpers
 sed -i 's/^RELEASE=.*/RELEASE="testing"/' "$helpers/calamares-sources-media"
 cp "$in/calamares/calamares-sources-final" "$helpers/calamares-sources-final"
