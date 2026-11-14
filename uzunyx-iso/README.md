@@ -66,11 +66,10 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   `notesqml@network` con `calamares/uzunyx-network.qml`: estado (cable, wifi, sin
   internet), lista de redes wifi con la contraseña dentro de la elegida y «Encender
   wifi» si está apagado; informa sin advertir y «Siguiente» siempre sigue. Calamares no
-  ejecuta comandos desde QML, y la fuente `executable` de `plasma5support` lo tumbaba al
-  cargar la página (primera 0.2.2): `/usr/libexec/uzunyx-calamares` arranca a su lado
+  ejecuta comandos desde QML, y se probó con la fuente `executable` de `plasma5support`: `/usr/libexec/uzunyx-calamares` arranca a su lado
   `/usr/libexec/uzunyx-calamares-network serve` (`nmcli`), que escribe `state.json` cada
   2 s en `/run/uzunyx-calamares-network` y atiende `request.json`; la página, solo
-  QtQuick, los lee y escribe con `XMLHttpRequest` (`QML_XHR_ALLOW_FILE_READ`/`WRITE`). Como Calamares corre
+  QtQuick, los lee y escribe con `XMLHttpRequest` (`QML_XHR_ALLOW_FILE_READ`/`WRITE`). El nombre del paso va en `qmlLabel` (`notes:`): `notesqml` no inicializa ese puntero y, sin la clave, Calamares se cae al dibujar la barra lateral (pasó con `notesName`). Como Calamares corre
   como root, la conexión queda del sistema con su contraseña y `networkcfg` la copia al
   sistema instalado. La bienvenida ya no avisa de la falta de internet (hasta 0.2.1,
   `internet` en `check` de `welcome.conf`).
