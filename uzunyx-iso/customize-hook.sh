@@ -52,14 +52,22 @@ cp "$in/calamares/calamares-sources-final" "$helpers/calamares-sources-final"
 chmod 755 "$helpers/calamares-sources-final"
 # "Aplicaciones" page after Users, and the extended selection downloaded once
 # Debian's sources are written (before that apt only sees the ISO).
-cp "$in/calamares/uzunyx-apps.qml" "$in/calamares/calamares-sidebar.qml" "$cal/branding/uzunyx/"
-cp "$in/calamares/uzunyx-apps.conf" "$in/calamares/uzunyx-install-apps.conf" "$cal/modules/"
+# "Conexión" page after the welcome: Calamares only checks for internet, it
+# doesn't connect. networkcfg copies the connection to the installed system.
+cp "$in/calamares/uzunyx-apps.qml" "$in/calamares/uzunyx-network.qml" "$in/calamares/calamares-sidebar.qml" "$cal/branding/uzunyx/"
+cp "$in/calamares/uzunyx-apps.conf" "$in/calamares/uzunyx-network.conf" "$in/calamares/uzunyx-install-apps.conf" "$cal/modules/"
 install -Dm755 "$in/calamares/uzunyx-install-apps" /usr/libexec/uzunyx-install-apps
-sed -i -e '0,/^  - users$/s//  - users\n  - packagechooserq@apps/' \
+install -Dm755 "$in/calamares/uzunyx-calamares-network" /usr/libexec/uzunyx-calamares-network
+sed -i -e '0,/^  - welcome$/s//  - welcome\n  - notesqml@network/' \
+    -e '0,/^  - users$/s//  - users\n  - packagechooserq@apps/' \
     -e 's/^  - sources-final$/&\n  - contextualprocess@uzunyx-apps/' "$cal/settings.conf"
+grep -q '^  - notesqml@network$' "$cal/settings.conf"
 cat >> "$cal/settings.conf" <<'EOF'
 
 instances:
+- id: network
+  module: notesqml
+  config: uzunyx-network.conf
 - id: apps
   module: packagechooserq
   config: uzunyx-apps.conf
@@ -69,8 +77,6 @@ instances:
 EOF
 grep -q '^instances:' "$cal/settings.conf" && [ "$(grep -c '^instances:' "$cal/settings.conf")" = 1 ] ||
     { echo "settings.conf already had instances" >&2; exit 1; }
-# Warns on the first page when there is no internet (not required).
-sed -i '0,/^        - root$/s//        - root\n        - internet/' "$cal/modules/welcome.conf"
 # A swap file by default (Debian's is none): no partition to size, and the
 # user can still choose another.
 sed -i 's/^initialSwapChoice: .*/initialSwapChoice: file/' "$cal/modules/partition.conf"
@@ -99,6 +105,17 @@ Exec=sh -c 'grep -qw boot=live /proc/cmdline && exec calamares-install-debian'
 OnlyShowIn=KDE;
 NoDisplay=true
 X-KDE-autostart-phase=2
+EOF
+
+# The live session turns the screen off but doesn't lock it: not everyone knows
+# the password ("live"). Also a copy in the installed system, which checks the
+# kernel's command line like the autostart above.
+mkdir -p /etc/xdg/plasma-workspace/env
+cat > /etc/xdg/plasma-workspace/env/uzunyx-live.sh <<'EOF'
+if grep -qw boot=live /proc/cmdline; then
+    kwriteconfig6 --file kscreenlockerrc --group Daemon --key Autolock false
+    kwriteconfig6 --file kscreenlockerrc --group Daemon --key LockOnResume false
+fi
 EOF
 
 # On shutdown, the medium is ejected without waiting for Enter.

@@ -59,9 +59,22 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   apt solo ve el repositorio de la ISO. Se descargan, para que la ISO quede por debajo de
   2 GiB (límite por archivo de las releases de GitHub); sin internet no falla y queda la
   instalación por defecto, con el registro en `/var/log/uzunyx-install-apps.log` del
-  sistema nuevo. La primera página avisa si no hay internet (`internet` en `check` de
-  `welcome.conf`, no en `required`). `customize-hook.sh` agrega la página, el paso y las
+  sistema nuevo. `customize-hook.sh` agrega la página, el paso y las
   `instances` a `settings.conf`.
+- Página «Conexión» después de la bienvenida (desde 0.2.2, maqueta aprobada por el
+  usuario el 2026-11-14): Calamares solo comprueba si hay internet, no conecta. Es
+  `notesqml@network` con `calamares/uzunyx-network.qml`: estado (cable, wifi, sin
+  internet), lista de redes wifi con la contraseña dentro de la elegida y «Encender
+  wifi» si está apagado; informa sin advertir y «Siguiente» siempre sigue. Calamares no
+  ejecuta comandos desde QML: lo hace con la fuente `executable` de `plasma5support`, que
+  llama a `/usr/libexec/uzunyx-calamares-network` (`nmcli`, JSON). Como Calamares corre
+  como root, la conexión queda del sistema con su contraseña y `networkcfg` la copia al
+  sistema instalado. La bienvenida ya no avisa de la falta de internet (hasta 0.2.1,
+  `internet` en `check` de `welcome.conf`).
+- La sesión en vivo apaga la pantalla pero no la bloquea (desde 0.2.2, pedido por el
+  usuario el 2026-11-14): `/etc/xdg/plasma-workspace/env/uzunyx-live.sh` pone
+  `Autolock=false` y `LockOnResume=false` en el `kscreenlockerrc` del usuario, solo con
+  `boot=live`.
 - La bienvenida nombra a Calamares (`welcomeStyleCalamares: true`; se probó sin él y el
   usuario prefirió dejarlo). Archivo de intercambio por defecto (`initialSwapChoice: file`;
   Debian trae `none`), y además zram desde `uzunyx-desktop`; decidido con el usuario el
