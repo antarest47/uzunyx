@@ -124,10 +124,24 @@ PlasmoidItem {
     property bool hasWired: false
     property bool wiredOn: false
     property string wiredName: ""
+    // The connected Wi-Fi's signal, 0 to 100, and whether NetworkManager reaches
+    // the internet through it (nmcli networking connectivity: full, limited, portal…).
+    property int wifiSignal: 0
+    property bool online: true
+    // Connected but without internet: a yellow mark on the icon, as on low battery.
+    readonly property bool wifiLimited: wifiConnected && !online
+    // Kora's levels: the dot, then one arc more each.
+    readonly property string wifiSignalIcon: wifiLimited
+        ? "network-wireless-" + Math.min(100, Math.round(wifiSignal / 20) * 20) + "-limited-symbolic"
+        : wifiSignal >= 80 ? "network-wireless-signal-excellent-symbolic"
+        : wifiSignal >= 55 ? "network-wireless-signal-good-symbolic"
+        : wifiSignal >= 30 ? "network-wireless-signal-ok-symbolic"
+        : "network-wireless-signal-weak-symbolic"
     // The pill shows one: Wi-Fi while it is connected, else the cable if it is.
-    readonly property string networkIcon: wifiConnected ? "network-wireless-symbolic"
+    // Wi-Fi on but not connected: all the arcs dim.
+    readonly property string networkIcon: wifiConnected ? wifiSignalIcon
         : wiredOn ? "network-wired-symbolic"
-        : hasWifi ? (wifiOn ? "network-wireless-symbolic" : "network-wireless-disconnected-symbolic")
+        : hasWifi ? (wifiOn ? "network-wireless-signal-none-symbolic" : "network-wireless-disconnected-symbolic")
         : hasWired ? "network-wired-disconnected-symbolic" : ""
 
     readonly property string volumeIcon: muted || volumePercent === 0 ? "audio-volume-muted-symbolic"
@@ -142,7 +156,7 @@ PlasmoidItem {
 
     readonly property string nightQuery: "n=org.kde.KWin.NightLight; p='qdbus6 org.kde.KWin /org/kde/KWin/NightLight org.freedesktop.DBus.Properties.Get'; echo night=$($p $n enabled),$($p $n running)"
 
-    readonly property string wifiQuery: "echo net=; nmcli -t -f TYPE,STATE,CONNECTION device"
+    readonly property string wifiQuery: "echo net=$(nmcli -t -f IN-USE,SIGNAL device wifi list --rescan no | sed -n 's/^\\*://p' | head -n 1),$(nmcli networking connectivity); nmcli -t -f TYPE,STATE,CONNECTION device"
 
     // Plasma's tray stays out of sight: the notifications live in it, and it holds
     // the widgets we have no controls for, which open in the "more" page. The panel
@@ -236,6 +250,7 @@ PlasmoidItem {
     PlasmaNM.EnabledConnections { id: enabledConnections }
     PlasmaNM.NetworkStatus {
         onActiveConnectionsChanged: root.run(root.wifiQuery)
+        onConnectivityChanged: root.run(root.wifiQuery)
     }
     Brightness.ScreenBrightnessControl { id: screenBrightness; isSilent: false }
     readonly property var nightLight: Brightness.NightLightInhibitor
@@ -268,6 +283,9 @@ PlasmoidItem {
         onNewData: (source, data) => {
             const out = data.stdout.trim();
             if (out.indexOf("net=") === 0) {
+                const status = out.split("\n")[0].slice(4).split(",");
+                root.wifiSignal = parseInt(status[0]) || 0;
+                root.online = status[1] === "full" || status[1] === "unknown";
                 root.readDevices(out.split("\n").slice(1));
             } else if (out.indexOf("night=") === 0) {
                 root.nightEnabled = out.indexOf("night=true") === 0;
@@ -394,7 +412,16 @@ PlasmoidItem {
                     radius: width / 2
                     color: "#ff1a0a"
                 }
-                PillIcon { visible: root.networkIcon !== ""; source: root.networkIcon }
+                PillIcon {
+                    visible: root.networkIcon !== ""
+                    source: root.networkIcon
+                    // The icon is a mask, one colour: the mark goes on top in yellow.
+                    Kirigami.Icon {
+                        anchors.fill: parent
+                        visible: root.wifiLimited
+                        source: Qt.resolvedUrl("../icons/wifi-limited-mark.svg")
+                    }
+                }
                 PillIcon { visible: root.bluetoothConnected; source: "bluetooth-active-symbolic" }
                 PillIcon { source: root.volumeIcon }
                 // Red on the red beat can't be read: orange, chosen by the user.

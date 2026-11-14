@@ -16,6 +16,7 @@ Item {
     // Icons of apps keep their colours.
     property bool monochrome: true
     signal clicked()
+    signal rightClicked()
     default property alias trailing: extra.data
 
     readonly property color ink: !current ? Kirigami.Theme.textColor
@@ -33,7 +34,8 @@ Item {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
-        onClicked: row.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: event => event.button === Qt.RightButton ? row.rightClicked() : row.clicked()
     }
     RowLayout {
         anchors.fill: parent

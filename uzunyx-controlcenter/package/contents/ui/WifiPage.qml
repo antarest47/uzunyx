@@ -1,6 +1,7 @@
 /*
- * The Wi-Fi networks, from Plasma's own model: click one to connect. A secured
- * network that isn't saved asks for its password here.
+ * The Wi-Fi networks, from Plasma's own model: click one to connect, or the
+ * connected one to disconnect. A secured network that isn't saved asks for its
+ * password here. A saved one has a menu on right click to forget it, password and all.
  */
 import QtQuick
 import QtQuick.Layouts
@@ -33,6 +34,9 @@ DetailPage {
             readonly property bool needsPassword: !model.Uuid && model.SecurityType !== PlasmaNM.Enums.NoneSecurity
             readonly property bool asking: page.askingFor === model.ItemUniqueName
 
+            function disconnect() {
+                page.handler.deactivateConnection(model.ConnectionPath, model.DevicePath);
+            }
             function connect(password) {
                 page.askingFor = "";
                 if (model.Uuid) {
@@ -51,12 +55,13 @@ DetailPage {
             ListRow {
                 iconSource: network.model.ConnectionIcon
                 title: network.model.Name
-                subtitle: network.connected ? i18n("Connected")
+                subtitle: network.connected ? i18n("Connected · click to disconnect")
                     : network.connecting ? i18n("Connecting…")
                     : network.model.SecurityTypeString
                 current: network.connected
                 onClicked: {
                     if (network.connected || network.connecting) {
+                        network.disconnect();
                         return;
                     }
                     if (network.needsPassword) {
@@ -65,11 +70,24 @@ DetailPage {
                         network.connect();
                     }
                 }
-                PlasmaComponents.ToolButton {
-                    visible: network.connected || network.connecting
-                    icon.name: "network-disconnect-symbolic"
-                    onClicked: page.handler.deactivateConnection(network.model.ConnectionPath, network.model.DevicePath)
-                    PlasmaComponents.ToolTip { text: i18n("Disconnect") }
+                onRightClicked: {
+                    if (network.model.Uuid) {
+                        menu.popup();
+                    }
+                }
+                PlasmaComponents.Menu {
+                    id: menu
+                    PlasmaComponents.MenuItem {
+                        text: network.connected || network.connecting ? i18n("Disconnect") : i18n("Connect")
+                        icon.name: network.connected || network.connecting ? "network-disconnect-symbolic" : "network-connect-symbolic"
+                        onClicked: network.connected || network.connecting ? network.disconnect() : network.connect()
+                    }
+                    PlasmaComponents.MenuSeparator {}
+                    PlasmaComponents.MenuItem {
+                        text: i18n("Forget network")
+                        icon.name: "edit-delete-symbolic"
+                        onClicked: page.handler.removeConnection(network.model.ConnectionPath)
+                    }
                 }
             }
             RowLayout {

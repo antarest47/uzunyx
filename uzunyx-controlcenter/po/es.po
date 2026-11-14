@@ -77,6 +77,12 @@ msgstr "Desconectar"
 msgid "Connect"
 msgstr "Conectar"
 
+msgid "Connected · click to disconnect"
+msgstr "Conectado · clic para desconectar"
+
+msgid "Forget network"
+msgstr "Olvidar red"
+
 msgid "Network settings"
 msgstr "Ajustes de red"
 
