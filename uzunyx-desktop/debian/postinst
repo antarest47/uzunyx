@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+# Flathub for the whole system, so Discover offers its apps from the start. It
+# needs the network: without it, the next upgrade of this package tries again.
+if [ "$1" = configure ] && command -v flatpak >/dev/null 2>&1; then
+    flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo ||
+        echo "uzunyx-desktop: no se pudo agregar Flathub (¿sin conexión?); se intentará al actualizar." >&2
+fi
+
+exit 0

@@ -4,7 +4,7 @@
 # they can be left out or removed (e.g. while a KWin update waits for the
 # effects to be rebuilt) without taking the rest away.
 NAME    := uzunyx-desktop
-VERSION := 0.1.20
+VERSION := 0.1.21
 
 BUILD := build
 DEB   := $(BUILD)/$(NAME)_$(VERSION)_all.deb
@@ -16,6 +16,7 @@ all:
 
 deb: clean
 	install -Dm644 debian/control $(BUILD)/root/DEBIAN/control
+	install -Dm755 debian/postinst $(BUILD)/root/DEBIAN/postinst
 	install -Dm644 README.md $(BUILD)/root/usr/share/doc/$(NAME)/README.md
 	install -Dm644 zram/uzunyx.conf $(BUILD)/root/usr/lib/systemd/zram-generator.conf.d/uzunyx.conf
 	sed -i 's/@VERSION@/$(VERSION)/' $(BUILD)/root/DEBIAN/control

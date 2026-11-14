@@ -27,7 +27,9 @@ Depends: uzunyx-lookandfeel (>= 0.24.0), uzunyx-archive-keyring,
  uzunyx-logout (>= 0.1.0),
  tsunyx-launcher (>= 1.11.0),
  xdg-user-dirs,
- systemd-zram-generator
+ systemd-zram-generator,
+ flatpak,
+ plasma-discover-backend-flatpak
 Recommends: uzunyx-outline,
  uzunyx-altguard,
  lunyx,
@@ -45,3 +47,6 @@ Description: Uzunyx desktop for KDE Plasma (metapackage)
  effects (window outline, open/close and genie animations) and the Alt guard
  plugin, which are built for one exact KWin version, the boot splash and the GRUB theme and hidden
  menu, which change how the PC boots, and the battery widget.
+ .
+ Also Flatpak, with Flathub added for the whole system and its apps in
+ Discover.
