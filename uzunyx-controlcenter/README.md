@@ -20,3 +20,8 @@ portapapeles, con imágenes, y los dispositivos extraíbles, con `uzunyx-control
 
 La bandeja de Plasma sigue corriendo pero no se ve en el panel; «Más» abre sus widgets
 restantes dentro del centro de control.
+
+El wifi de la píldora sigue la señal con los niveles de Kora; encendido sin conectar se ve
+gris, y conectado sin internet lleva una exclamación amarilla. En la lista de redes, clic
+en la conectada la desconecta y clic derecho en una guardada permite olvidarla (borra la
+conexión y la contraseña).
