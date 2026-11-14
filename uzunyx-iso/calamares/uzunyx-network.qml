@@ -3,11 +3,12 @@
 // or that it's connected already. Without internet it installs all the same, so
 // it informs and doesn't warn, and "Siguiente" always goes on. The welcome no
 // longer checks for internet. Approved mockup of 2026-11-14.
-// Calamares has no way to run a command from QML: uzunyx-calamares-network
-// runs through Plasma's executable data source.
+// Calamares can't run commands from QML, and Plasma's executable data source
+// crashed it on loading (ISO 0.2.2): uzunyx-calamares starts
+// uzunyx-calamares-network next to it, and this page reads its state.json and
+// writes request.json with XMLHttpRequest. Only QtQuick, nothing of Plasma.
 import QtQuick
 import QtQuick.Controls
-import org.kde.plasma.plasma5support as P5Support
 
 Item {
     id: page
@@ -15,7 +16,7 @@ Item {
     readonly property color accent: "#e62967"
     readonly property color text: "#f2f2f7"
     readonly property color dim: "#c8ccd6"
-    readonly property string helper: "/usr/libexec/uzunyx-calamares-network"
+    readonly property string dir: "file:///run/uzunyx-calamares-network/"
     readonly property string kora: "file:///usr/share/icons/kora/panel/16/"
 
     property var net: null
@@ -25,17 +26,48 @@ Item {
     property string chosen: ""
     property string connecting: ""
     property string failed: ""
+    property real lastRequest: 0
 
-    function quote(text) {
-        return "'" + text.replace(/'/g, "'\\''") + "'";
-    }
-    function run(args) {
-        runner.connectSource(helper + " " + args);
+    function request(data) {
+        lastRequest = Date.now();
+        data.id = lastRequest;
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", dir + "request.json");
+        xhr.send(JSON.stringify(data));
     }
     function connect(network, password) {
         connecting = network.ssid;
         failed = "";
-        run("connect " + quote(network.ssid) + (password ? " " + quote(password) : ""));
+        request({action: "connect", ssid: network.ssid, password: password});
+    }
+    function read() {
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState !== XMLHttpRequest.DONE || !xhr.responseText) {
+                return;
+            }
+            let state = null;
+            try {
+                state = JSON.parse(xhr.responseText);
+            } catch (e) {
+                return;
+            }
+            net = state;
+            const answer = state.answer;
+            if (connecting && answer && answer.id === lastRequest) {
+                connecting = "";
+                if (answer.ok) {
+                    chosen = "";
+                } else {
+                    failed = answer.ssid;
+                }
+            }
+            if (!chosen || connecting) {
+                networks = state.networks;
+            }
+        };
+        xhr.open("GET", dir + "state.json");
+        xhr.send();
     }
     function signalIcon(signal) {
         return kora + (signal >= 80 ? "network-wireless-signal-excellent-symbolic.svg"
@@ -44,42 +76,12 @@ Item {
             : "network-wireless-signal-weak-symbolic.svg");
     }
 
-    P5Support.DataSource {
-        id: runner
-        engine: "executable"
-        onNewData: (source, data) => {
-            disconnectSource(source);
-            let out = null;
-            try {
-                out = JSON.parse(data.stdout.trim());
-            } catch (e) {
-                return;
-            }
-            // Changing sources inside onNewData overflows the stack: later.
-            if (out.state) {
-                page.net = out.state;
-                if (!page.chosen || page.connecting) {
-                    page.networks = out.state.networks;
-                }
-            } else if (out.connect !== undefined) {
-                page.connecting = "";
-                if (out.ok) {
-                    page.chosen = "";
-                } else {
-                    page.failed = out.connect;
-                }
-                Qt.callLater(page.run, "state");
-            } else if (out.wifiOn) {
-                Qt.callLater(page.run, "state --rescan");
-            }
-        }
-    }
     Timer {
-        interval: 4000
+        interval: 1000
         running: page.visible
         repeat: true
         triggeredOnStart: true
-        onTriggered: page.run(page.net ? "state" : "state --rescan")
+        onTriggered: page.read()
     }
 
     Rectangle {
@@ -274,7 +276,7 @@ Item {
             }
             Button {
                 text: "Encender wifi"
-                onClicked: page.run("wifi-on")
+                onClicked: page.request({action: "wifi-on"})
             }
         }
     }

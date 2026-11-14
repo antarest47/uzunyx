@@ -1,4 +1,13 @@
 #!/bin/sh
 export QT_QPA_PLATFORMTHEME=kde
 export XDG_CONFIG_HOME=/etc/calamares/theme
-exec calamares "$@"
+# The "Conexión" page (uzunyx-network.qml) talks to its helper through files in
+# /run/uzunyx-calamares-network, with XMLHttpRequest.
+export QML_XHR_ALLOW_FILE_READ=1 QML_XHR_ALLOW_FILE_WRITE=1
+/usr/libexec/uzunyx-calamares-network serve &
+helper=$!
+calamares "$@"
+status=$?
+kill "$helper" 2>/dev/null
+rm -rf /run/uzunyx-calamares-network
+exit $status
