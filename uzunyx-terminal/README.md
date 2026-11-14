@@ -41,3 +41,9 @@ nombre y las etiquetas en verde ANSI, el acento en los esquemas de Konsole.
 Ctrl+R y la flecha arriba abren Atuin, con la lista de comandos recientes; se
 filtra escribiendo, Enter ejecuta y Tab deja el comando para editarlo. Solo
 sincroniza si se inicia sesión en una cuenta.
+
+Desde 0.7.2 (elegidas por el usuario el 2026-11-14) trae también herramientas de terminal
+comunes, como dependencias para que lleguen a la ISO (mmdebstrap no instala los
+`Recommends`): btop, htop, curl, wget, tree, ncdu, eza y micro. Se probaron y quedaron
+fuera, por ahora, tealdeer (`tldr`, que pide `tldr --update` a cada usuario), bat, ripgrep,
+fd y zoxide.
