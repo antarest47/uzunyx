@@ -26,3 +26,7 @@ su propio repositorio, al lado de este):
 
     sudo apt install ./uzunyx-desktop/build/uzunyx-desktop_*_all.deb \
         ./*/build/*.deb ../tsunyx-launcher/build/*.deb
+
+Desde 0.1.21 trae Flatpak y su backend de Discover, y agrega Flathub para todo el sistema
+al instalarse (`postinst`). Hace falta conexión; sin ella, lo vuelve a intentar en la
+próxima actualización del paquete.
