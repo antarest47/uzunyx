@@ -59,7 +59,15 @@ mmdebstrap --mode=unshare --variant=important --architectures=amd64 \
     "deb http://deb.debian.org/debian testing-updates main contrib non-free non-free-firmware" \
     "deb http://deb.debian.org/debian-security testing-security main contrib non-free non-free-firmware"
 
-sqfstar -comp zstd -Xcompression-level 15 "$ISO_TREE/live/filesystem.squashfs" < "$build/rootfs.tar"
+# The tarball has no entry for / itself, so sqfstar made it with the owner of
+# whoever ran it, mode 0777: on installed systems / belonged to the first user
+# (uid 1000), and systemd-tmpfiles refused to work under it ("unsafe path
+# transition"), so /tmp/.ICE-unix was missing, ksmserver crashed and the
+# splash waited its 30 s (ISOs up to 0.2.2).
+sqfstar -comp zstd -Xcompression-level 15 -root-uid 0 -root-gid 0 -root-mode 0755 \
+    "$ISO_TREE/live/filesystem.squashfs" < "$build/rootfs.tar"
+unsquashfs -lln "$ISO_TREE/live/filesystem.squashfs" | head -1 | grep -q '^drwxr-xr-x 0/0 ' ||
+    { echo "squashfs: / is not root's 0755" >&2; exit 1; }
 rm "$build/rootfs.tar"
 
 cp "$ISO_DIR/grub.cfg" "$ISO_TREE/boot/grub/grub.cfg"

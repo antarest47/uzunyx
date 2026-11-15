@@ -130,6 +130,13 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   se pide en el arranque, en la pantalla de Plymouth; antes `/boot` iba dentro del cifrado
   y la pedía GRUB, en texto sobre el logo del fabricante, y no la aceptaba (LUKS2 con
   Argon2, en una laptop de pruebas). La raíz usa el sistema de archivos que se elija.
+- La raíz del squashfs es de root con `0755` (`sqfstar -root-uid 0 -root-gid 0 -root-mode
+  0755`, y `build-iso.sh` lo comprueba): el `.tar` de mmdebstrap no trae `/`, y `sqfstar`
+  la creaba con el dueño de quien arma la ISO y `0777`. Hasta la 0.2.2 los sistemas
+  instalados tenían `/` del primer usuario: `systemd-tmpfiles` no creaba `/tmp/.ICE-unix`
+  («unsafe path transition»), `ksmserver` se caía y la pantalla de carga de Plasma esperaba
+  sus 30 s (visto en una laptop el 2026-11-15). `uzunyx-desktop` ≥ 0.1.22 lo corrige en
+  los sistemas ya instalados.
 - Secure Boot no está probado; con él apagado arranca. La ISO usa el GRUB sin firmar
   de `grub-mkrescue`.
 - `/etc/os-release` sigue diciendo Debian, a propósito (ver `uzunyx-terminal`).

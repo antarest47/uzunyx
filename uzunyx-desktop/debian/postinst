@@ -8,4 +8,15 @@ if [ "$1" = configure ] && command -v flatpak >/dev/null 2>&1; then
         echo "uzunyx-desktop: no se pudo agregar Flathub (¿sin conexión?); se intentará al actualizar." >&2
 fi
 
+# Systems installed from the ISOs up to 0.2.2 have / owned by the first user,
+# mode 0777 (the ISO's squashfs was made so): systemd-tmpfiles refuses to work
+# under it, so /tmp/.ICE-unix was missing and the session started without its
+# session manager, and the user could replace anything at the top level.
+if [ "$1" = configure ] && [ "$(stat -c '%u:%g %a' /)" != "0:0 755" ]; then
+    echo "uzunyx-desktop: / era de $(stat -c '%U:%G %a' /); pasa a root:root 755." >&2
+    chown root:root /
+    chmod 755 /
+    systemd-tmpfiles --create >/dev/null 2>&1 || true
+fi
+
 exit 0

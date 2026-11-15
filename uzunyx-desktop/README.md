@@ -30,3 +30,8 @@ su propio repositorio, al lado de este):
 Desde 0.1.21 trae Flatpak y su backend de Discover, y agrega Flathub para todo el sistema
 al instalarse (`postinst`). Hace falta conexión; sin ella, lo vuelve a intentar en la
 próxima actualización del paquete.
+
+Desde 0.1.22 el `postinst` devuelve `/` a `root:root` con `0755` si no lo está: las
+instalaciones desde las ISO hasta la 0.2.2 tenían `/` del primer usuario con `0777`
+(ver `uzunyx-iso`). Con eso `systemd-tmpfiles` se negaba a crear `/tmp/.ICE-unix`,
+`ksmserver` se caía y la pantalla de carga esperaba 30 s.
