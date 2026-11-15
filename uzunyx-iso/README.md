@@ -81,6 +81,13 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   usuario prefirió dejarlo). Archivo de intercambio por defecto (`initialSwapChoice: file`;
   Debian trae `none`), y además zram desde `uzunyx-desktop`; decidido con el usuario el
   2026-11-08.
+- Calamares corre como root en Xwayland, cuyo teclado quedaba en inglés aunque la sesión
+  tuviera el del menú de arranque (`keyboard-layouts=latam`): `uzunyx-calamares` le pone
+  con `setxkbmap` el de `/etc/default/keyboard`, que escribe live-config (desde 0.2.2,
+  2026-11-15; la contraseña del wifi salía con otras teclas).
+- Ojo para ver la contraseña en los campos de usuario, root y cifrado (desde 0.2.2, pedido
+  por el usuario el 2026-11-15): `calamares/password-reveal.patch`, que `make calamares`
+  aplica junto con el de la leyenda.
 - Tema oscuro: `pkexec` borra el entorno, así que Calamares corre por
   `/usr/libexec/uzunyx-calamares` (con su acción de polkit) con los colores de Akane en
   `/etc/calamares/theme/kdeglobals`. Calamares pinta la leyenda de particiones en negro

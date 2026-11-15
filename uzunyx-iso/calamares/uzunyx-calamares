@@ -4,6 +4,15 @@ export XDG_CONFIG_HOME=/etc/calamares/theme
 # The "Conexión" page (uzunyx-network.qml) talks to its helper through files in
 # /run/uzunyx-calamares-network, with XMLHttpRequest.
 export QML_XHR_ALLOW_FILE_READ=1 QML_XHR_ALLOW_FILE_WRITE=1
+# Calamares runs as root on Xwayland, whose keymap stayed in English while the
+# session had the layout of the boot menu (live-config writes it to
+# /etc/default/keyboard): the Wi-Fi password came out with other keys. Its
+# "Teclado" page changes it later the same way.
+if [ -r /etc/default/keyboard ]; then
+    . /etc/default/keyboard
+    [ -n "$XKBLAYOUT" ] && setxkbmap -model "${XKBMODEL:-pc105}" -layout "$XKBLAYOUT" \
+        -variant "$XKBVARIANT" ${XKBOPTIONS:+-option "$XKBOPTIONS"} || true
+fi
 /usr/libexec/uzunyx-calamares-network serve &
 helper=$!
 calamares "$@"
