@@ -43,6 +43,7 @@ ls "$tree"/pool/grub-efi_*.deb "$tree"/pool/grub-pc_*.deb >/dev/null
 cal=/etc/calamares
 mkdir -p "$cal/branding/uzunyx"
 cp "$in/calamares/locale.conf" "$cal/modules/locale.conf"
+cp "$in/calamares/keyboard.conf" "$cal/modules/keyboard.conf"
 cp -r "$in/calamares/branding.desc" "$in/calamares/show.qml" "$in/calamares/slides" "$cal/branding/uzunyx/"
 cp "$in/logo.png" "$cal/branding/uzunyx/logo.png"
 sed -i 's/^branding: .*/branding: uzunyx/' "$cal/settings.conf"
@@ -73,10 +74,15 @@ cp "$in/calamares/uzunyx-apps.qml" "$in/calamares/uzunyx-network.qml" "$in/calam
 cp "$in/calamares/uzunyx-apps.conf" "$in/calamares/uzunyx-network.conf" "$in/calamares/uzunyx-install-apps.conf" "$cal/modules/"
 install -Dm755 "$in/calamares/uzunyx-install-apps" /usr/libexec/uzunyx-install-apps
 install -Dm755 "$in/calamares/uzunyx-calamares-network" /usr/libexec/uzunyx-calamares-network
-sed -i -e '0,/^  - welcome$/s//  - welcome\n  - notesqml@network/' \
+# "Teclado" right after the welcome too, as Ubuntu: it changes the layout as it
+# is chosen, so the Wi-Fi, user and encryption passwords are typed with it.
+# Only the first "keyboard" (the page; the second one is the job) moves.
+sed -i -e '0,/^  - keyboard$/{/^  - keyboard$/d}' "$cal/settings.conf"
+sed -i -e '0,/^  - welcome$/s//  - welcome\n  - keyboard\n  - notesqml@network/' \
     -e '0,/^  - users$/s//  - users\n  - packagechooserq@apps/' \
     -e 's/^  - sources-final$/&\n  - contextualprocess@uzunyx-apps/' "$cal/settings.conf"
 grep -q '^  - notesqml@network$' "$cal/settings.conf"
+[ "$(grep -c "^  - keyboard$" "$cal/settings.conf")" = 2 ]
 cat >> "$cal/settings.conf" <<'EOF'
 
 instances:

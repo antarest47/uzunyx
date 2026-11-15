@@ -85,6 +85,11 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   tuviera el del menú de arranque (`keyboard-layouts=latam`): `uzunyx-calamares` le pone
   con `setxkbmap` el de `/etc/default/keyboard`, que escribe live-config (desde 0.2.2,
   2026-11-15; la contraseña del wifi salía con otras teclas).
+- «Teclado» va justo después de la bienvenida (desde 0.2.2, idea del usuario, como Ubuntu):
+  la página cambia la distribución al elegirla, así que las contraseñas del wifi, del
+  usuario y del cifrado ya se escriben con ella. Empieza en la de la sesión
+  (`calamares/keyboard.conf`, `guessLayout: false`): adivinando por el idioma, `es_UY`
+  daba `es`, el de España, y no el `latam` del menú de arranque.
 - Ojo para ver la contraseña en los campos de usuario, root y cifrado (desde 0.2.2, pedido
   por el usuario el 2026-11-15): `calamares/password-reveal.patch`, que `make calamares`
   aplica junto con el de la leyenda.
