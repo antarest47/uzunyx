@@ -53,8 +53,14 @@ msgstr "Pantalla de arranque"
 msgid "All users, takes a while"
 msgstr "Todos los usuarios, tarda un poco"
 
-msgid "The panels and the icons are not touched. The login and boot screens ask for the administrator password."
-msgstr "Los paneles y los iconos no se tocan. El inicio de sesión y el arranque piden la contraseña de administrador."
+msgid "The login and boot screens ask for the administrator password."
+msgstr "El inicio de sesión y el arranque piden la contraseña de administrador."
+
+msgid "The login screen asks for the administrator password."
+msgstr "El inicio de sesión pide la contraseña de administrador."
+
+msgid "The panels and the icons are not touched."
+msgstr "Los paneles y los iconos no se tocan."
 
 msgid "Window focus"
 msgstr "Foco de las ventanas"

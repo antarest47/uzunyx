@@ -68,7 +68,9 @@ normal solo cambian los colores y la decoración.
   y pantalla de arranque (apagadas: afectan a todos y piden contraseña; la
   de arranque solo aparece si está `uzunyx-plymouth`). Sus vistas previas
   muestran la edición elegida (fondos y cielos con `wallpaperPreview`,
-  logo, y los colores de `uzunyx-colors` escritos en `main.qml`). Ni SDDM ni
+  logo, y los colores de `uzunyx-colors` escritos en `main.qml`). Desde 0.5.1
+  el contenido mide como máximo 38 unidades de grilla y queda centrado: al
+  maximizar, las tarjetas no se ensanchan (pedido por el usuario). Ni SDDM ni
   Plymouth se leen para marcar la edición actual: siempre se ofrecen. «Aplicar» ejecuta
   `uzunyx-edition` y muestra su error si falla.
   Debajo, desde 0.4.0, **«Foco de las ventanas»** (desde 0.5.0, tres
