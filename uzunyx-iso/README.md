@@ -106,6 +106,13 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   si existe el `.desktop`, que solo hay en la sesión en vivo).
 - El cargador se instala desde un repositorio en la propia ISO (`pool/`, `dists/`),
   porque depende de la máquina: GRUB para BIOS o para UEFI.
+- Instalar sin red de la ISO: su repositorio (`pool/`) trae los metapaquetes `grub-efi` y
+  `grub-pc`, que pide `calamares-bootloader-config`, y la lista que quita Calamares no
+  nombra los `live-task-*`, que no están en la ISO (sin internet, apt no los conoce y
+  falla con 100). Con red, el sistema instalado usa el `resolv.conf` de la sesión en vivo
+  (`calamares-sources-media` lo copia): el del squashfs era el de la máquina que armó la
+  ISO, y en otra red apt se quedaba sin DNS (pasó con 0.2.1 y 0.2.2 en una laptop con wifi;
+  en la VM no, porque llega a ese DNS). Ahora el squashfs lo trae vacío.
 - Secure Boot no está probado; con él apagado arranca. La ISO usa el GRUB sin firmar
   de `grub-mkrescue`.
 - `/etc/os-release` sigue diciendo Debian, a propósito (ver `uzunyx-terminal`).

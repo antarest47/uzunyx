@@ -56,6 +56,13 @@ sed -i "/^ *- 'live-task-/d" "$cal/modules/packages.conf"
 ! grep -q "live-task-" "$cal/modules/packages.conf"
 helpers=/usr/share/calamares/helpers
 sed -i 's/^RELEASE=.*/RELEASE="testing"/' "$helpers/calamares-sources-media"
+# The installed system is copied from the squashfs, whose resolv.conf is not the
+# live session's: without this, apt in it had no DNS even with internet, and
+# grub-efi and the removal of the live packages failed (0.2.1, 0.2.2). The
+# squashfs had the build machine's (build-iso.sh now empties it). NetworkManager
+# rewrites it on the installed system.
+sed -i 's#^rm -f \$CHROOT/etc/apt/sources.list.d/base.list$#&\ncp -L /etc/resolv.conf $CHROOT/etc/resolv.conf || true#' "$helpers/calamares-sources-media"
+grep -q '^cp -L /etc/resolv.conf' "$helpers/calamares-sources-media"
 cp "$in/calamares/calamares-sources-final" "$helpers/calamares-sources-final"
 chmod 755 "$helpers/calamares-sources-final"
 # "Aplicaciones" page after Users, and the extended selection downloaded once

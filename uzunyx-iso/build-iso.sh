@@ -53,6 +53,7 @@ mmdebstrap --mode=unshare --variant=important --architectures=amd64 \
     --customize-hook="sync-out /tmp/uzunyx-iso/tree $ISO_TREE" \
     --customize-hook="$sources_out" \
     --customize-hook='rm -rf "$1/tmp/uzunyx-iso" "$1/etc/apt/preferences.d/uzunyx-iso"' \
+    --customize-hook=': > "$1/etc/resolv.conf"' \
     testing "$build/rootfs.tar" \
     "deb http://deb.debian.org/debian testing main contrib non-free non-free-firmware" \
     "deb http://deb.debian.org/debian testing-updates main contrib non-free non-free-firmware" \
