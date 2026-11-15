@@ -64,7 +64,7 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
 - Página «Conexión» después de la bienvenida (desde 0.2.2, maqueta aprobada por el
   usuario el 2026-11-14): Calamares solo comprueba si hay internet, no conecta. Es
   `notesqml@network` con `calamares/uzunyx-network.qml`: estado (cable, wifi, sin
-  internet), lista de redes wifi con la contraseña dentro de la elegida y «Encender
+  internet), lista de redes wifi con la contraseña dentro de la elegida (con un ojo para verla) y «Encender
   wifi» si está apagado; informa sin advertir y «Siguiente» siempre sigue. Calamares no
   ejecuta comandos desde QML, y se probó con la fuente `executable` de `plasma5support`: `/usr/libexec/uzunyx-calamares` arranca a su lado
   `/usr/libexec/uzunyx-calamares-network serve` (`nmcli`), que escribe `state.json` cada

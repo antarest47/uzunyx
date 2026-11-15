@@ -187,16 +187,40 @@ Item {
                 TextField {
                     id: password
                     width: parent.width - connectButton.width - 8
-                    echoMode: TextInput.Password
+                    property bool shown: false
+                    echoMode: shown ? TextInput.Normal : TextInput.Password
                     placeholderText: "Contraseña"
                     color: page.text
+                    rightPadding: 34
                     background: Rectangle {
                         radius: 6
                         color: "#0d0e12"
                         border.color: password.activeFocus ? page.accent : "#343944"
                     }
+                    // Show or hide what's typed. Kora's view-hidden is the same open
+                    // eye as view-visible; the crossed-out one is hint.svg.
+                    Image {
+                        anchors.right: parent.right
+                        anchors.rightMargin: 9
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 16
+                        height: 16
+                        sourceSize: Qt.size(32, 32)
+                        source: "file:///usr/share/icons/kora/actions/16/"
+                            + (password.shown ? "hint.svg" : "view-visible.svg")
+                        opacity: eye.containsMouse || password.shown ? 1 : 0.6
+                        MouseArea {
+                            id: eye
+                            anchors.fill: parent
+                            anchors.margins: -6
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: password.shown = !password.shown
+                        }
+                    }
                     onVisibleChanged: {
                         text = "";
+                        shown = false;
                         if (visible) {
                             forceActiveFocus();
                         }
