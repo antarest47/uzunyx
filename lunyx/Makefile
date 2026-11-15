@@ -31,28 +31,36 @@ all:
 fetch:
 	test -d $(LUNYX_SRC)/.git || git clone $(LUNYX_URL) $(LUNYX_SRC)
 	git -C $(LUNYX_SRC) fetch --quiet $(LUNYX_URL)
-	git -C $(LUNYX_SRC) checkout --quiet $(LUNYX_COMMIT)
 	python3 fetch-wheels.py $(WHEELS)
 
-# The checkout must be exactly the pinned commit.
-check:
-	test "$$(git -C $(LUNYX_SRC) rev-parse HEAD)" = "$(LUNYX_COMMIT)"
-	test -z "$$(git -C $(LUNYX_SRC) status --porcelain)"
+# The files come from the pinned commit, not from whatever the checkout is on
+# (it's the Lunyx working repo: it can be on another branch or have changes).
+SRC := $(CURDIR)/$(BUILD)/src
 
-install: check
+check:
+	git -C $(LUNYX_SRC) cat-file -e $(LUNYX_COMMIT)^{commit}
+
+.PHONY: $(SRC)
+$(SRC): check
+	rm -rf $(SRC)
+	mkdir -p $(SRC)
+	git -C $(LUNYX_SRC) archive $(LUNYX_COMMIT) | tar -x -C $(SRC)
+
+install: $(SRC)
 	install -d $(DESTDIR)$(APP_DIR)/vendor
-	install -m644 $(LUNYX_SRC)/*.py $(LUNYX_SRC)/logo.png $(LUNYX_SRC)/VERSION $(DESTDIR)$(APP_DIR)/
+	install -m644 $(SRC)/*.py $(SRC)/logo.png $(SRC)/VERSION $(DESTDIR)$(APP_DIR)/
 	for w in $(WHEELS)/*.whl; do python3 -m zipfile -e $$w $(DESTDIR)$(APP_DIR)/vendor/; done
 	find $(DESTDIR)$(APP_DIR)/vendor -type d -exec chmod 755 {} +
 	find $(DESTDIR)$(APP_DIR)/vendor -type f -exec chmod 644 {} +
 	install -Dm755 lunyx $(DESTDIR)$(PREFIX)/bin/lunyx
-	install -Dm644 $(LUNYX_SRC)/flatpak/$(APP_ID).desktop $(DESTDIR)$(PREFIX)/share/applications/$(APP_ID).desktop
-	install -Dm644 $(LUNYX_SRC)/flatpak/lunyx-icon.png $(DESTDIR)$(PREFIX)/share/icons/hicolor/512x512/apps/$(APP_ID).png
-	install -Dm644 $(LUNYX_SRC)/THIRD_PARTY_LICENSES.md $(DESTDIR)$(PREFIX)/share/doc/$(NAME)/THIRD_PARTY_LICENSES.md
+	install -Dm644 $(SRC)/flatpak/$(APP_ID).desktop $(DESTDIR)$(PREFIX)/share/applications/$(APP_ID).desktop
+	install -Dm644 $(SRC)/flatpak/lunyx-icon.png $(DESTDIR)$(PREFIX)/share/icons/hicolor/512x512/apps/$(APP_ID).png
+	install -Dm644 $(SRC)/THIRD_PARTY_LICENSES.md $(DESTDIR)$(PREFIX)/share/doc/$(NAME)/THIRD_PARTY_LICENSES.md
 	install -Dm644 debian/copyright $(DESTDIR)$(PREFIX)/share/doc/$(NAME)/copyright
 
 deb: clean
 	$(MAKE) install DESTDIR=$(CURDIR)/$(BUILD)/root PREFIX=/usr
+	rm -rf $(SRC)
 	install -Dm644 debian/control $(BUILD)/root/DEBIAN/control
 	sed -i 's/@VERSION@/$(VERSION)/' $(BUILD)/root/DEBIAN/control
 	dpkg-deb --root-owner-group --build $(BUILD)/root $(DEB)
