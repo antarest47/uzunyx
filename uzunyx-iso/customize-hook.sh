@@ -23,16 +23,20 @@ LOCALES
 locale-gen
 
 # Offline repository on the ISO: Calamares installs the bootloader that fits
-# the machine from it, so those can't be chosen ahead of time.
+# the machine from it, so those can't be chosen ahead of time. Its helper
+# (calamares-bootloader-config) asks for the grub-efi metapackage: without it
+# here, a UEFI install without internet had no GRUB modules and grub-install
+# failed at the end (0.2.1 and 0.2.2).
 pool=/var/cache/uzunyx-iso-pool
 mkdir -p "$pool/partial"
-for packages in "grub-pc" "grub-efi-amd64 grub-efi-amd64-signed shim-signed" "cryptsetup-initramfs keyutils"; do
+for packages in "grub-pc" "grub-efi grub-efi-amd64 grub-efi-amd64-signed shim-signed" "cryptsetup-initramfs keyutils"; do
     apt-get -y --download-only -o Dir::Cache::archives="$pool" install $packages
 done
 rm -rf "$pool/partial" "$pool/lock"
 mkdir -p "$tree/pool" "$tree/dists/testing/main/binary-amd64"
 mv "$pool"/*.deb "$tree/pool/"
 rmdir "$pool"
+ls "$tree"/pool/grub-efi_*.deb "$tree"/pool/grub-pc_*.deb >/dev/null
 (cd "$tree" && apt-ftparchive packages pool > dists/testing/main/binary-amd64/Packages)
 
 # Calamares from Debian, as Uzunyx.
