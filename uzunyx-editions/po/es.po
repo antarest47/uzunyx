@@ -23,8 +23,11 @@ msgstr "Cian"
 msgid "Current edition"
 msgstr "Edición actual"
 
-msgid "Change, without touching the panels or the icons:"
-msgstr "Cambiar, sin tocar los paneles ni los iconos:"
+msgid "Edition"
+msgstr "Edición"
+
+msgid "What changes with the edition"
+msgstr "Qué cambia con la edición"
 
 msgid "Theme and colors"
 msgstr "Tema y colores"
@@ -38,26 +41,44 @@ msgstr "Pantalla de bloqueo"
 msgid "Launcher icon"
 msgstr "Icono del lanzador"
 
-msgid "Login screen too (all users; asks for the administrator password)"
-msgstr "También la pantalla de inicio de sesión (todos los usuarios; pide la contraseña de administrador)"
+msgid "Login screen"
+msgstr "Inicio de sesión"
 
-msgid "Boot screen too (all users; asks for the administrator password; takes a while)"
-msgstr "También la pantalla de arranque (todos los usuarios; pide la contraseña de administrador; tarda un poco)"
+msgid "All users"
+msgstr "Todos los usuarios"
 
-msgid "Applying…"
-msgstr "Aplicando…"
+msgid "Boot screen"
+msgstr "Pantalla de arranque"
 
-msgid "Keyboard shortcuts…"
-msgstr "Atajos de teclado…"
+msgid "All users, takes a while"
+msgstr "Todos los usuarios, tarda un poco"
 
-msgid "Window focus:"
-msgstr "Foco de las ventanas:"
+msgid "The panels and the icons are not touched. The login and boot screens ask for the administrator password."
+msgstr "Los paneles y los iconos no se tocan. El inicio de sesión y el arranque piden la contraseña de administrador."
+
+msgid "Window focus"
+msgstr "Foco de las ventanas"
+
+msgid "With a click"
+msgstr "Con un clic"
 
 msgid "Click to focus"
 msgstr "Clic para enfocar"
 
-msgid "Focus follows the mouse"
-msgstr "El foco sigue al ratón"
+msgid "Follows the mouse"
+msgstr "Sigue al ratón"
 
-msgid "Focus follows the mouse and raises the window"
-msgstr "El foco sigue al ratón y la ventana pasa al frente"
+msgid "Without changing the order"
+msgstr "Sin cambiar el orden"
+
+msgid "Follows and raises"
+msgstr "Sigue y la trae al frente"
+
+msgid "Brings it to the front"
+msgstr "Pasa adelante a los 300 ms"
+
+msgid "Keyboard shortcuts…"
+msgstr "Atajos de teclado…"
+
+msgid "Applying…"
+msgstr "Aplicando…"

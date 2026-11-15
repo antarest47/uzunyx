@@ -57,15 +57,22 @@ normal solo cambian los colores y la decoración.
     Antes, `org.uzunyx.edition.sddm`.
 - **Módulo «Edición de Uzunyx»** (`kcm_uzunyx_editions`, en Configuración
   del sistema > Colores y temas; `kcmshell6 kcm_uzunyx_editions`): C++
-  (`kcm/src/kcm.cpp`, `KQuickConfigModule`) + QML (`kcm/ui/main.qml`). Dos
-  tarjetas con el fondo y el logo de cada edición (marca la actual, leída de
-  `LookAndFeelPackage` en `kdeglobals`) y casillas: tema y colores, fondo,
-  bloqueo, icono del lanzador (marcadas), pantalla de inicio de sesión y
-  pantalla de arranque (desmarcadas: afectan a todos y piden contraseña;
-  la de arranque solo aparece si está `uzunyx-plymouth`). Ni SDDM ni
+  (`kcm/src/kcm.cpp`, `KQuickConfigModule`) + QML (`kcm/ui/main.qml`).
+  Desde 0.5.0 (maqueta aprobada por el usuario el 2026-11-15) todo son
+  tarjetas con una vista previa dibujada (`ToggleCard.qml`; aro del color
+  de resaltado y ✓ cuando está elegida, vista previa atenuada si no), sin
+  casillas ni desplegable. Dos tarjetas con el fondo y el logo de cada
+  edición (marca la actual, leída de `LookAndFeelPackage` en `kdeglobals`)
+  y, debajo, «Qué cambia con la edición», que se encienden y apagan: tema y
+  colores, fondo, bloqueo, icono del lanzador (encendidas), inicio de sesión
+  y pantalla de arranque (apagadas: afectan a todos y piden contraseña; la
+  de arranque solo aparece si está `uzunyx-plymouth`). Sus vistas previas
+  muestran la edición elegida (fondos y cielos con `wallpaperPreview`,
+  logo, y los colores de `uzunyx-colors` escritos en `main.qml`). Ni SDDM ni
   Plymouth se leen para marcar la edición actual: siempre se ofrecen. «Aplicar» ejecuta
   `uzunyx-edition` y muestra su error si falla.
-  Debajo, desde 0.4.0, **«Foco de las ventanas»**: clic para enfocar (el de
+  Debajo, desde 0.4.0, **«Foco de las ventanas»** (desde 0.5.0, tres
+  tarjetas con dos ventanas y el puntero, `MiniWindow.qml` y `Pointer.qml`): clic para enfocar (el de
   KWin), el foco sigue al ratón (`[Windows] FocusPolicy=FocusFollowsMouse`
   en el `kwinrc` del usuario: la ventana recibe el teclado pero no sube al
   frente hasta el clic; al pasar al escritorio o al panel la última conserva
