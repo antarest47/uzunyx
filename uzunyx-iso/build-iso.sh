@@ -25,8 +25,10 @@ cp "$ISO_DIR/../uzunyx-welcome/art/akane-sora.png" "$ISO_DIR/../uzunyx-welcome/c
 mkdir -p "$ISO_TREE"
 # SOURCES=1: also the sources of Debian's packages, for publishing the ISO.
 sources_out=true
+SOURCES_CACHE=${SOURCES_CACHE:-$HOME/claude/uzunyx-sources-cache}
 if [ "$SOURCES" = 1 ]; then
     touch "$in/with-sources"
+    "$ISO_DIR/sources-cache.sh" list "$SOURCES_CACHE" "$in/cached.txt"
     sources_out="sync-out /tmp/uzunyx-iso/sources $build/sources"
 fi
 
@@ -75,6 +77,7 @@ grub-mkrescue -o "$build/uzunyx-$version-amd64.iso" "$ISO_TREE" -- -volid UZUNYX
 cp "$ISO_TREE/packages.txt" "$build/uzunyx-$version-packages.txt"
 ls -l "$build/uzunyx-$version-amd64.iso"
 if [ "$SOURCES" = 1 ]; then
+    "$ISO_DIR/sources-cache.sh" merge "$SOURCES_CACHE" "$build/sources"
     # GitHub takes files up to 2 GiB. The patch is Calamares' only change.
     cp "$ISO_DIR/calamares/legend-colours.patch" "$build/sources/"
     tar -C "$build" -cf - sources | split -b 1900M -d - "$build/uzunyx-$version-sources.tar."

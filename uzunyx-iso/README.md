@@ -102,6 +102,10 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   primera ISO, y otra vez si `libkpmcore` cambia de versión mayor en Debian.
 - Para publicarla: `make iso SOURCES=1` deja también `packages.txt` y las fuentes de los
   paquetes de Debian en partes de 1,9 GB (`missing.txt` lista las que no pudo bajar).
+  Las fuentes quedan en `~/claude/uzunyx-sources-cache` (`SOURCES_CACHE=` para otra
+  carpeta, en el mismo disco que `build/`): el siguiente armado baja solo las que
+  cambiaron de versión (`sources-cache.sh`) y la caché pierde las que ya no van en la
+  ISO. Bajarlas todas llevó 2 horas (0.2.2, 975 paquetes, 6 GB).
   `make publish` sube primero las fuentes, la lista y `SHA256SUMS` a la release
   `v<versión>` de GitHub (con `gh`; `GITHUB=` para otro repositorio) y después la ISO,
   `SHA256SUMS` y `FUENTES.txt` (con el enlace a la release) a Cloudflare R2, en

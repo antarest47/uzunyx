@@ -180,9 +180,15 @@ SOURCES
     mkdir -p "$in/sources"
     cd "$in/sources"
     # A Debian package rebuilt with a patch (calamares +uzunyx1): Debian's
-    # source; the patch is in calamares/ next to it.
+    # source; the patch is in calamares/ next to it. Those already in the
+    # cache (cached.txt, sources-cache.sh) aren't downloaded again; needed.txt
+    # says which ones the ISO takes from there.
     awk '{print $3 "=" $4}' "$tree/packages.txt" | sed 's/+uzunyx[0-9]*$//' | sort -u |
     while read -r source; do
+        version=${source#*=}
+        dsc=${source%%=*}_${version#*:}.dsc
+        echo "$dsc" >> needed.txt
+        grep -qxF "$dsc" "$in/cached.txt" && continue
         apt-get --download-only source "$source" || echo "$source" >> missing.txt
     done
     # The rest isn't in Debian: where its code is.
