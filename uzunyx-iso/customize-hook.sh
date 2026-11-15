@@ -96,6 +96,26 @@ grep -q '^instances:' "$cal/settings.conf" && [ "$(grep -c '^instances:' "$cal/s
 # user can still choose another.
 sed -i 's/^initialSwapChoice: .*/initialSwapChoice: file/' "$cal/modules/partition.conf"
 grep -q '^initialSwapChoice: file$' "$cal/modules/partition.conf"
+# /boot apart and never encrypted, as Ubuntu: with it inside the encrypted
+# system, GRUB asked for the password in text over the firmware's logo and
+# rejected it (Argon2 of LUKS2, 0.2.2 on a laptop). This way the system asks in
+# the initramfs, on the Plymouth screen, and Calamares leaves out the keyfile
+# and GRUB_ENABLE_CRYPTODISK by itself. "unknown" is the filesystem the user
+# picks.
+! grep -q '^partitionLayout:' "$cal/modules/partition.conf"
+cat >> "$cal/modules/partition.conf" <<'EOF'
+
+partitionLayout:
+    - name: "boot"
+      filesystem: "ext4"
+      noEncrypt: true
+      mountPoint: "/boot"
+      size: 1G
+    - name: "root"
+      filesystem: "unknown"
+      mountPoint: "/"
+      size: 100%
+EOF
 sed -e 's/^Name=.*/Name=Instalar Uzunyx/' -e '/^Name\[/d' -e '/^GenericName/d' -e '/^Comment/d' \
     -e 's/^Icon=.*/Icon=uzunyx-akane/' -i "/usr/share/applications/calamares-install-debian.desktop"
 

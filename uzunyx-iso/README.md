@@ -113,6 +113,11 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   (`calamares-sources-media` lo copia): el del squashfs era el de la máquina que armó la
   ISO, y en otra red apt se quedaba sin DNS (pasó con 0.2.1 y 0.2.2 en una laptop con wifi;
   en la VM no, porque llega a ese DNS). Ahora el squashfs lo trae vacío.
+- Particiones (desde 0.2.2): `/boot` aparte, de 1 GiB, en ext4 y nunca cifrada
+  (`partitionLayout` con `noEncrypt`), como Ubuntu. Con «Cifrar el sistema» la contraseña
+  se pide en el arranque, en la pantalla de Plymouth; antes `/boot` iba dentro del cifrado
+  y la pedía GRUB, en texto sobre el logo del fabricante, y no la aceptaba (LUKS2 con
+  Argon2, en una laptop de pruebas). La raíz usa el sistema de archivos que se elija.
 - Secure Boot no está probado; con él apagado arranca. La ISO usa el GRUB sin firmar
   de `grub-mkrescue`.
 - `/etc/os-release` sigue diciendo Debian, a propósito (ver `uzunyx-terminal`).

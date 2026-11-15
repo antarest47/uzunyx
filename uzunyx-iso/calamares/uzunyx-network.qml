@@ -124,7 +124,8 @@ Item {
         required property var modelData
         readonly property bool open: page.chosen === modelData.ssid
         readonly property bool asks: open && modelData.secure && !modelData.saved && !modelData.inUse
-        width: ListView.view.width
+        // Room for the scroll bar on the right, outside the cards.
+        width: ListView.view.width - (ListView.view.contentHeight > ListView.view.height ? 14 : 0)
         height: column.implicitHeight + 20
         radius: 10
         color: open || modelData.inUse ? "#22151c" : mouse.containsMouse ? "#1d2028" : "#171920"
