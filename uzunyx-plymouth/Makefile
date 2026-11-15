@@ -2,9 +2,10 @@
 # and uzunyx-sora. Same script (uzunyx.script); gen-theme.py makes each
 # edition's images (logo, icon, the shine frames that sweep over the name,
 # glint, password field). Also adds "splash" to the kernel command line
-# through /etc/default/grub.d, so the theme is shown.
+# through /etc/default/grub.d, so the theme is shown, and the keyboard layout
+# to the initramfs (initramfs-keymap.conf), for the disk password.
 NAME    := uzunyx-plymouth
-VERSION := 0.2.2
+VERSION := 0.2.3
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -44,10 +45,12 @@ install: images
 		chmod 644 $$d/uzunyx-$$e.plymouth; \
 	done
 	install -Dm644 grub-splash.cfg $(DESTDIR)$(SYSCONFDIR)/default/grub.d/uzunyx-splash.cfg
+	install -Dm644 initramfs-keymap.conf $(DESTDIR)$(SYSCONFDIR)/initramfs-tools/conf.d/uzunyx-keymap
 
 uninstall:
 	rm -rf $(addprefix $(DESTDIR)$(THEMES_DIR)/uzunyx-,$(EDITIONS))
 	rm -f $(DESTDIR)$(SYSCONFDIR)/default/grub.d/uzunyx-splash.cfg
+	rm -f $(DESTDIR)$(SYSCONFDIR)/initramfs-tools/conf.d/uzunyx-keymap
 
 deb: clean
 	$(MAKE) install DESTDIR=$(CURDIR)/$(BUILD)/root PREFIX=/usr SYSCONFDIR=/etc

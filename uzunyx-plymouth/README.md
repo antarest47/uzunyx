@@ -15,6 +15,12 @@ Pantalla de arranque (Plymouth) de Uzunyx, un tema por edición:
 - Contraseña de disco cifrado: campo `#20232B` con borde del texto al 25 %
   y esquinas de 8 px, como las ventanas, con puntos del acento. Mensajes
   del sistema (fsck) abajo, tenues.
+- La contraseña se escribe con la distribución del teclado del sistema (desde 0.2.3):
+  `/etc/initramfs-tools/conf.d/uzunyx-keymap` pone `KEYMAP=y`, y el initramfs lleva el
+  mapa de la consola (`setupcon`, de `console-setup`). Plymouth lee `XKBLAYOUT` de
+  `/etc/default/keyboard`, pero el initramfs no trae los datos de XKB y toma las teclas
+  de la consola, que sin esto quedaba en inglés (con el teclado español, la tecla de `-`
+  daba `/`; visto por el usuario el 2026-11-15).
 
 Usa el plugin `script` de Plymouth (viene en `plymouth`; `two-step` está en
 `plymouth-themes`, que no se pide). Plymouth no puede recortar ni mezclar
