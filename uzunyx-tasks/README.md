@@ -45,3 +45,6 @@ quién son las miniaturas abiertas.
 Desde 0.4.9 las miniaturas no se rearman si las ventanas no cambiaron: al volver del
 cuadro al icono, Plasma vuelve a mostrar el mismo tooltip, y las miniaturas nuevas
 mostraban un instante el icono de la app hasta que llegaba la imagen en vivo.
+El destello seguía: al sacar las miniaturas del tooltip y volver a ponerlas, cada una se
+creía oculta y cortaba su imagen en vivo. Desde 0.4.10 la corta recién un segundo después
+de ocultarse.

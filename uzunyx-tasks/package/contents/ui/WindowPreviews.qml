@@ -102,9 +102,28 @@ Rectangle {
             // Only stream while the tooltip is really on screen.
             readonly property bool shown: Window.visibility !== Window.Hidden
 
+            // The stream stops a second after the thumbnail is hidden, not at
+            // once: when the pointer comes back from the previews to the icon,
+            // Plasma takes them out of the tooltip and puts them back, and a new
+            // stream showed the app's icon until its first frame.
+            property bool streaming: shown
+            onShownChanged: {
+                if (shown) {
+                    stopStream.stop();
+                    streaming = true;
+                } else {
+                    stopStream.restart();
+                }
+            }
+            Timer {
+                id: stopStream
+                interval: 1000
+                onTriggered: entry.streaming = false
+            }
+
             TaskManager.ScreencastingRequest {
                 id: cast
-                uuid: entry.shown ? entry.modelData.uuid : ""
+                uuid: entry.streaming ? entry.modelData.uuid : ""
             }
 
             Rectangle {
