@@ -1,0 +1,32 @@
+#!/usr/bin/python3 -I
+"""Turns KWin's global shortcuts back on after something marked them inactive.
+
+A KWin started on the session bus (a nested KWin outside dbus-run-session)
+registers its actions in the real KWin's kglobalaccel and, when it exits,
+marks every "kwin" shortcut inactive: Alt+Tab and the rest stop working until
+the next login. This marks again as present every one that has a key, without
+changing any key (flag 2 = SetPresent, with autoloading).
+"""
+import json
+import subprocess
+
+
+def busctl(*args):
+    return subprocess.run(["busctl", "--user", *args], capture_output=True, text=True, check=True).stdout
+
+
+def main():
+    infos = json.loads(busctl("--json=short", "call", "org.kde.kglobalaccel", "/component/kwin",
+                              "org.kde.kglobalaccel.Component", "allShortcutInfos"))["data"][0]
+    count = 0
+    for name, friendly, comp, comp_friendly, _ctx, _ctx_friendly, keys, _defaults in infos:
+        if not any(keys):
+            continue
+        busctl("call", "org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel", "setShortcutKeys",
+               "asa(ai)u", "4", comp, name, comp_friendly, friendly, "0", "2")
+        count += 1
+    print(f"{count} KWin shortcuts marked present")
+
+
+if __name__ == "__main__":
+    main()
