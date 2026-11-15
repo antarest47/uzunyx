@@ -112,5 +112,5 @@ lado): en Wayland, a veces la ventana del panel se queda con el tamaño viejo de
 de que Plasma pidió otro (hueco vacío al final del panel, visto al cerrarse una
 tarea) y Plasma no lo vuelve a pedir. Cada 2 s compara la ventana con la geometría
 que Plasma quiere (`panel.geometryByDistance(0)`) y, si no coinciden dos veces
-seguidas, mueve el largo un píxel y lo devuelve, que lo vuelve a pedir. Deja una
+seguidas, mueve el largo un píxel y lo devuelve 300 ms después, que lo vuelve a pedir (hasta 0.29.1 lo devolvía en el mismo instante: Qt juntaba los dos cambios, el tamaño final era el ya pedido y no llegaba nada nuevo al compositor; pasó 123 veces seguidas el 2026-11-15). Deja una
 línea `uzunyx: panel window is …` en el registro de `plasmashell`.
