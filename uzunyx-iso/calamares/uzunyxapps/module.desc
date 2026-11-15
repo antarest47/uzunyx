@@ -1,0 +1,9 @@
+# Downloads the extended selection of apps with its progress on the install
+# page (uzunyx-install-apps does the work).
+---
+type:       "job"
+name:       "uzunyxapps"
+interface:  "python"
+script:     "main.py"
+noconfig:   true
+weight:     15

@@ -54,9 +54,13 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   Thunderbird, VLC, Elisa, GIMP, KCalc y sus traducciones). Es `packagechooserq@apps` con
   su QML propio (`calamares/uzunyx-apps.qml`, por `qmlFilename` en `uzunyx-apps.conf`);
   la elección queda en Global Storage como `packagechooser_apps`, y
-  `contextualprocess@uzunyx-apps` (`uzunyx-install-apps.conf`) corre
-  `/usr/libexec/uzunyx-install-apps` si es `extended`, después de `sources-final`: antes
-  apt solo ve el repositorio de la ISO. Se descargan, para que la ISO quede por debajo de
+  el módulo Python `uzunyxapps` (`calamares/uzunyxapps/`, en
+  `/usr/lib/calamares/modules`) corre `/usr/libexec/uzunyx-install-apps` si es `extended`,
+  después de `sources-final`: antes apt solo ve el repositorio de la ISO. Desde 0.2.3
+  muestra el avance («Descargando las aplicaciones… 45 %», y la barra se mueve): el script
+  manda por el descriptor 3 sus marcas `uzunyx:<paso>` y el `APT::Status-Fd` de apt. Hasta
+  0.2.2 era un `contextualprocess`, que no muestra nada (la instalación parecía colgada en
+  94 % mientras descargaba) y cortaba a la hora. Se descargan, para que la ISO quede por debajo de
   2 GiB (límite por archivo de las releases de GitHub); sin internet no falla y queda la
   instalación por defecto, con el registro en `/var/log/uzunyx-install-apps.log` del
   sistema nuevo. `customize-hook.sh` agrega la página, el paso y las

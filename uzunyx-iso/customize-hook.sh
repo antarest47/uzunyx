@@ -71,8 +71,11 @@ chmod 755 "$helpers/calamares-sources-final"
 # "Conexión" page after the welcome: Calamares only checks for internet, it
 # doesn't connect. networkcfg copies the connection to the installed system.
 cp "$in/calamares/uzunyx-apps.qml" "$in/calamares/uzunyx-network.qml" "$in/calamares/calamares-sidebar.qml" "$cal/branding/uzunyx/"
-cp "$in/calamares/uzunyx-apps.conf" "$in/calamares/uzunyx-network.conf" "$in/calamares/uzunyx-install-apps.conf" "$cal/modules/"
+cp "$in/calamares/uzunyx-apps.conf" "$in/calamares/uzunyx-network.conf" "$cal/modules/"
 install -Dm755 "$in/calamares/uzunyx-install-apps" /usr/libexec/uzunyx-install-apps
+# A Python job and not contextualprocess: it shows apt's progress (0.2.2 sat
+# at 94 % without a word while downloading) and has no time limit.
+install -Dm644 -t /usr/lib/calamares/modules/uzunyxapps "$in/calamares/uzunyxapps/module.desc" "$in/calamares/uzunyxapps/main.py"
 install -Dm755 "$in/calamares/uzunyx-calamares-network" /usr/libexec/uzunyx-calamares-network
 # "Teclado" right after the welcome too, as Ubuntu: it changes the layout as it
 # is chosen, so the Wi-Fi, user and encryption passwords are typed with it.
@@ -80,8 +83,9 @@ install -Dm755 "$in/calamares/uzunyx-calamares-network" /usr/libexec/uzunyx-cala
 sed -i -e '0,/^  - keyboard$/{/^  - keyboard$/d}' "$cal/settings.conf"
 sed -i -e '0,/^  - welcome$/s//  - welcome\n  - keyboard\n  - notesqml@network/' \
     -e '0,/^  - users$/s//  - users\n  - packagechooserq@apps/' \
-    -e 's/^  - sources-final$/&\n  - contextualprocess@uzunyx-apps/' "$cal/settings.conf"
+    -e 's/^  - sources-final$/&\n  - uzunyxapps/' "$cal/settings.conf"
 grep -q '^  - notesqml@network$' "$cal/settings.conf"
+grep -q '^  - uzunyxapps$' "$cal/settings.conf"
 [ "$(grep -c "^  - keyboard$" "$cal/settings.conf")" = 2 ]
 cat >> "$cal/settings.conf" <<'EOF'
 
@@ -92,9 +96,6 @@ instances:
 - id: apps
   module: packagechooserq
   config: uzunyx-apps.conf
-- id: uzunyx-apps
-  module: contextualprocess
-  config: uzunyx-install-apps.conf
 EOF
 grep -q '^instances:' "$cal/settings.conf" && [ "$(grep -c '^instances:' "$cal/settings.conf")" = 1 ] ||
     { echo "settings.conf already had instances" >&2; exit 1; }
