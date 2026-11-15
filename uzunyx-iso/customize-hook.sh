@@ -50,6 +50,10 @@ sed -i 's/^branding: .*/branding: uzunyx/' "$cal/settings.conf"
 # repository is the live session's; the system updates from dl.uzunyx.com).
 sed -i 's/^\( *\)- .calamares-settings-debian.$/&\n\1- '"'"'calamares'"'"'\n\1- '"'"'uzunyx-installer'"'"'/' "$cal/modules/packages.conf"
 grep -q "^ *- 'uzunyx-installer'$" "$cal/modules/packages.conf"
+# Nor the live-task-* that Debian's list removes: they aren't on this ISO, and
+# without internet apt doesn't know them and the whole removal failed (100).
+sed -i "/^ *- 'live-task-/d" "$cal/modules/packages.conf"
+! grep -q "live-task-" "$cal/modules/packages.conf"
 helpers=/usr/share/calamares/helpers
 sed -i 's/^RELEASE=.*/RELEASE="testing"/' "$helpers/calamares-sources-media"
 cp "$in/calamares/calamares-sources-final" "$helpers/calamares-sources-final"
