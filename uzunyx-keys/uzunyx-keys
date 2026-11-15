@@ -207,9 +207,14 @@ class Keys(Gtk.Application):
         footer.pack_start(hint, True, True, 0)
         footer.pack_end(settings, False, False, 0)
 
+        # The scroll bar is drawn over the content: it gets the right margin's
+        # space (8 + 16 = 24 px, like the other sides) instead of the keys.
         scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        grid.set_margin_end(16)
+        footer.set_margin_end(16)
         scroll.add(grid)
-        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, border_width=24)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, margin_top=24, margin_bottom=24,
+                       margin_start=24, margin_end=8)
         page.pack_start(scroll, True, True, 0)
         page.pack_start(footer, False, False, 0)
         self.window.add(page)
