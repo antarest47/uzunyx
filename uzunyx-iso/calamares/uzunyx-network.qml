@@ -125,7 +125,7 @@ Item {
         readonly property bool open: page.chosen === modelData.ssid
         readonly property bool asks: open && modelData.secure && !modelData.saved && !modelData.inUse
         // Room for the scroll bar on the right, outside the cards.
-        width: ListView.view.width - (ListView.view.contentHeight > ListView.view.height ? 14 : 0)
+        width: ListView.view.width - (ListView.view.contentHeight > ListView.view.height ? 16 : 0)
         height: column.implicitHeight + 20
         radius: 10
         color: open || modelData.inUse ? "#22151c" : mouse.containsMouse ? "#1d2028" : "#171920"
@@ -317,6 +317,16 @@ Item {
         visible: page.net !== null && page.net.wifi && page.net.wifiOn
         model: page.networks
         delegate: Network {}
-        ScrollBar.vertical: ScrollBar {}
+        // Our own: Breeze's draws a separator line along the cards.
+        ScrollBar.vertical: ScrollBar {
+            id: scroll
+            width: 8
+            contentItem: Rectangle {
+                implicitWidth: 6
+                radius: 3
+                color: scroll.pressed ? "#c8ccd6" : scroll.hovered ? "#7a7f8c" : "#4a4f5c"
+            }
+            background: Item {}
+        }
     }
 }
