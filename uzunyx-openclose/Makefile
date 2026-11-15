@@ -2,7 +2,7 @@
 # only loads in that exact version (KWin checks it in the plugin IID), so the
 # package is pinned to it and has to be rebuilt after every KWin update.
 NAME    := uzunyx-openclose
-VERSION := 0.2.1
+VERSION := 0.2.2
 DESTDIR ?=
 
 # Upstream version of the KWin we build against, e.g. 6.7.4 (from 4:6.7.4-2+b1)
@@ -35,6 +35,8 @@ deb: clean
 	install -Dm644 debian/control $(BUILD)/root/DEBIAN/control
 	sed -i 's/@VERSION@/$(DEB_VERSION)/; s/@ARCH@/$(ARCH)/; s/@KWIN@/$(KWIN_EPOCH)$(KWIN_VERSION)/g' $(BUILD)/root/DEBIAN/control
 	install -Dm644 ../tools/copyright $(BUILD)/root/usr/share/doc/$(NAME)/copyright
+	@# No group-writable folders (they came from the umask 0002).
+	chmod -R go-w $(BUILD)/root
 	dpkg-deb --root-owner-group --build $(BUILD)/root $(DEB)
 
 clean:

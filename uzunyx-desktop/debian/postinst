@@ -19,4 +19,21 @@ if [ "$1" = configure ] && [ "$(stat -c '%u:%g %a' /)" != "0:0 755" ]; then
     systemd-tmpfiles --create >/dev/null 2>&1 || true
 fi
 
+# Systems installed from the ISOs up to 0.2.2 kept the live installer's own
+# files, among them a polkit action that let the active user run
+# /usr/libexec/uzunyx-calamares as root without a password. Only once Calamares
+# is gone, so never in the live session (Calamares removes them since 0.2.2).
+if [ "$1" = configure ] && [ ! -e /usr/bin/calamares ] &&
+    [ -e /usr/share/polkit-1/actions/org.uzunyx.calamares.policy ]; then
+    echo "uzunyx-desktop: se quitan los restos del instalador de la ISO." >&2
+    rm -rf /etc/calamares \
+        /usr/share/polkit-1/actions/org.uzunyx.calamares.policy \
+        /usr/libexec/uzunyx-calamares \
+        /usr/libexec/uzunyx-calamares-network \
+        /usr/libexec/uzunyx-install-apps \
+        /etc/xdg/autostart/uzunyx-install.desktop \
+        /etc/xdg/plasma-workspace/env/uzunyx-live.sh \
+        /etc/live
+fi
+
 exit 0

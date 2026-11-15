@@ -114,3 +114,11 @@ tarea) y Plasma no lo vuelve a pedir. Cada 2 s compara la ventana con la geometr
 que Plasma quiere (`panel.geometryByDistance(0)`) y, si no coinciden dos veces
 seguidas, mueve el largo un píxel y lo devuelve 300 ms después, que lo vuelve a pedir (hasta 0.29.1 lo devolvía en el mismo instante: Qt juntaba los dos cambios, el tamaño final era el ya pedido y no llegaba nada nuevo al compositor; pasó 123 veces seguidas el 2026-11-15). Deja una
 línea `uzunyx: panel window is …` en el registro de `plasmashell`.
+
+Desde 0.29.3 (revisión del 2026-11-15): la pantalla de bloqueo solo lleva los botones de
+bola si Plasma les pasa lo que `UzunyxActionButton` acepta (`text`, `icon.name`,
+`onClicked`, `visible`, `enabled`); si una versión de Plasma usa otra propiedad, el
+`postinst` deja la de Plasma y lo avisa, porque con un error de QML la pantalla de bloqueo
+no carga y el respaldo de Plasma no desbloquea. El `~/.face` de los usuarios se reescribe
+como cada usuario (`runuser`), no como root. Y, como en los demás paquetes, sin carpetas
+con escritura para el grupo (`chmod -R go-w` antes de `dpkg-deb`).

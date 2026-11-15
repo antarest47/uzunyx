@@ -1,5 +1,5 @@
 NAME    := uzunyx-buttons
-VERSION := 0.9.0
+VERSION := 0.9.1
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -54,6 +54,8 @@ deb: clean
 	install -Dm644 debian/conffiles $(BUILD)/root/DEBIAN/conffiles
 	sed -i 's/@VERSION@/$(VERSION)/' $(BUILD)/root/DEBIAN/control
 	install -Dm644 ../tools/copyright $(BUILD)/root/usr/share/doc/$(NAME)/copyright
+	@# No group-writable folders (they came from the umask 0002).
+	chmod -R go-w $(BUILD)/root
 	dpkg-deb --root-owner-group --build $(BUILD)/root $(DEB)
 
 clean:

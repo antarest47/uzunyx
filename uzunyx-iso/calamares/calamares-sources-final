@@ -16,4 +16,18 @@ Suites: testing-security
 Components: main contrib non-free non-free-firmware
 Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 SOURCES
+
+# What the live session's installer added outside any package stays out of the
+# installed system: above all the polkit action that lets the active user run
+# /usr/libexec/uzunyx-calamares as root without a password (fine live, not
+# installed). uzunyx-install-apps runs later from the live system, not this one.
+# uzunyx-desktop removes the same from systems installed before this.
+rm -rf "$CHROOT/etc/calamares" \
+    "$CHROOT/usr/share/polkit-1/actions/org.uzunyx.calamares.policy" \
+    "$CHROOT/usr/libexec/uzunyx-calamares" \
+    "$CHROOT/usr/libexec/uzunyx-calamares-network" \
+    "$CHROOT/usr/libexec/uzunyx-install-apps" \
+    "$CHROOT/etc/xdg/autostart/uzunyx-install.desktop" \
+    "$CHROOT/etc/xdg/plasma-workspace/env/uzunyx-live.sh" \
+    "$CHROOT/etc/live"
 exit 0

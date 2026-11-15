@@ -2,7 +2,7 @@
 # plus the uzunyx-edition command that does the work and its root helper for
 # the login screen.
 NAME    := uzunyx-editions
-VERSION := 0.4.0
+VERSION := 0.4.1
 PREFIX  ?= /usr
 DESTDIR ?=
 ARCH    := $(shell dpkg --print-architecture)
@@ -42,6 +42,8 @@ deb: clean
 	install -m644 debian/conffiles $(BUILD)/root/DEBIAN/conffiles
 	sed -i 's/@VERSION@/$(VERSION)/; s/@ARCH@/$(ARCH)/' $(BUILD)/root/DEBIAN/control
 	install -Dm644 ../tools/copyright $(BUILD)/root/usr/share/doc/$(NAME)/copyright
+	@# No group-writable folders (they came from the umask 0002).
+	chmod -R go-w $(BUILD)/root
 	dpkg-deb --root-owner-group --build $(BUILD)/root $(DEB)
 
 clean:

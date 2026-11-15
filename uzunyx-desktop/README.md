@@ -35,3 +35,8 @@ Desde 0.1.22 el `postinst` devuelve `/` a `root:root` con `0755` si no lo está:
 instalaciones desde las ISO hasta la 0.2.2 tenían `/` del primer usuario con `0777`
 (ver `uzunyx-iso`). Con eso `systemd-tmpfiles` se negaba a crear `/tmp/.ICE-unix`,
 `ksmserver` se caía y la pantalla de carga esperaba 30 s.
+
+Desde 0.1.23 también quita lo que el instalador de la ISO dejaba en el sistema instalado,
+fuera de todo paquete, si Calamares ya no está: sobre todo la acción de polkit que dejaba
+al usuario activo ejecutar `/usr/libexec/uzunyx-calamares` como root sin contraseña
+(revisión del 2026-11-15). La ISO 0.2.2 ya no lo deja (`calamares-sources-final`).

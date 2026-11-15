@@ -10,7 +10,27 @@ panel=/usr/share/plasma/shells/org.kde.plasma.desktop/contents/views/Panel.qml
 
 case "$1" in
     configure|triggered)
+        # Only while Plasma gives its buttons what ours takes: a property it
+        # doesn't have would stop the lock screen from loading, and Plasma's
+        # fallback can't unlock. Otherwise the lock screen stays Plasma's own.
+        unknown=
         if [ -f "$ui.distrib" ]; then
+            unknown=$(awk '
+                /ActionButton \{/ { inb = 1; depth = 0 }
+                inb {
+                    if (depth == 1 && match($0, /^[ \t]*[A-Za-z_.]+[ \t]*:/)) {
+                        p = substr($0, RSTART, RLENGTH); gsub(/[ \t:]/, "", p); print p
+                    }
+                    o = gsub(/\{/, "{"); c = gsub(/\}/, "}"); depth += o - c
+                    if (depth <= 0 && o + c > 0) inb = 0
+                }' "$ui.distrib" | grep -vxE 'text|icon\.name|onClicked|visible|enabled' | sort -u | tr '\n' ' ')
+        fi
+        if [ -f "$ui.distrib" ] && [ -n "$unknown" ]; then
+            echo "uzunyx-lookandfeel: la pantalla de bloqueo de Plasma usa en sus botones: $unknown; queda la de Plasma." >&2
+            cp "$ui.distrib" "$ui.uzunyx-tmp"
+            chmod 644 "$ui.uzunyx-tmp"
+            mv -f "$ui.uzunyx-tmp" "$ui"
+        elif [ -f "$ui.distrib" ]; then
             sed 's/^\(\s*\)ActionButton {/\1UzunyxActionButton {/' "$ui.distrib" > "$ui.uzunyx-tmp"
             chmod 644 "$ui.uzunyx-tmp"
             mv -f "$ui.uzunyx-tmp" "$ui"
@@ -28,12 +48,14 @@ case "$1" in
         fi
         # Users who still have Debian's avatar or our previous default (the logo,
         # until 0.25.0) get the new default; a personal one is theirs.
-        getent passwd | while IFS=: read -r _ _ uid _ _ home _; do
+        # Written as the user, not as root: a link put there meanwhile can't
+        # point the write at a system file.
+        getent passwd | while IFS=: read -r name _ uid _ _ home _; do
             [ "$uid" -ge 1000 ] && [ "$uid" -lt 60000 ] || continue
             [ -f "$home/.face" ] && [ ! -L "$home/.face" ] || continue
             if cmp -s "$home/.face" /etc/skel/.face.distrib \
                 || [ "$(sha256sum < "$home/.face" | cut -d' ' -f1)" = "$old_logo" ]; then
-                cat /etc/skel/.face > "$home/.face"
+                runuser -u "$name" -- sh -c 'cat /etc/skel/.face > "$1"' sh "$home/.face" || true
             fi
         done
         ;;

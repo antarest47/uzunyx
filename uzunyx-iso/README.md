@@ -137,6 +137,10 @@ firmware, apps). Sin `grub-pc-bin` la ISO sale solo para UEFI, sin avisar.
   («unsafe path transition»), `ksmserver` se caía y la pantalla de carga de Plasma esperaba
   sus 30 s (visto en una laptop el 2026-11-15). `uzunyx-desktop` ≥ 0.1.22 lo corrige en
   los sistemas ya instalados.
+- El sistema instalado no se lleva lo que la ISO agrega fuera de paquetes para la sesión en
+  vivo (`/etc/calamares`, `uzunyx-calamares` y su acción de polkit sin contraseña, el
+  ayudante de red, el autoarranque del instalador, `uzunyx-live.sh`, `/etc/live`):
+  `calamares-sources-final` lo borra al terminar (desde 0.2.2; revisión del 2026-11-15).
 - Secure Boot no está probado; con él apagado arranca. La ISO usa el GRUB sin firmar
   de `grub-mkrescue`.
 - `/etc/os-release` sigue diciendo Debian, a propósito (ver `uzunyx-terminal`).
