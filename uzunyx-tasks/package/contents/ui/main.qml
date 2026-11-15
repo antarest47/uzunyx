@@ -49,6 +49,9 @@ PlasmoidItem {
         return mprisModel.playerForLauncherUrl(launcherUrl, pid);
     }
 
+    // The task whose window previews are open, if any (WindowPreviews).
+    property var previewOwner: null
+
     // What apps announce for their launcher (Unity Launcher API): a count, a
     // progress and whether they ask for attention, by "application://x.desktop".
     property var launcherEntries: ({})

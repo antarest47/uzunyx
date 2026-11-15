@@ -35,3 +35,10 @@ QML solo escucha uno fijo, así que `uzunyx-task-badges` (Python, autoarranque) 
 repite desde `org.uzunyx.TaskBadges` y además registra `com.canonical.Unity`.
 
 `make deb` genera el paquete.
+
+Con las miniaturas de una app abiertas, otro icono solo las reemplaza si el puntero se
+queda 300 ms sobre él (desde 0.4.8, pedido por el usuario el 2026-11-15): en diagonal
+hacia las miniaturas se suele cruzar otro icono, y antes se cerraban. Mientras tanto ese
+botón tiene el tooltip apagado (`holdOff`), porque el de Plasma pasa enseguida al icono
+nuevo y no tiene demora configurable por botón; `previewOwner` en `main.qml` dice de
+quién son las miniaturas abiertas.

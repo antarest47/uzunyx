@@ -103,7 +103,31 @@ PlasmaCore.ToolTipArea {
     width: size
     height: size
 
-    active: Plasmoid.configuration.showToolTips
+    // With another app's previews open, the pointer only takes them over after
+    // resting here 300 ms: on its way to them it often crosses other icons
+    // (asked by the user, 2026-11-15). Meanwhile this tooltip is off, so
+    // Plasma's leaves the open one alone.
+    property bool holdOff: false
+    active: Plasmoid.configuration.showToolTips && !holdOff
+    onContainsMouseChanged: {
+        if (containsMouse && host.previewOwner && host.previewOwner !== button) {
+            holdOff = true;
+            intentTimer.restart();
+        } else if (!containsMouse) {
+            intentTimer.stop();
+            holdOff = false;
+        }
+    }
+    Timer {
+        id: intentTimer
+        interval: 300
+        onTriggered: {
+            button.holdOff = false;
+            if (button.containsMouse) {
+                button.showToolTip();
+            }
+        }
+    }
     location: Plasmoid.location
     interactive: windows > 0
     mainText: windows > 0 ? "" : (model.AppName || model.display || "")

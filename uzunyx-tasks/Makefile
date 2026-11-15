@@ -1,5 +1,5 @@
 NAME    := uzunyx-tasks
-VERSION := 0.4.7
+VERSION := 0.4.8
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=

@@ -52,6 +52,16 @@ Rectangle {
         entries = list;
     }
 
+    // Open while it's in the tooltip window and that is shown.
+    readonly property bool shown: Window.window !== null && Window.window.visible
+    onShownChanged: {
+        if (shown) {
+            host.previewOwner = task;
+        } else if (host.previewOwner === task) {
+            host.previewOwner = null;
+        }
+    }
+
     onPointerOverTaskChanged: if (pointerOverTask) refresh()
     onWindowsChanged: refresh()
     Component.onCompleted: refresh()
