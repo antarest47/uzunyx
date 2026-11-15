@@ -42,3 +42,6 @@ hacia las miniaturas se suele cruzar otro icono, y antes se cerraban. Mientras t
 botón tiene el tooltip apagado (`holdOff`), porque el de Plasma pasa enseguida al icono
 nuevo y no tiene demora configurable por botón; `previewOwner` en `main.qml` dice de
 quién son las miniaturas abiertas.
+Desde 0.4.9 las miniaturas no se rearman si las ventanas no cambiaron: al volver del
+cuadro al icono, Plasma vuelve a mostrar el mismo tooltip, y las miniaturas nuevas
+mostraban un instante el icono de la app hasta que llegaba la imagen en vivo.

@@ -49,8 +49,16 @@ Rectangle {
                 uuid: ids && ids.length ? String(ids[0]) : "",
             });
         }
-        entries = list;
+        // Only when the windows changed: new entries recreate the thumbnails, and
+        // each shows the app's icon until its stream starts again (a flash when
+        // the pointer came back from the previews to the icon).
+        const key = list.map(e => e.uuid + "\n" + e.title).join("\n\n");
+        if (key !== entriesKey) {
+            entriesKey = key;
+            entries = list;
+        }
     }
+    property string entriesKey: ""
 
     // Open while it's in the tooltip window and that is shown.
     readonly property bool shown: Window.window !== null && Window.window.visible
