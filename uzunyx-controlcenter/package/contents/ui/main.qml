@@ -456,8 +456,12 @@ PlasmoidItem {
 
     fullRepresentation: Item {
         readonly property int margin: Kirigami.Units.smallSpacing * 2
+        // Fixed width: Plasma lets the user drag a popup's edge and keeps that
+        // size (popupWidth in the appletsrc); without a maximum the center
+        // stayed twice as wide on a laptop (0.9.7).
         Layout.minimumWidth: Kirigami.Units.gridUnit * 21 + margin * 2
         Layout.preferredWidth: Kirigami.Units.gridUnit * 21 + margin * 2
+        Layout.maximumWidth: Kirigami.Units.gridUnit * 21 + margin * 2
         readonly property int pageHeight: root.page === "main" ? content.implicitHeight : Kirigami.Units.gridUnit * 21
         Layout.minimumHeight: pageHeight + margin * 2
         Layout.preferredHeight: pageHeight + margin * 2

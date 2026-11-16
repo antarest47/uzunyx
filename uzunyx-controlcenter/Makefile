@@ -1,5 +1,5 @@
 NAME    := uzunyx-controlcenter
-VERSION := 0.9.7
+VERSION := 0.9.8
 PREFIX  ?= /usr
 DESTDIR ?=
 

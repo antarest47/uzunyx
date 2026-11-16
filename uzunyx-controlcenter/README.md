@@ -25,3 +25,7 @@ El wifi de la píldora sigue la señal con los niveles de Kora; encendido sin co
 gris, y conectado sin internet lleva una exclamación amarilla. En la lista de redes, clic
 en la conectada la desconecta y clic derecho en una guardada permite olvidarla (borra la
 conexión y la contraseña).
+
+El ancho del centro es fijo (mínimo, preferido y máximo iguales): Plasma deja agrandar a mano
+la ventana de un widget del panel y guarda ese tamaño (`popupWidth` en el appletsrc); hasta
+la 0.9.7 no tenía máximo y en una laptop quedó el doble de ancho.
