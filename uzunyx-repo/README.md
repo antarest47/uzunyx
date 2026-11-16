@@ -23,6 +23,9 @@ armado de la ISO. Por eso el índice también va por su hash (`Acquire-By-Hash: 
 copias en `by-hash/SHA256` y `by-hash/SHA512`; apt pide por el más fuerte), como en
 Debian: esas direcciones nunca cambian de contenido. Por lo mismo, **un paquete
 publicado no se vuelve a armar con la misma versión**: la caché seguiría dando el viejo.
+Como `uzunyx-installer` y la ISO corren `make deb` en todas las carpetas, `make-repo.sh` guarda
+todo lo publicado en `build/published` y, si un `.deb` ya se publicó con el mismo nombre, usa
+ese y avisa (desde 2026-11-16).
 
 Al subir, primero se copian los paquetes nuevos y las copias por hash, después el índice y al final se borran
 los viejos, para que el índice nunca nombre un archivo que no está. Solo queda la última

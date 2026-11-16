@@ -13,12 +13,25 @@ out=$here/build/repo
 suites="testing forky"
 
 folders=$(make -s -C "$top/uzunyx-installer" --eval='_f:;@echo $(FOLDERS)' _f)
+# Every .deb ever published stays in build/published, and a .deb with the same
+# name is taken from there, not from its folder: a package rebuilt with the same
+# version has other bytes (uzunyx-installer and the ISO run make deb in every
+# folder), and Cloudflare's cache could hand out the old file under the new
+# hash ("Hash Sum mismatch"). A changed package needs a new version.
+published=$here/build/published
+mkdir -p "$published"
+[ -d "$out/pool/main" ] && cp -n "$out"/pool/main/*.deb "$published/" 2>/dev/null || true
 rm -rf "$out"
 mkdir -p "$out/pool/main"
 for f in $folders; do
     v=$(make -s -C "$top/$f" --eval='_pv:;@echo $(VERSION)' _pv)
     d=$(ls -v "$top/$f"/build/*_"$v"*.deb 2>/dev/null | tail -1)
     [ -n "$d" ] || { echo "$f: falta el .deb de $v (make deb)" >&2; exit 1; }
+    b=$(basename "$d")
+    if [ -f "$published/$b" ]; then
+        cmp -s "$d" "$published/$b" || echo "$b: ya publicado, se usa el publicado (para cambiarlo, subir la versión)"
+        d=$published/$b
+    fi
     cp "$d" "$out/pool/main/"
 done
 
