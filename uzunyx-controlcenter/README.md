@@ -26,6 +26,6 @@ gris, y conectado sin internet lleva una exclamación amarilla. En la lista de r
 en la conectada la desconecta y clic derecho en una guardada permite olvidarla (borra la
 conexión y la contraseña).
 
-El ancho del centro es fijo (mínimo, preferido y máximo iguales): Plasma deja agrandar a mano
-la ventana de un widget del panel y guarda ese tamaño (`popupWidth` en el appletsrc); hasta
-la 0.9.7 no tenía máximo y en una laptop quedó el doble de ancho.
+El ancho se puede cambiar arrastrando el borde, y Plasma guarda el tamaño (`popupWidth` en el
+appletsrc). La 0.9.8 lo fijó y la 0.9.9 lo volvió a dejar libre: mejor personalizable
+(decidido por el usuario el 2026-11-16).
