@@ -6,3 +6,6 @@ text/html=firefox-esr.desktop;firefox.desktop;
 application/xhtml+xml=firefox-esr.desktop;firefox.desktop;
 x-scheme-handler/http=firefox-esr.desktop;firefox.desktop;
 x-scheme-handler/https=firefox-esr.desktop;firefox.desktop;
+# Double click on a .deb installs it with apt in a terminal (uzunyx-debinstall);
+# Discover if that one isn't there.
+application/vnd.debian.binary-package=org.uzunyx.debinstall.desktop;org.kde.discover.desktop;

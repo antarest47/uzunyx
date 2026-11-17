@@ -1,5 +1,5 @@
 NAME    := uzunyx-lookandfeel
-VERSION := 0.29.3
+VERSION := 0.29.4
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=

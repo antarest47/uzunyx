@@ -6,7 +6,9 @@ Instala paquetes `.deb` locales desde el administrador de archivos.
   paquete** (menú de servicio en `/usr/share/kio/servicemenus`).
 - También en «Abrir con» como «Instalador de paquetes»
   (`org.uzunyx.debinstall.desktop`, `MimeType=application/vnd.debian.binary-package`).
-  No se pone como predeterminado: el doble clic sigue abriendo Discover.
+  Es también la del doble clic: lo pone `uzunyx-lookandfeel` ≥ 0.29.4 en
+  `/etc/xdg/mimeapps.list` (con Discover de respaldo). Quien haya elegido
+  otra app en `~/.config/mimeapps.list` conserva la suya.
 
 Abre Konsole (o `x-terminal-emulator`), muestra nombre, versión y
 descripción de cada paquete y ejecuta `sudo apt install /ruta/paquete.deb`,
