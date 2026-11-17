@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=application/vnd.debian.binary-package;
+Actions=install;
+X-KDE-Priority=TopLevel
+X-KDE-AuthorizeAction=shell_access
+
+[Desktop Action install]
+Exec=uzunyx-debinstall %F
+Icon=system-software-install
+Name=Install package
+Name[es]=Instalar paquete

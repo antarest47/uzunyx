@@ -12,7 +12,7 @@ REPO  := $(ROOT)/usr/share/$(NAME)/repo
 
 # Folders with a package that goes in the repository.
 FOLDERS := edge-gaps kora-icons lunyx uzunyx-archive-keyring uzunyx-buttons uzunyx-clock \
-	uzunyx-altguard uzunyx-colors uzunyx-controlcenter uzunyx-deco uzunyx-desktop \
+	uzunyx-altguard uzunyx-colors uzunyx-controlcenter uzunyx-debinstall uzunyx-deco uzunyx-desktop \
 	uzunyx-editions uzunyx-genie uzunyx-grub uzunyx-keys uzunyx-welcome uzunyx-lnf \
 	uzunyx-lockkeys uzunyx-logout uzunyx-openclose uzunyx-outline uzunyx-pager \
 	uzunyx-plasmatheme uzunyx-plymouth uzunyx-shortcuts uzunyx-tasks \

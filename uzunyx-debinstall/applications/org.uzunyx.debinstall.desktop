@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Package installer
+Name[es]=Instalador de paquetes
+Comment=Install .deb packages with apt
+Comment[es]=Instala paquetes .deb con apt
+Exec=uzunyx-debinstall %F
+Icon=system-software-install
+MimeType=application/vnd.debian.binary-package;
+NoDisplay=true
+Terminal=false
+Categories=System;PackageManager;
