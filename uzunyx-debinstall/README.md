@@ -13,7 +13,9 @@ Instala paquetes `.deb` locales desde el administrador de archivos.
 Abre Konsole (o `x-terminal-emulator`), muestra nombre, versión y
 descripción de cada paquete y ejecuta `sudo apt install /ruta/paquete.deb`,
 así apt resuelve las dependencias y pide la contraseña y la confirmación como
-siempre. Al terminar espera una tecla para que se pueda leer el resultado.
+siempre. Al terminar comprueba en dpkg que quedó instalada cada versión, muestra
+un recuadro verde («Instalación completada») o rojo («falló o se canceló») y
+solo se cierra con Enter; Ctrl+C corta apt pero no la ventana.
 
 Desde la terminal: `uzunyx-debinstall archivo.deb [...]`.
 

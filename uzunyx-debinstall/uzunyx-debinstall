@@ -26,41 +26,72 @@ shift
 
 bold=$'\e[1m'; green=$'\e[32m'; red=$'\e[31m'; reset=$'\e[0m'
 
+# Ctrl+C corta apt pero no el script: la ventana no se cierra sin avisar.
+trap 'echo' INT
+
+banner() {  # color texto...
+    local color=$1; shift
+    echo
+    echo "${color}${bold}════════════════════════════════════════${reset}"
+    for line in "$@"; do echo "${color}${bold}  $line${reset}"; done
+    echo "${color}${bold}════════════════════════════════════════${reset}"
+}
+
 finish() {
     echo
-    read -rsn1 -p "Pulsa cualquier tecla para cerrar…"
+    # Descarta lo que se haya tecleado antes (p. ej. la respuesta a apt).
+    while read -r -t 0.1 -n 10000 _; do :; done
+    local key
+    while :; do
+        IFS= read -r -s -n1 -p "Pulsa Enter para cerrar esta ventana." key || break  # sin entrada
+        [ -z "$key" ] && break
+        echo
+    done
     echo
     exit "$1"
 }
 
-debs=()
+debs=(); names=(); versions=()
 for f in "$@"; do
     case "$f" in file://*) f=${f#file://}; f=$(printf '%b' "${f//%/\\x}") ;; esac
     if [ ! -f "$f" ]; then
-        echo "${red}No existe: $f${reset}"
+        banner "$red" "✗ No se instaló nada" "No existe: $f"
         finish 1
     fi
     path=$(readlink -f "$f")
-    if ! info=$(dpkg-deb -W --showformat='${Package} ${Version} (${Architecture})\n${Description}\n' "$path" 2>&1); then
-        echo "${red}No es un paquete .deb válido: $f${reset}"
+    if ! info=$(dpkg-deb -W --showformat='${Package}\n${Version}\n${Architecture}\n${Description}\n' "$path" 2>&1); then
         echo "$info"
+        banner "$red" "✗ No se instaló nada" "No es un paquete .deb válido: $f"
         finish 1
     fi
-    echo "${bold}$(head -1 <<<"$info")${reset}"
-    sed -n '2p' <<<"$info" | sed 's/^/  /'
-    debs+=("$path")
+    mapfile -t field <<<"$info"
+    echo "${bold}${field[0]} ${field[1]} (${field[2]})${reset}"
+    echo "  ${field[3]}"
+    debs+=("$path"); names+=("${field[0]}"); versions+=("${field[1]}")
 done
 echo
 
 # apt solo trata el argumento como archivo si empieza por / o ./
 echo "${bold}\$ sudo apt install ${debs[*]}${reset}"
-if sudo apt install "${debs[@]}"; then
-    echo
-    echo "${green}${bold}Listo: instalado.${reset}"
+sudo apt install "${debs[@]}"
+status=$?
+
+# El resultado se comprueba en dpkg, no solo por el código de apt.
+missing=()
+for i in "${!names[@]}"; do
+    got=$(dpkg-query -W -f='${db:Status-Abbrev}${Version}' "${names[$i]}" 2>/dev/null)
+    [ "$got" = "ii ${versions[$i]}" ] || missing+=("${names[$i]} ${versions[$i]}")
+done
+
+if [ "$status" -eq 0 ] && [ ${#missing[@]} -eq 0 ]; then
+    lines=("✓ Instalación completada")
+    for i in "${!names[@]}"; do lines+=("${names[$i]} ${versions[$i]}"); done
+    banner "$green" "${lines[@]}"
     finish 0
 else
-    status=$?
-    echo
-    echo "${red}${bold}La instalación no terminó (código $status).${reset}"
-    finish "$status"
+    lines=("✗ La instalación falló o se canceló")
+    for m in "${missing[@]}"; do lines+=("Sin instalar: $m"); done
+    lines+=("Arriba está lo que dijo apt (código $status).")
+    banner "$red" "${lines[@]}"
+    finish $(( status ? status : 1 ))
 fi
