@@ -3,6 +3,9 @@
  * desktop of its own, and the view slides to it. Coming back (the same shortcut
  * or menu entry, leaving fullscreen some other way, or closing the window) puts
  * it back on its desktops, removes the new one and returns to the first.
+ *
+ * Fullscreen asked for by the app itself (VirtualBox, QEMU, RustDesk, F11...)
+ * goes to a desktop of its own too, except in the apps of APP_FULLSCREEN_SKIP.
  */
 
 // Marks the desktops this script makes, to find the ones left from a session
@@ -101,6 +104,19 @@ focusTimer.timeout.connect(() => {
     pendingFocus = null;
 });
 
+// Apps whose own fullscreen stays where it is: in a browser it's mostly a
+// video or a slideshow, a moment and not a place of its own. Super+F still
+// takes them to a desktop of their own. Compared with resourceClass, lowercase.
+const APP_FULLSCREEN_SKIP = [
+    "firefox", "firefox-esr", "org.mozilla.firefox",
+    "chromium", "chromium-browser", "google-chrome", "brave-browser",
+    "microsoft-edge", "vivaldi-stable", "librewolf", "zen",
+];
+
+function followsAppFullscreen(w) {
+    return APP_FULLSCREEN_SKIP.indexOf(String(w.resourceClass).toLowerCase()) < 0;
+}
+
 function eligible(w) {
     return w && w.normalWindow && w.fullScreenable && !w.skipTaskbar
         && w.resourceClass !== "org.kde.plasmashell";
@@ -175,10 +191,22 @@ function toggle(w) {
     }
 }
 
+// The app went fullscreen by itself: give it a desktop of its own, as Super+F.
+function followApp(w) {
+    if (w.fullScreen && !entries.has(key(w)) && eligible(w) && followsAppFullscreen(w)) {
+        enter(w);
+    }
+}
+
 function watch(w) {
     w.fullScreenChanged.connect(() => {
-        if (!busy && !w.fullScreen && entries.has(key(w))) {
+        if (busy) {
+            return;
+        }
+        if (!w.fullScreen && entries.has(key(w))) {
             leave(w, false);
+        } else {
+            followApp(w);
         }
     });
     w.closed.connect(() => {
@@ -190,7 +218,11 @@ function watch(w) {
 }
 
 workspace.windowList().forEach(watch);
-workspace.windowAdded.connect(watch);
+workspace.windowAdded.connect(w => {
+    watch(w);
+    // Opened already fullscreen (mpv --fs, games): no change to notice.
+    followApp(w);
+});
 workspace.currentDesktopChanged.connect(updatePanel);
 
 // Leftovers of an earlier run (session restart, script reloaded): windows go
