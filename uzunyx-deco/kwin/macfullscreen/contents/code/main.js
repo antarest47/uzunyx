@@ -4,8 +4,8 @@
  * or menu entry, leaving fullscreen some other way, or closing the window) puts
  * it back on its desktops, removes the new one and returns to the first.
  *
- * Fullscreen asked for by the app itself (VirtualBox, QEMU, RustDesk, F11...)
- * goes to a desktop of its own too, except in the apps of APP_FULLSCREEN_SKIP.
+ * Fullscreen asked for by the app itself (VirtualBox, QEMU, RustDesk, F11, a
+ * video in the browser...) goes to a desktop of its own too, in every app.
  */
 
 // Marks the desktops this script makes, to find the ones left from a session
@@ -104,19 +104,6 @@ focusTimer.timeout.connect(() => {
     pendingFocus = null;
 });
 
-// Apps whose own fullscreen stays where it is: in a browser it's mostly a
-// video or a slideshow, a moment and not a place of its own. Super+F still
-// takes them to a desktop of their own. Compared with resourceClass, lowercase.
-const APP_FULLSCREEN_SKIP = [
-    "firefox", "firefox-esr", "org.mozilla.firefox",
-    "chromium", "chromium-browser", "google-chrome", "brave-browser",
-    "microsoft-edge", "vivaldi-stable", "librewolf", "zen",
-];
-
-function followsAppFullscreen(w) {
-    return APP_FULLSCREEN_SKIP.indexOf(String(w.resourceClass).toLowerCase()) < 0;
-}
-
 function eligible(w) {
     return w && w.normalWindow && w.fullScreenable && !w.skipTaskbar
         && w.resourceClass !== "org.kde.plasmashell";
@@ -193,7 +180,7 @@ function toggle(w) {
 
 // The app went fullscreen by itself: give it a desktop of its own, as Super+F.
 function followApp(w) {
-    if (w.fullScreen && !entries.has(key(w)) && eligible(w) && followsAppFullscreen(w)) {
+    if (w.fullScreen && !entries.has(key(w)) && eligible(w)) {
         enter(w);
     }
 }
