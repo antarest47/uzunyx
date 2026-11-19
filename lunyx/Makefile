@@ -5,11 +5,11 @@
 # inside the package.
 NAME         := lunyx
 LUNYX_URL    ?= https://github.com/antarest47/lunyx.git
-LUNYX_COMMIT := 89081dd0285060d029d39934507e7c2df4bfc626
+LUNYX_COMMIT := 44061e698418f0cedd4cfd803d0f2d7ee60d6a09
 # The commit's date, so that versions go up: hashes alone don't sort (apt
 # took +gita289fdd for newer than +git89081dd). The "." after "git" sorts
 # after any letter, so this is newer than every earlier +git<hash>.
-LUNYX_DATE   := 20261111
+LUNYX_DATE   := 20261119
 # The revision counts changes to this recipe on the same commit.
 VERSION      := 0.1.0+git.$(LUNYX_DATE).$(shell echo $(LUNYX_COMMIT) | cut -c1-7)-1
 PREFIX       ?= /usr
