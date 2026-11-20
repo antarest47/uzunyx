@@ -46,7 +46,9 @@ function primary() {
 function followsScreen(w) {
     return (w.normalWindow || w.dialog) && !w.transient && !w.skipTaskbar && !w.deleted
         && !w.fullScreen && !w.desktops.some(isFullscreenDesktop)
-        && w.resourceClass !== "org.kde.plasmashell";
+        && w.resourceClass !== "org.kde.plasmashell"
+        // The window view's own windows (uzunyxwindowview, uzunyx-deco).
+        && String(w.caption).indexOf("Uzunyx window view") !== 0;
 }
 
 function place(w) {

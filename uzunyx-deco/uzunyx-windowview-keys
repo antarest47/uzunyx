@@ -1,0 +1,138 @@
+#!/usr/bin/python3
+"""The keyboard of Uzunyx's window view (uzunyxwindowview).
+
+KWin never gives the keyboard to the windows a script creates, so the view's
+search field can't receive keys. While the view is open this shows a 1 px
+ordinary window, which KWin does make active; the view's windows are above
+it (a script's windows are in KWin's top layer), so it isn't seen. The view's
+script recognizes it by its title (it starts like theirs), keeps it out of the
+task manager and Alt+Tab, and makes it active. A layer-shell surface asking
+for the keyboard (exclusive) was tried first: KWin 6.7 never focused it. What
+is typed stays here, through an input method context (dead keys: ´ + a = á),
+and the script reads it with Poll every few milliseconds: a KWin script can't
+receive D-Bus calls.
+
+    Start()                  takes the keyboard, with an empty text
+    Stop()                   gives it back
+    Poll() -> (s, as)        the text, and the keys since the last poll:
+                             enter, escape, left, right, up, down, next, previous
+
+Started by D-Bus activation on the view's first opening; it goes away after
+ten minutes without being used.
+"""
+
+import cairo
+import gi
+
+gi.require_version("Gdk", "3.0")
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gdk, Gio, GLib, Gtk  # noqa: E402
+
+NAME = "org.uzunyx.WindowViewKeys"
+PATH = "/org/uzunyx/WindowViewKeys"
+INTERFACE = """
+<node>
+  <interface name="org.uzunyx.WindowViewKeys">
+    <method name="Start"/>
+    <method name="Stop"/>
+    <method name="Poll">
+      <arg type="s" name="text" direction="out"/>
+      <arg type="as" name="keys" direction="out"/>
+    </method>
+  </interface>
+</node>
+"""
+IDLE_SECONDS = 600
+# The view's windows start with the same words: its script leaves them alone.
+TITLE = "Uzunyx window view keys"
+
+KEYS = {
+    Gdk.KEY_Return: "enter", Gdk.KEY_KP_Enter: "enter", Gdk.KEY_ISO_Enter: "enter",
+    Gdk.KEY_Escape: "escape",
+    Gdk.KEY_Left: "left", Gdk.KEY_Right: "right", Gdk.KEY_Up: "up", Gdk.KEY_Down: "down",
+    Gdk.KEY_Tab: "next", Gdk.KEY_ISO_Left_Tab: "previous",
+}
+
+
+class Keys:
+    def __init__(self):
+        self.text = ""
+        self.keys = []
+        self.idle = 0
+        self.window = Gtk.Window(title=TITLE)
+        self.window.set_decorated(False)
+        self.window.set_skip_taskbar_hint(True)
+        self.window.set_skip_pager_hint(True)
+        self.window.set_resizable(False)
+        self.window.set_default_size(1, 1)
+        self.window.set_app_paintable(True)
+        visual = self.window.get_screen().get_rgba_visual()
+        if visual:
+            self.window.set_visual(visual)
+        self.window.connect("draw", self.on_draw)
+        self.window.connect("key-press-event", self.on_key)
+        self.window.connect("key-release-event", lambda w, e: self.im.filter_keypress(e))
+        self.im = Gtk.IMContextSimple()
+        self.im.connect("commit", self.on_commit)
+
+        self.bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+        node = Gio.DBusNodeInfo.new_for_xml(INTERFACE)
+        self.bus.register_object(PATH, node.interfaces[0], self.on_call, None, None)
+        Gio.bus_own_name_on_connection(self.bus, NAME, Gio.BusNameOwnerFlags.NONE, None, lambda *_: Gtk.main_quit())
+        GLib.timeout_add_seconds(60, self.check_idle)
+
+    @staticmethod
+    def on_draw(_widget, cr):
+        cr.set_operator(cairo.OPERATOR_SOURCE)
+        cr.set_source_rgba(0, 0, 0, 0)
+        cr.paint()
+        return True
+
+    def on_commit(self, _im, string):
+        self.text += "".join(c for c in string if c.isprintable())
+
+    def on_key(self, _window, event):
+        if self.im.filter_keypress(event):
+            return True
+        ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
+        if event.keyval == Gdk.KEY_BackSpace:
+            self.text = "" if ctrl else self.text[:-1]
+        elif event.keyval in KEYS:
+            key = KEYS[event.keyval]
+            if key == "next" and event.state & Gdk.ModifierType.SHIFT_MASK:
+                key = "previous"
+            self.keys.append(key)
+        elif ctrl and event.keyval in (Gdk.KEY_u, Gdk.KEY_U):
+            self.text = ""
+        return True
+
+    def on_call(self, _bus, _sender, _path, _interface, method, _params, invocation):
+        self.idle = 0
+        if method == "Start":
+            self.text = ""
+            self.keys = []
+            self.im.reset()
+            self.window.show_all()
+            invocation.return_value(None)
+        elif method == "Stop":
+            self.window.hide()
+            self.text = ""
+            self.keys = []
+            invocation.return_value(None)
+        elif method == "Poll":
+            keys, self.keys = self.keys, []
+            invocation.return_value(GLib.Variant("(sas)", (self.text, keys)))
+
+    def check_idle(self):
+        if self.window.get_visible():
+            self.idle = 0
+        else:
+            self.idle += 60
+            if self.idle >= IDLE_SECONDS:
+                Gtk.main_quit()
+        return True
+
+
+if __name__ == "__main__":
+    Keys()
+    Gtk.main()

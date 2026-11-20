@@ -139,8 +139,35 @@ fondo difuminado, con un buscador arriba y el panel a la vista. Script QML
 - El buscador filtra por título y por app en todas las pantallas; está en la pantalla
   desde la que se abrió.
 - Una ventana por pantalla: los escritorios solo están en la principal, así que cada una
-  muestra las suyas. El panel es una copia en vivo (la vista está encima de todo).
-- Las ventanas propias de la vista (título `Uzunyx window view`) se dejan fuera.
+  muestra las suyas.
+- Las ventanas propias de la vista (título `Uzunyx window view`) se dejan fuera, y los
+  demás scripts de Uzunyx (`softmaximize`, `macfullscreen`, el mosaico y los escritorios de
+  `uzunyx-tiling` ≥ 0.10.1) y `uzunyx-outline` ≥ 0.4.3 las ignoran por ese título.
+
+Desde 0.16.1 (visto por el usuario el 2026-11-20 con la 0.16.0: no se podía escribir, el
+panel era una copia inerte y al cerrar una ventana desde la vista parpadeaba a su tamaño):
+
+- **El panel es el real y funciona.** Las ventanas de un script van siempre en la capa más
+  alta de KWin (encima del panel), lleven o no `BypassWindowManagerHint`, así que la vista
+  le deja un hueco: la ventana del panel menos los 8 px de su margen flotante, en píxeles
+  enteros (el panel puede quedar en medio píxel y dejaba una línea). La vista es una ventana
+  hasta el borde de arriba del panel y piezas a sus lados y debajo, cada una con el fondo
+  de toda la pantalla difuminado y recortado, así que no se nota la unión. Si se activa otra
+  ventana (una tarea del panel, Tsunyx), la vista se va y la deja así.
+- **El teclado.** KWin no le da nunca el foco a las ventanas de un script (ni con
+  `activeWindow`, ni con `requestActivate`, ni como diálogo), y tampoco a una superficie
+  layer-shell que lo pide en exclusiva (probado en un KWin anidado). Lo recibe
+  `uzunyx-windowview-keys` (`/usr/libexec`, Python + GTK3, activado por D-Bus,
+  `org.uzunyx.WindowViewKeys`: `Start`, `Stop`, `Poll`): una ventana común de 1 px, sin
+  bordes, que el script deja transparente debajo de la vista y hace activa; guarda lo que se
+  escribe con un `IMContextSimple` (acentos con tecla muerta) y el script lo lee cada 40 ms.
+  Enter, Esc, Tab y las flechas llegan como eventos. Se va sola tras diez minutos sin uso.
+  Comprobado en un Plasma anidado con un teclado simulado (`org_kde_kwin_fake_input`).
+- **Cerrar una ventana desde la vista** la deja transparente antes de cerrarla
+  (`uzunyx-openclose` dibuja encima de todo la ventana que se cierra); si sigue ahí 1,5 s
+  después (pregunta si guardar), vuelve a verse.
+- La ventana elegida se activa al terminar la animación (activarla antes la subía encima
+  de la vista); con Esc vuelve a estar activa la que lo estaba al abrir.
 
 Comprobado en un Plasma anidado (también con dos pantallas, con el filtro y eligiendo una
 ventana por temporizadores de prueba, porque ahí no se puede teclear).

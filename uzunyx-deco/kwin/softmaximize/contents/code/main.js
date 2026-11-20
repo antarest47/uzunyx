@@ -32,7 +32,9 @@ function eligible(w) {
     // Plasma's own windows (e.g. fullscreen launchers like Tsunyx) and
     // windows hidden from the taskbar manage their own maximized state.
     return w.normalWindow && w.maximizable && w.resizeable && !w.fullScreen
-        && !w.skipTaskbar && w.resourceClass !== "org.kde.plasmashell";
+        && !w.skipTaskbar && w.resourceClass !== "org.kde.plasmashell"
+        // The window view's own windows (uzunyxwindowview).
+        && String(w.caption).indexOf("Uzunyx window view") !== 0;
 }
 
 // Client-side decorated: KWin draws no frame, so frame == client geometry.

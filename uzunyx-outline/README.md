@@ -10,6 +10,9 @@ ocupan una pantalla entera sin estarlo (juegos, reproductores), menús y
 ventanas emergentes, las superficies de `edge-gaps`, las de Plasma (Tsunyx,
 KRunner), la pantalla de inicio (`ksplashqml`) y la de salida
 (`ksmserver`); estas dos últimas desde 0.2.1 (el splash mostraba el borde).
+Desde 0.4.3, tampoco las de la vista de ventanas de `uzunyx-deco` (título
+`Uzunyx window view…`): son el fondo difuminado alrededor del panel y el
+borde marcaba sus uniones.
 
 ## Cómo funciona
 

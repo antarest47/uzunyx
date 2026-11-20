@@ -15,8 +15,18 @@
  * so each screen shows its own windows. The search field is on the screen the
  * view was opened from, and filters on every screen.
  *
- * The panel is a live copy (the view's window is above everything, panels
- * included): a click on it goes back, like Esc.
+ * The panel stays real and works: a script's windows are always in KWin's top
+ * layer, above the panel, so the view leaves a hole where the panel is drawn
+ * (its window less the 8 px of floating margin): one window above it and pieces
+ * at its sides and below, each with the same blurred wallpaper. When another
+ * window becomes active (a task clicked in the panel, Tsunyx) the view goes.
+ * The main window isn't bypassing the window manager, so KWin can give it the
+ * keyboard (the search field); all are kept out of the task manager, Alt+Tab
+ * and the pager, and Uzunyx's other scripts leave them alone by their title.
+ *
+ * Closing a window from the view: it is made transparent first, so the closing
+ * animation (uzunyx-openclose draws it on top of everything) doesn't flash it at
+ * its real size; if it stays (an app asking to save), it comes back.
  */
 import QtQuick
 import QtQuick.Effects
@@ -34,6 +44,32 @@ Item {
     property var stages: []
     property bool closing: false
     property string filter: ""
+    // The window that was active when the view opened, to give it back.
+    property var previous: null
+    // Title -> where each of the view's windows goes, for KWin (onWindowAdded).
+    property var geometries: ({})
+    // Floating margin of the panel's window around what it draws.
+    readonly property int panelMargin: 8
+
+    // Where a screen's bottom panel is drawn, in screen coordinates, or null.
+    function holeOn(output) {
+        const g = output.geometry;
+        for (const w of KWin.Workspace.stackingOrder) {
+            if (!w.dock || w.minimized || !w.output || w.output.name !== output.name) {
+                continue;
+            }
+            const f = w.frameGeometry;
+            // On whole pixels: the panel can sit on half a pixel (centred), and
+            // the windows around it would leave a line between them.
+            const left = Math.round(f.x - g.x + panelMargin), top = Math.round(f.y - g.y + panelMargin);
+            const r = Qt.rect(left, top, Math.round(f.x - g.x + f.width - panelMargin) - left,
+                              Math.round(f.y - g.y + f.height - panelMargin) - top);
+            if (r.width > 0 && r.height > 0 && r.y + r.height / 2 > g.height / 2 && r.y < g.height) {
+                return r;
+            }
+        }
+        return null;
+    }
 
     function toggle() {
         if (stages.length === 0) {
@@ -46,33 +82,66 @@ Item {
     function open() {
         closing = false;
         filter = "";
+        previous = KWin.Workspace.activeWindow;
         const focused = KWin.Workspace.activeScreen;
         // Taken before the view's own windows exist.
         const screens = KWin.Workspace.screens.map(output => ({ output: output, windows: windowsOn(output) }));
         const list = [];
+        const places = {};
         for (const screen of screens) {
+            const g = screen.output.geometry;
+            const hole = holeOn(screen.output);
+            const title = viewTitle + " " + screen.output.name;
+            places[title] = Qt.rect(g.x, g.y, g.width, hole ? hole.y : g.height);
             // Created without a parent: a Window inside an Item would only show
             // while that Item's window does, and a script's root has none.
-            list.push(stageComponent.createObject(null, {
+            // Not shown yet: the pieces go first, so the main window is KWin's
+            // newest internal window, the one that gets the keys.
+            const stage = stageComponent.createObject(null, {
                 output: screen.output,
                 windows: screen.windows,
                 hasSearch: focused && screen.output.name === focused.name,
-            }));
+                title: title,
+                hole: hole,
+            });
+            if (hole) {
+                const pieces = [
+                    Qt.rect(0, hole.y, hole.x, g.height - hole.y),
+                    Qt.rect(hole.x + hole.width, hole.y, g.width - hole.x - hole.width, g.height - hole.y),
+                    Qt.rect(hole.x, hole.y + hole.height, hole.width, g.height - hole.y - hole.height),
+                ].filter(r => r.width > 0 && r.height > 0);
+                stage.pieces = pieces.map((r, i) => {
+                    const pieceTitle = title + " " + i;
+                    places[pieceTitle] = Qt.rect(g.x + r.x, g.y + r.y, r.width, r.height);
+                    return pieceComponent.createObject(null, { stage: stage, rect: r, title: pieceTitle });
+                });
+            }
+            list.push(stage);
         }
+        geometries = places;
         stages = list;
+        keyboard("Start");
+        // The searching screen's main window last of all.
+        const order = list.slice().sort((a, b) => (a.hasSearch ? 1 : 0) - (b.hasSearch ? 1 : 0));
+        for (const stage of order) {
+            stage.visible = true;
+        }
     }
 
     // chosen: the window to make active, or null to go back as it was.
-    function close(chosen) {
+    // elsewhere: another window became active on its own; leave it so.
+    property var chosen: null
+    property bool keepActive: false
+    function close(chosen, elsewhere) {
         if (closing || stages.length === 0) {
             return;
         }
         closing = true;
-        if (chosen) {
-            if (chosen.minimized) {
-                chosen.minimized = false;
-            }
-            KWin.Workspace.activeWindow = chosen;
+        root.chosen = chosen;
+        keepActive = elsewhere === true;
+        keyboard("Stop");
+        if (chosen && chosen.minimized) {
+            chosen.minimized = false;
         }
         for (const stage of stages) {
             stage.leave(chosen);
@@ -80,15 +149,130 @@ Item {
         finished.start();
     }
 
+    // Once the animation is over: activating a window raises it above the
+    // view (both are normal windows), so it is done at the end.
     Timer {
         id: finished
         interval: root.duration + 40
         onTriggered: {
+            const target = root.chosen || (root.keepActive ? null : root.previous);
+            if (target && !target.deleted) {
+                KWin.Workspace.activeWindow = target;
+            }
             for (const stage of root.stages) {
+                for (const piece of stage.pieces) {
+                    piece.destroy();
+                }
                 stage.destroy();
             }
             root.stages = [];
             root.closing = false;
+            root.chosen = null;
+            root.previous = null;
+        }
+    }
+
+    // The keyboard: KWin never gives it to a script's windows, so a helper
+    // (uzunyx-windowview-keys, a 1 px layer-shell surface that takes it) keeps
+    // what is typed, read here every 40 ms while the view is open.
+    KWin.DBusCall {
+        id: keyboardCall
+        service: "org.uzunyx.WindowViewKeys"
+        path: "/org/uzunyx/WindowViewKeys"
+        dbusInterface: "org.uzunyx.WindowViewKeys"
+    }
+    KWin.DBusCall {
+        id: pollCall
+        property bool waiting: false
+        service: "org.uzunyx.WindowViewKeys"
+        path: "/org/uzunyx/WindowViewKeys"
+        dbusInterface: "org.uzunyx.WindowViewKeys"
+        method: "Poll"
+        onFinished: returnValue => {
+            waiting = false;
+            if (root.stages.length === 0 || root.closing || !returnValue || returnValue.length < 2) {
+                return;
+            }
+            root.filter = String(returnValue[0]);
+            for (const key of returnValue[1]) {
+                root.key(key);
+            }
+        }
+        onFailed: waiting = false
+    }
+    Timer {
+        interval: 40
+        repeat: true
+        running: root.stages.length > 0 && !root.closing
+        onTriggered: {
+            if (!pollCall.waiting) {
+                pollCall.waiting = true;
+                pollCall.call();
+            }
+        }
+    }
+    function keyboard(method) {
+        keyboardCall.method = method;
+        keyboardCall.call();
+    }
+
+    // A key from the helper, on the screen with the search field.
+    function key(name) {
+        const stage = stages.find(s => s.hasSearch) || stages[0];
+        if (!stage) {
+            return;
+        }
+        if (name === "escape") {
+            close(null);
+        } else if (name === "enter") {
+            const i = stage.selected;
+            close(i >= 0 && stage.shown[i] ? stage.entries[i].window : null);
+        } else if (name === "next" || name === "right" || name === "down") {
+            stage.move(1);
+        } else if (name === "previous" || name === "left" || name === "up") {
+            stage.move(-1);
+        }
+    }
+
+    function isView(window) {
+        return window && String(window.caption).startsWith(viewTitle);
+    }
+
+    // The view's windows as KWin sees them: out of the task manager, Alt+Tab
+    // and the pager, on their screen, above the other windows; the one with
+    // the search field gets the keyboard.
+    Connections {
+        target: KWin.Workspace
+        function onWindowAdded(window) {
+            if (!root.isView(window)) {
+                return;
+            }
+            window.skipTaskbar = true;
+            window.skipSwitcher = true;
+            window.skipPager = true;
+            // The keyboard helper's window: invisible, under the view, active.
+            if (window.caption === root.viewTitle + " keys") {
+                window.opacity = 0;
+                const screen = KWin.Workspace.activeScreen.geometry;
+                window.frameGeometry = Qt.rect(screen.x, screen.y, 1, 1);
+                KWin.Workspace.activeWindow = window;
+                return;
+            }
+            const place = root.geometries[window.caption];
+            if (place) {
+                window.frameGeometry = place;
+                // KWin may still place it on its own right after.
+                Qt.callLater(() => {
+                    if (!window.deleted) {
+                        window.frameGeometry = place;
+                    }
+                });
+            }
+        }
+        function onWindowActivated(window) {
+            if (window && !root.isView(window) && root.stages.length > 0 && !root.closing) {
+                root.close(null, true);
+            }
         }
     }
 
@@ -122,7 +306,7 @@ Item {
         const list = [];
         for (const w of KWin.Workspace.stackingOrder) {
             if (w.deleted || !(w.normalWindow || w.dialog) || w.skipTaskbar || w.specialWindow
-                    || w.resourceClass === "org.kde.plasmashell" || String(w.caption).startsWith(viewTitle)) {
+                    || w.resourceClass === "org.kde.plasmashell" || isView(w)) {
                 continue;
             }
             if (!w.output || w.output.name !== output.name) {
@@ -210,6 +394,74 @@ Item {
         return result;
     }
 
+    // The blurred wallpaper of a screen, darker, at the size of the screen;
+    // a click on it goes back.
+    component Backdrop: Item {
+        id: backdrop
+        required property var view
+        anchors.fill: parent
+
+        Rectangle {
+            anchors.fill: parent
+            color: Kirigami.Theme.backgroundColor
+        }
+        KWin.DesktopBackground {
+            anchors.fill: parent
+            activity: KWin.Workspace.currentActivity
+            desktop: KWin.Workspace.currentDesktop
+            outputName: backdrop.view.output.name
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                autoPaddingEnabled: false
+                blurEnabled: true
+                blurMax: 64
+                blur: backdrop.view.showing ? 1 : 0
+                Behavior on blur { enabled: backdrop.view.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+            }
+        }
+        Rectangle {
+            anchors.fill: parent
+            color: Kirigami.Theme.backgroundColor
+            opacity: backdrop.view.showing ? 0.3 : 0
+            Behavior on opacity { enabled: backdrop.view.animate; NumberAnimation { duration: root.duration } }
+        }
+        MouseArea {
+            anchors.fill: parent
+            enabled: backdrop.view.showing
+            onClicked: root.close(null)
+        }
+    }
+
+    // A piece of the view beside or below the panel: only the wallpaper.
+    Component {
+        id: pieceComponent
+
+        Window {
+            id: piece
+            required property var stage
+            required property rect rect
+
+            x: stage.geo.x + rect.x
+            y: stage.geo.y + rect.y
+            width: rect.width
+            height: rect.height
+            flags: Qt.BypassWindowManagerHint | Qt.FramelessWindowHint | Qt.WindowDoesNotAcceptFocus
+            color: "transparent"
+            visible: true
+
+            Item {
+                x: -piece.rect.x
+                y: -piece.rect.y
+                width: piece.stage.geo.width
+                height: piece.stage.geo.height
+                opacity: piece.stage.ready ? 1 : 0.001
+                Backdrop {
+                    view: piece.stage
+                }
+            }
+        }
+    }
+
     Component {
         id: stageComponent
 
@@ -219,6 +471,9 @@ Item {
             required property var output
             required property var windows
             property bool hasSearch: false
+            // Where the panel is (left to it), and the windows around it.
+            property var hole: null
+            property var pieces: []
 
             readonly property rect geo: output.geometry
             readonly property int gap: Kirigami.Units.gridUnit * 2
@@ -234,7 +489,6 @@ Item {
 
             // {window, from}: from is where it is on screen, null if minimized.
             property var entries: []
-            property var panels: []
             // Where the windows go below the search field and above the panel.
             property rect area: Qt.rect(0, 0, 0, 0)
             readonly property var shown: entries.map(e => root.matches(e.window))
@@ -278,12 +532,10 @@ Item {
                     window: w,
                     from: w.minimized ? null : inScreen(w.frameGeometry),
                 }));
-                const docks = [];
                 let bottom = Kirigami.Units.gridUnit * 2;
                 for (const w of KWin.Workspace.stackingOrder) {
                     if (w.dock && !w.minimized && w.output && w.output.name === output.name) {
                         const f = inScreen(w.frameGeometry);
-                        docks.push({ id: w.internalId, rect: f });
                         if (f.y + f.height / 2 > geo.height / 2) {
                             bottom = Math.max(bottom, geo.height - f.y + Kirigami.Units.gridUnit);
                         }
@@ -292,15 +544,11 @@ Item {
                 const top = Kirigami.Units.gridUnit * (hasSearch ? 5 : 2);
                 const side = Kirigami.Units.gridUnit * 2;
                 area = Qt.rect(side, top, geo.width - 2 * side, geo.height - top - bottom);
-                panels = docks;
                 entries = list;
                 const active = KWin.Workspace.activeWindow;
                 const index = list.findIndex(e => e.window === active);
                 selected = index >= 0 ? index : (list.length > 0 ? 0 : -1);
-                if (hasSearch) {
-                    requestActivate();
-                    search.forceActiveFocus();
-                }
+
             }
 
             // A window closed while the view is open goes out of it.
@@ -330,70 +578,22 @@ Item {
             x: geo.x
             y: geo.y
             width: geo.width
-            height: geo.height
-            title: root.viewTitle
-            flags: Qt.BypassWindowManagerHint | Qt.FramelessWindowHint
+            height: hole ? hole.y : geo.height
+            flags: Qt.FramelessWindowHint
             color: "transparent"
-            visible: true
+            visible: false
 
             Item {
-                anchors.fill: parent
+                // The whole screen, clipped by the window when it stops above
+                // the panel, so the blur is the same as in the pieces.
+                width: stage.geo.width
+                height: stage.geo.height
                 // Not invisible (nothing would be drawn, thumbnails included):
                 // just not seen until they have a picture.
                 opacity: stage.ready ? 1 : 0.001
 
-                Item {
-                    id: backdrop
-                    anchors.fill: parent
-
-                    Rectangle {
-                        anchors.fill: parent
-                        color: Kirigami.Theme.backgroundColor
-                    }
-                    KWin.DesktopBackground {
-                        anchors.fill: parent
-                        activity: KWin.Workspace.currentActivity
-                        desktop: KWin.Workspace.currentDesktop
-                        outputName: stage.output.name
-                        layer.enabled: true
-                        layer.effect: MultiEffect {
-                            autoPaddingEnabled: false
-                            blurEnabled: true
-                            blurMax: 64
-                            blur: stage.showing ? 1 : 0
-                            Behavior on blur { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                        }
-                    }
-                    Rectangle {
-                        anchors.fill: parent
-                        color: Kirigami.Theme.backgroundColor
-                        opacity: stage.showing ? 0.3 : 0
-                        Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: root.duration } }
-                    }
-                    MouseArea {
-                        anchors.fill: parent
-                        enabled: stage.showing
-                        onClicked: root.close(null)
-                    }
-                }
-
-                // The panels, live and where they are: a click goes back.
-                Repeater {
-                    model: stage.panels
-                    delegate: KWin.WindowThumbnail {
-                        required property var modelData
-                        wId: modelData.id
-                        x: modelData.rect.x
-                        y: modelData.rect.y
-                        width: modelData.rect.width
-                        height: modelData.rect.height
-                        z: 50
-                        MouseArea {
-                            anchors.fill: parent
-                            enabled: stage.showing
-                            onClicked: root.close(null)
-                        }
-                    }
+                Backdrop {
+                    view: stage
                 }
 
                 // The search field, on the screen the view was opened from.
@@ -409,7 +609,7 @@ Item {
                     radius: height / 2
                     color: Qt.rgba(Kirigami.Theme.backgroundColor.r, Kirigami.Theme.backgroundColor.g, Kirigami.Theme.backgroundColor.b, 0.8)
                     border.width: 1
-                    border.color: search.activeFocus ? Kirigami.Theme.focusColor : Qt.rgba(1, 1, 1, 0.25)
+                    border.color: Kirigami.Theme.focusColor
                     opacity: stage.showing ? 1 : 0
                     Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: root.duration } }
                     Behavior on y { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
@@ -424,33 +624,34 @@ Item {
                         source: "search"
                         color: Kirigami.Theme.textColor
                     }
-                    TextInput {
+                    // What is typed, from the keyboard helper (see keyboard below).
+                    Text {
                         id: search
                         anchors.left: lens.right
                         anchors.right: parent.right
                         anchors.leftMargin: Kirigami.Units.smallSpacing * 2
                         anchors.rightMargin: Kirigami.Units.largeSpacing
                         anchors.verticalCenter: parent.verticalCenter
-                        color: Kirigami.Theme.textColor
-                        selectionColor: Kirigami.Theme.highlightColor
+                        color: root.filter.length > 0 ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
                         font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.1
-                        clip: true
-                        onTextChanged: root.filter = text
-                        Keys.onEscapePressed: root.close(null)
-                        Keys.onReturnPressed: root.close(stage.selected >= 0 && stage.shown[stage.selected] ? stage.entries[stage.selected].window : null)
-                        Keys.onEnterPressed: root.close(stage.selected >= 0 && stage.shown[stage.selected] ? stage.entries[stage.selected].window : null)
-                        Keys.onLeftPressed: event => { if (text.length === 0) stage.move(-1); else event.accepted = false; }
-                        Keys.onRightPressed: event => { if (text.length === 0) stage.move(1); else event.accepted = false; }
-                        Keys.onTabPressed: stage.move(1)
-                        Keys.onBacktabPressed: stage.move(-1)
+                        elide: Text.ElideLeft
+                        text: root.filter.length > 0 ? root.filter : "Buscar ventanas…"
 
-                        Text {
-                            anchors.fill: parent
-                            verticalAlignment: Text.AlignVCenter
-                            visible: search.text.length === 0
-                            text: "Buscar ventanas…"
-                            color: Kirigami.Theme.disabledTextColor
-                            font: search.font
+                        Rectangle {
+                            id: caret
+                            x: root.filter.length > 0 ? Math.min(search.contentWidth, search.width) + 1 : 0
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 1
+                            height: search.font.pixelSize > 0 ? search.font.pixelSize * 1.2 : Kirigami.Units.gridUnit
+                            color: Kirigami.Theme.textColor
+                            SequentialAnimation on opacity {
+                                loops: Animation.Infinite
+                                running: stage.showing
+                                NumberAnimation { to: 1; duration: 0 }
+                                PauseAnimation { duration: 530 }
+                                NumberAnimation { to: 0; duration: 0 }
+                                PauseAnimation { duration: 530 }
+                            }
                         }
                     }
                 }
@@ -469,6 +670,26 @@ Item {
                         readonly property bool isShown: stage.shown[index] === true && place !== null
                         readonly property bool isChosen: stage.chosen === window
                         readonly property bool isSelected: stage.selected === index && isShown
+                        // Closing it from here: invisible first (see the top), back
+                        // if it is still there a moment later (it asked something).
+                        property bool going: false
+                        function closeIt() {
+                            going = true;
+                            window.opacity = 0;
+                            window.closeWindow();
+                            stillThere.start();
+                        }
+                        Timer {
+                            id: stillThere
+                            interval: 1500
+                            onTriggered: {
+                                if (!tile.window.deleted) {
+                                    tile.window.opacity = 1;
+                                    tile.going = false;
+                                }
+                            }
+                        }
+
                         // Its last place in the grid, for fading out when filtered.
                         property var lastPlace: place
                         onPlaceChanged: if (place) lastPlace = place
@@ -493,7 +714,9 @@ Item {
                         width: rect.width
                         height: rect.height
                         z: isChosen ? 300 : (hover.containsMouse ? 200 : 100 + index)
-                        opacity: !stage.opened ? (target ? 1 : 0) : (isShown ? (window.minimized ? 0.7 : 1) : 0)
+                        opacity: going ? 0 : !stage.opened ? (target ? 1 : 0) : (isShown ? (window.minimized ? 0.7 : 1) : 0)
+                        scale: going ? 0.85 : 1
+                        Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                         visible: opacity > 0
 
                         Behavior on x { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
@@ -557,7 +780,7 @@ Item {
                                 id: closeMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: tile.window.closeWindow()
+                                onClicked: tile.closeIt()
                             }
                         }
 

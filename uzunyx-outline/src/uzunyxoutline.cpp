@@ -128,6 +128,11 @@ bool UzunyxOutlineEffect::wantsOutline(EffectWindow *window) const
             return false;
         }
     }
+    // The window view's own windows (uzunyxwindowview, uzunyx-deco): the
+    // blurred wallpaper around the panel, not app frames.
+    if (window->caption().startsWith(QLatin1String("Uzunyx window view"))) {
+        return false;
+    }
     // Borderless windows covering a whole screen (games, players, splash
     // screens) without being in the fullscreen state.
     const RectF screen = effects->clientArea(FullScreenArea, window);

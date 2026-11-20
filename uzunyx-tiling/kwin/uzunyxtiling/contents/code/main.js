@@ -88,6 +88,8 @@ function desktopOf(w) {
 function eligible(w) {
     return w.normalWindow && !w.transient && w.resizeable && w.moveable && !w.skipTaskbar
         && !w.specialWindow && w.resourceClass !== "org.kde.plasmashell" && w.resourceClass !== KEYS_WINDOW
+        // The window view's own windows (uzunyxwindowview, uzunyx-deco).
+        && String(w.caption).indexOf("Uzunyx window view") !== 0
         && (w.onAllDesktops ? onSecondary(w) : w.desktops.length === 1);
 }
 

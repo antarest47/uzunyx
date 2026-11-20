@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=org.uzunyx.WindowViewKeys
+Exec=/usr/libexec/uzunyx-windowview-keys

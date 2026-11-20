@@ -1,5 +1,5 @@
 NAME    := uzunyx-deco
-VERSION := 0.16.0
+VERSION := 0.16.1
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -32,12 +32,16 @@ install:
 	for s in $(QML_SCRIPTS); do for f in $(QML_SCRIPT_FILES); do install -Dm644 kwin/$$s/$$f $(DESTDIR)$(SCRIPTS_DIR)/$$s/$$f; done; done
 	for f in metadata.json contents/ui/main.qml; do install -Dm644 kwin/tabbox/uzunyx_cover/$$f $(DESTDIR)$(TABBOX_DIR)/uzunyx_cover/$$f; done
 	install -Dm644 kwinrc $(DESTDIR)$(SYSCONFDIR)/xdg/kwinrc
+	@# The window view's keyboard (a script's windows never get it).
+	install -Dm755 uzunyx-windowview-keys $(DESTDIR)$(PREFIX)/libexec/uzunyx-windowview-keys
+	install -Dm644 dbus/org.uzunyx.WindowViewKeys.service $(DESTDIR)$(PREFIX)/share/dbus-1/services/org.uzunyx.WindowViewKeys.service
 
 uninstall:
 	rm -rf $(DESTDIR)$(DECO_DIR)
 	for s in $(SCRIPTS) $(QML_SCRIPTS); do rm -rf $(DESTDIR)$(SCRIPTS_DIR)/$$s; done
 	rm -rf $(DESTDIR)$(TABBOX_DIR)/uzunyx_cover
 	rm -f $(DESTDIR)$(SYSCONFDIR)/xdg/kwinrc
+	rm -f $(DESTDIR)$(PREFIX)/libexec/uzunyx-windowview-keys $(DESTDIR)$(PREFIX)/share/dbus-1/services/org.uzunyx.WindowViewKeys.service
 
 deb: clean
 	$(MAKE) install DESTDIR=$(CURDIR)/$(BUILD)/root PREFIX=/usr SYSCONFDIR=/etc

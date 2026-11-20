@@ -117,7 +117,9 @@ focusTimer.timeout.connect(() => {
 
 function eligible(w) {
     return w && w.normalWindow && w.fullScreenable && !w.skipTaskbar
-        && w.resourceClass !== "org.kde.plasmashell";
+        && w.resourceClass !== "org.kde.plasmashell"
+        // The window view's own windows (uzunyxwindowview).
+        && String(w.caption).indexOf("Uzunyx window view") !== 0;
 }
 
 function onSecondary(w) {
