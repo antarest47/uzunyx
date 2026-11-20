@@ -20,7 +20,7 @@ TILING = "Con el mosaico encendido"
 # doesn't know (the launcher's Super is KWin's modifier-only shortcut).
 # Three-finger swipes: KWin's own, and uzunyx-tiling's script (uzunyxgestures).
 # kglobalaccel knows none of them, so they're listed as they are.
-GESTURES = [("Vista general", "", "", ["4 dedos", "↑"]),
+GESTURES = [("Vista de ventanas", "", "", ["4 dedos", "↑"]),
             ("Escritorio siguiente", "", "", ["3 dedos", "←"]),
             ("Escritorio anterior", "", "", ["3 dedos", "→"])]
 if os.path.isdir("/usr/share/kwin-wayland/scripts/uzunyxgestures"):
@@ -58,7 +58,7 @@ SECTIONS = [
         ("Ir a la derecha o crear otro", "kwin", "UzunyxDesktopNext"),
         ("Llevar la ventana al siguiente", "kwin", "UzunyxWindowDesktopNext"),
         ("Llevar la ventana al anterior", "kwin", "UzunyxWindowDesktopPrevious"),
-        ("Vista general", "kwin", "Overview"),
+        ("Vista de ventanas", "kwin", "UzunyxWindowView"),
         ("Mostrar el escritorio", "kwin", "Show Desktop"),
     ]),
     ("Panel táctil", None, GESTURES),

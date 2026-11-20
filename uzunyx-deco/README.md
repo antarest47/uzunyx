@@ -116,6 +116,35 @@ sin escritorio propio: los escritorios solo están en la principal (`uzunyxdeskt
 de `uzunyx-tiling` ≥ 0.10.0, y `PerOutputVirtualDesktops=false` en `/etc/xdg/kwinrc`,
 que hasta 0.15.9 era `true`).
 
+## Vista de ventanas `uzunyxwindowview`
+
+Desde 0.16.0 (variante B de las maquetas, elegida por el usuario el 2026-11-20), en lugar
+de la Vista general de KWin, que queda apagada (`overviewEnabled=false` en
+`/etc/xdg/kwinrc`): Super+Tab o cuatro dedos hacia arriba (abajo la cierran) muestran
+todas las ventanas del escritorio actual en miniatura y en vivo, en una cuadrícula sobre el
+fondo difuminado, con un buscador arriba y el panel a la vista. Script QML
+(`declarativescript`; la carpeta se llama como su Id, si no KWin no la encuentra), sin C++.
+
+- Abre y cierra como el Alt+Tab: el primer cuadro es una copia del escritorio, cada ventana
+  donde está, y de ahí vuela a su lugar en la cuadrícula mientras el fondo se difumina
+  (`KWin.DesktopBackground` + `MultiEffect`). Las minimizadas aparecen en la cuadrícula,
+  más tenues.
+- La cuadrícula prueba cada cantidad de columnas y se queda con la que deja las ventanas más
+  grandes (nunca más que su tamaño real); filas centradas, en orden de lectura de su lugar
+  real, para que se muevan poco.
+- Elegir: clic, o Enter sobre la seleccionada (aro en el acento; al empezar, la activa; Tab
+  y las flechas la cambian, el puntero también). La elegida pasa al frente y crece hasta su
+  lugar. Esc, un clic en el fondo o en el panel vuelven sin cambiar nada. La bola de cerrar
+  aparece al pasar el ratón.
+- El buscador filtra por título y por app en todas las pantallas; está en la pantalla
+  desde la que se abrió.
+- Una ventana por pantalla: los escritorios solo están en la principal, así que cada una
+  muestra las suyas. El panel es una copia en vivo (la vista está encima de todo).
+- Las ventanas propias de la vista (título `Uzunyx window view`) se dejan fuera.
+
+Comprobado en un Plasma anidado (también con dos pantallas, con el filtro y eligiendo una
+ventana por temporizadores de prueba, porque ahí no se puede teclear).
+
 ## Selector de Alt+Tab `uzunyx_cover`
 
 Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en

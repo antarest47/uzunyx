@@ -16,7 +16,7 @@ sistema):
 | Alt+Z / Alt+C | Pista anterior / siguiente | `mediacontrol` `previousmedia` / `nextmedia` |
 | Ctrl+Shift+S | Captura de una región rectangular | `org.kde.spectacle.desktop` `RectangularRegionScreenShot` |
 | Super+W/A/S/D | Pasar el foco a la ventana de arriba / izquierda / abajo / derecha | `kwin` `Switch Window Up` / `Left` / `Down` / `Right` |
-| Super+Tab | Vista general (en vez de Super+W) | `kwin` `Overview` |
+| Super+Tab | Vista de ventanas de Uzunyx (desde 0.9.0; antes la Vista general de KWin, ahora apagada) | `kwin` `UzunyxWindowView` |
 | Super+Q | Mostrar escritorio (en vez de Super+D) | `kwin` `Show Desktop` |
 | Super+Escape | Bloquear la pantalla | `ksmserver` `Lock Session` (se quita de `org.kde.plasma-systemmonitor.desktop` `_launch`) |
 

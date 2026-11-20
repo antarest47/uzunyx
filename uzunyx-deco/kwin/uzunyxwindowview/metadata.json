@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "Shows every window of the current desktop as a live thumbnail over the blurred wallpaper, with a search field; Meta+Tab or four fingers up",
+        "Description[es]": "Muestra todas las ventanas del escritorio actual en miniatura y en vivo sobre el fondo difuminado, con un buscador; Super+Tab o cuatro dedos hacia arriba",
+        "EnabledByDefault": true,
+        "Icon": "view-grid",
+        "Id": "uzunyxwindowview",
+        "License": "GPL-3.0-or-later",
+        "Name": "Uzunyx window view",
+        "Name[es]": "Vista de ventanas de Uzunyx",
+        "Version": "0.1.0"
+    },
+    "X-Plasma-API": "declarativescript",
+    "X-Plasma-MainScript": "ui/main.qml"
+}

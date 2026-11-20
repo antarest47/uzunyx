@@ -1,5 +1,5 @@
 NAME    := uzunyx-deco
-VERSION := 0.15.10
+VERSION := 0.16.0
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -12,7 +12,7 @@ SCRIPTS_DIR  := $(PREFIX)/share/kwin-wayland/scripts
 SCRIPTS      := softmaximize panelconfigretry macfullscreen
 SCRIPT_FILES := metadata.json contents/code/main.js
 # Declarative (QML) scripts
-QML_SCRIPTS      := fullscreenbar
+QML_SCRIPTS      := fullscreenbar uzunyxwindowview
 QML_SCRIPT_FILES := metadata.json contents/ui/main.qml
 TABBOX_DIR   := $(PREFIX)/share/kwin-wayland/tabbox
 

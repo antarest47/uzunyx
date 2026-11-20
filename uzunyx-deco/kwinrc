@@ -7,6 +7,10 @@
 magiclampEnabled=true
 squashEnabled=false
 
+# KWin's Overview is off: uzunyxwindowview (Meta+Tab, four fingers up) takes
+# its place, with the windows of each screen (desktops only on the primary).
+overviewEnabled=false
+
 [Windows]
 # Desktops shared by every screen (KWin's default), but only the primary one
 # changes: uzunyxdesktops (uzunyx-tiling) puts the windows of the other screens on
