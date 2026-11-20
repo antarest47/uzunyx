@@ -82,15 +82,21 @@ KWin.TabBoxSwitcher {
             // go of Alt without it stays on the same window. KWin had already
             // moved the selection to the next one (and may do it a moment after
             // this window exists): put it back until the animation starts.
-            property bool painted: false
+            //
+            // The live thumbnails need a frame or two before they have a picture:
+            // until then everything stays invisible (the window is transparent,
+            // so the real desktop shows, the same picture), else the current
+            // window blinked out and back just before shrinking.
+            property int frames: 0
+            readonly property bool ready: frames >= 3
             function start() {
-                if (!animate && painted) {
+                if (!animate && frames >= 4) {
                     animate = true;
                     opened = true;
                 }
             }
             onFrameSwapped: {
-                painted = true;
+                frames += 1;
                 start();
             }
             Connections {
@@ -102,14 +108,30 @@ KWin.TabBoxSwitcher {
                 }
             }
             Timer {
-                interval: 60
+                interval: 150
                 running: true
                 onTriggered: {
-                    stage.painted = true;
+                    stage.frames = Math.max(stage.frames, 4);
                     stage.start();
                 }
             }
-            Component.onCompleted: tabBox.currentIndex = 0
+
+            // The panels of this screen, as they are: the switcher covers them,
+            // so live copies of them slide away (and come back when closing)
+            // instead of vanishing at once.
+            property var panels: []
+            Component.onCompleted: {
+                tabBox.currentIndex = 0;
+                const list = [];
+                for (const w of KWin.Workspace.stackingOrder) {
+                    if (w.dock && !w.minimized && w.output && output && w.output.name === output.name) {
+                        const f = w.frameGeometry;
+                        list.push({ id: w.internalId, x: f.x - tabBox.screenGeometry.x, y: f.y - tabBox.screenGeometry.y,
+                                    width: f.width, height: f.height });
+                    }
+                }
+                panels = list;
+            }
 
             function leave() {
                 // KWin activates the chosen window right after asking the
@@ -174,164 +196,190 @@ KWin.TabBoxSwitcher {
             color: "transparent"
             visible: true
 
-            // Opaque, so nothing shows through (the panel included), also while
-            // closing: at the end it matches the desktop, blur gone and every
-            // window back in its place, and the real one takes over.
             Item {
-                id: backdrop
+                id: content
                 anchors.fill: parent
+                // Not invisible (nothing would be drawn, thumbnails included):
+                // just not seen until they are ready.
+                opacity: stage.ready ? 1 : 0.001
 
-                Rectangle {
+                // Opaque, so nothing shows through (the panel included), also while
+                // closing: at the end it matches the desktop, blur gone and every
+                // window back in its place, and the real one takes over.
+                Item {
+                    id: backdrop
                     anchors.fill: parent
-                    color: Kirigami.Theme.backgroundColor
-                }
 
-                KWin.DesktopBackground {
-                    anchors.fill: parent
-                    activity: KWin.Workspace.currentActivity
-                    desktop: KWin.Workspace.currentDesktop
-                    outputName: stage.output ? stage.output.name : ""
+                    Rectangle {
+                        anchors.fill: parent
+                        color: Kirigami.Theme.backgroundColor
+                    }
 
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        // Without padding the edges stay opaque: with it they
-                        // faded out and showed the desktop and panel behind.
-                        autoPaddingEnabled: false
-                        blurEnabled: true
-                        blurMax: 64
-                        blur: stage.showing ? 1 : 0
-                        Behavior on blur { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                    KWin.DesktopBackground {
+                        anchors.fill: parent
+                        activity: KWin.Workspace.currentActivity
+                        desktop: KWin.Workspace.currentDesktop
+                        outputName: stage.output ? stage.output.name : ""
+
+                        layer.enabled: true
+                        layer.effect: MultiEffect {
+                            // Without padding the edges stay opaque: with it they
+                            // faded out and showed the desktop and panel behind.
+                            autoPaddingEnabled: false
+                            blurEnabled: true
+                            blurMax: 64
+                            blur: stage.showing ? 1 : 0
+                            Behavior on blur { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                        }
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        color: Kirigami.Theme.backgroundColor
+                        opacity: stage.showing ? 0.3 : 0
+                        Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
                     }
                 }
-
-                Rectangle {
-                    anchors.fill: parent
-                    color: Kirigami.Theme.backgroundColor
-                    opacity: stage.showing ? 0.3 : 0
-                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
-                }
-            }
-
-            Item {
-                id: scene
-                anchors.fill: parent
-                focus: true
-
-                Keys.onLeftPressed: tabBox.currentIndex = (tabBox.currentIndex - 1 + stage.count) % stage.count
-                Keys.onRightPressed: tabBox.currentIndex = (tabBox.currentIndex + 1) % stage.count
 
                 Repeater {
-                    id: covers
-                    model: tabBox.model
-
-                    delegate: Item {
-                        id: cover
-
-                        required property int index
-                        required property var model
-
-                        // Shortest way around from the chosen window: negative on
-                        // the left. A tie goes left, so with Alt+Tab the current
-                        // window (the one before the chosen) always goes left.
-                        readonly property int offset: {
-                            const half = stage.count / 2;
-                            let d = (index - tabBox.currentIndex + stage.count) % stage.count;
-                            return d >= half && d > 0 ? d - stage.count : d;
-                        }
-                        readonly property int distance: Math.abs(offset)
-                        readonly property int side: offset === 0 ? 0 : (offset > 0 ? 1 : -1)
-                        readonly property bool chosen: offset === 0
-                        readonly property bool leavingOnTop: stage.closing && model.windowId.toString() === stage.chosenId
-
-                        // Its real place, taken once, before the first frame.
-                        property var from: null
-                        Component.onCompleted: from = stage.placeOf(model.windowId)
-                        // Where it is (or goes) outside the row: its real place
-                        // before opening and after closing; null means the row.
-                        readonly property var place: !stage.opened ? from
-                            : (stage.closing ? (leavingOnTop && stage.chosenRect ? stage.chosenRect : from) : null)
-                        readonly property bool inRow: place == null
-
-                        width: inRow ? stage.coverWidth : place.width
-                        height: inRow ? stage.coverHeight : place.height
-                        y: inRow ? Math.round((stage.height - stage.coverHeight) / 2 - stage.height * 0.03) : place.y
-                        x: inRow ? Math.round((stage.width - stage.coverWidth) / 2 + side * (stage.width * 0.27 + (distance - 1) * stage.width * 0.055)) : place.x
-                        // The model is in focus order, the first one on top: as on screen.
-                        z: leavingOnTop ? 300 : (stage.opened ? 100 - distance : 100 - index)
-                        scale: inRow ? (chosen ? 1 : 0.8) : 1
-                        // In the row: dimmer far away; fading in and out when it
-                        // has no place on screen.
-                        opacity: !inRow ? 1 : (!stage.showing ? 0 : (distance > 3 ? 0 : (distance > 2 ? 0.45 : 1)))
-
-                        Behavior on x { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                    model: stage.panels
+                    delegate: KWin.WindowThumbnail {
+                        required property var modelData
+                        // Out through the nearest edge: down for a bottom panel.
+                        readonly property real away: modelData.y + modelData.height / 2 > stage.height / 2
+                            ? modelData.height + 24 : -(modelData.height + 24)
+                        wId: modelData.id
+                        x: modelData.x
+                        y: modelData.y + (stage.showing ? away : 0)
+                        width: modelData.width
+                        height: modelData.height
+                        opacity: stage.showing ? 0 : 1
                         Behavior on y { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on width { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on height { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on scale { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
                         Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
-
-                        transform: Rotation {
-                            origin.x: cover.width / 2
-                            origin.y: cover.height / 2
-                            axis { x: 0; y: 1; z: 0 }
-                            angle: cover.inRow ? -cover.side * 58 : 0
-                            Behavior on angle { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        }
-
-                        // The frame hugs the window, whatever its shape.
-                        readonly property real fit: thumbnail.implicitWidth > 0 && thumbnail.implicitHeight > 0
-                            ? Math.min(width / thumbnail.implicitWidth, height / thumbnail.implicitHeight) : 0
-
-                        Rectangle {
-                            anchors.centerIn: parent
-                            width: cover.fit > 0 ? thumbnail.implicitWidth * cover.fit + 6 : parent.width
-                            height: cover.fit > 0 ? thumbnail.implicitHeight * cover.fit + 6 : parent.height
-                            radius: 8
-                            color: Kirigami.Theme.alternateBackgroundColor
-                            border.width: cover.chosen ? 2 : 1
-                            border.color: cover.chosen ? Kirigami.Theme.focusColor : Qt.rgba(1, 1, 1, 0.25)
-                            opacity: stage.showing ? 1 : 0
-                            Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
-                        }
-
-                        KWin.WindowThumbnail {
-                            id: thumbnail
-                            anchors.fill: parent
-                            anchors.margins: stage.showing ? 3 : 0
-                            wId: cover.model.windowId
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            enabled: stage.showing
-                            onClicked: tabBox.model.activate(cover.index)
-                        }
                     }
                 }
 
-                Row {
-                    id: title
-                    readonly property var current: covers.count > 0 ? covers.itemAt(tabBox.currentIndex) : null
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    y: Math.round(parent.height / 2 + stage.coverHeight / 2 + parent.height * 0.015)
-                    spacing: Kirigami.Units.largeSpacing
-                    visible: current !== null
-                    opacity: stage.showing ? 1 : 0
-                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
+                Item {
+                    id: scene
+                    anchors.fill: parent
+                    focus: true
 
-                    Kirigami.Icon {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: Kirigami.Units.iconSizes.medium
-                        height: width
-                        source: title.current ? title.current.model.icon : ""
+                    Keys.onLeftPressed: tabBox.currentIndex = (tabBox.currentIndex - 1 + stage.count) % stage.count
+                    Keys.onRightPressed: tabBox.currentIndex = (tabBox.currentIndex + 1) % stage.count
+
+                    Repeater {
+                        id: covers
+                        model: tabBox.model
+
+                        delegate: Item {
+                            id: cover
+
+                            required property int index
+                            required property var model
+
+                            // Shortest way around from the chosen window: negative on
+                            // the left. A tie goes left, so with Alt+Tab the current
+                            // window (the one before the chosen) always goes left.
+                            readonly property int offset: {
+                                const half = stage.count / 2;
+                                let d = (index - tabBox.currentIndex + stage.count) % stage.count;
+                                return d >= half && d > 0 ? d - stage.count : d;
+                            }
+                            readonly property int distance: Math.abs(offset)
+                            readonly property int side: offset === 0 ? 0 : (offset > 0 ? 1 : -1)
+                            readonly property bool chosen: offset === 0
+                            readonly property bool leavingOnTop: stage.closing && model.windowId.toString() === stage.chosenId
+
+                            // Its real place, taken once, before the first frame.
+                            property var from: null
+                            Component.onCompleted: from = stage.placeOf(model.windowId)
+                            // Where it is (or goes) outside the row: its real place
+                            // before opening and after closing; null means the row.
+                            readonly property var place: !stage.opened ? from
+                                : (stage.closing ? (leavingOnTop && stage.chosenRect ? stage.chosenRect : from) : null)
+                            readonly property bool inRow: place == null
+
+                            width: inRow ? stage.coverWidth : place.width
+                            height: inRow ? stage.coverHeight : place.height
+                            y: inRow ? Math.round((stage.height - stage.coverHeight) / 2 - stage.height * 0.03) : place.y
+                            x: inRow ? Math.round((stage.width - stage.coverWidth) / 2 + side * (stage.width * 0.27 + (distance - 1) * stage.width * 0.055)) : place.x
+                            // The model is in focus order, the first one on top: as on screen.
+                            z: leavingOnTop ? 300 : (stage.opened ? 100 - distance : 100 - index)
+                            scale: inRow ? (chosen ? 1 : 0.8) : 1
+                            // In the row: dimmer far away; fading in and out when it
+                            // has no place on screen.
+                            opacity: !inRow ? 1 : (!stage.showing ? 0 : (distance > 3 ? 0 : (distance > 2 ? 0.45 : 1)))
+
+                            Behavior on x { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                            Behavior on y { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                            Behavior on width { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                            Behavior on height { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                            Behavior on scale { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                            Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
+
+                            transform: Rotation {
+                                origin.x: cover.width / 2
+                                origin.y: cover.height / 2
+                                axis { x: 0; y: 1; z: 0 }
+                                angle: cover.inRow ? -cover.side * 58 : 0
+                                Behavior on angle { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                            }
+
+                            // The frame hugs the window, whatever its shape.
+                            readonly property real fit: thumbnail.implicitWidth > 0 && thumbnail.implicitHeight > 0
+                                ? Math.min(width / thumbnail.implicitWidth, height / thumbnail.implicitHeight) : 0
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: cover.fit > 0 ? thumbnail.implicitWidth * cover.fit + 6 : parent.width
+                                height: cover.fit > 0 ? thumbnail.implicitHeight * cover.fit + 6 : parent.height
+                                radius: 8
+                                color: Kirigami.Theme.alternateBackgroundColor
+                                border.width: cover.chosen ? 2 : 1
+                                border.color: cover.chosen ? Kirigami.Theme.focusColor : Qt.rgba(1, 1, 1, 0.25)
+                                opacity: stage.showing ? 1 : 0
+                                Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
+                            }
+
+                            KWin.WindowThumbnail {
+                                id: thumbnail
+                                anchors.fill: parent
+                                anchors.margins: stage.showing ? 3 : 0
+                                wId: cover.model.windowId
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: stage.showing
+                                onClicked: tabBox.model.activate(cover.index)
+                            }
+                        }
                     }
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: Math.min(implicitWidth, stage.width * 0.6)
-                        text: title.current ? title.current.model.caption : ""
-                        color: Kirigami.Theme.textColor
-                        font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.25
-                        elide: Text.ElideRight
+
+                    Row {
+                        id: title
+                        readonly property var current: covers.count > 0 ? covers.itemAt(tabBox.currentIndex) : null
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        y: Math.round(parent.height / 2 + stage.coverHeight / 2 + parent.height * 0.015)
+                        spacing: Kirigami.Units.largeSpacing
+                        visible: current !== null
+                        opacity: stage.showing ? 1 : 0
+                        Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
+
+                        Kirigami.Icon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Kirigami.Units.iconSizes.medium
+                            height: width
+                            source: title.current ? title.current.model.icon : ""
+                        }
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: Math.min(implicitWidth, stage.width * 0.6)
+                            text: title.current ? title.current.model.caption : ""
+                            color: Kirigami.Theme.textColor
+                            font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.25
+                            elide: Text.ElideRight
+                        }
                     }
                 }
             }
