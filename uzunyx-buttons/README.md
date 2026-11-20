@@ -34,7 +34,9 @@ SVG: lo ponen la decoración (`UzunyxButton.qml`) y el CSS de GTK
 | `/usr/share/icons/uzunyx` | Tema de iconos (`gen-icons.py`): hereda de `kora` y trae `window-{minimize,maximize,restore,close}-symbolic.png` a 16, 24 y 32 px (y @2x), las carpetas (genérica y de la carpeta personal) en `places/scalable` y el icono de Dolphin en `apps/scalable`, con los colores del logo de Akane, con los nombres alternativos que piden las apps (enlaces: `folder-public` para Dolphin/KIO, `folder-downloads`, `folder-desktop`, `folder-home`, `inode-directory`, `system-file-manager`). Sus versiones `-symbolic` (y las de los alias) son enlaces a las de Kora en `places/symbolic` y `apps/symbolic`: al pedir un icono `-symbolic` que no tiene, el buscador prueba primero el nombre sin sufijo **en el mismo tema** antes de pasar a Kora, y saldría la carpeta de color (pasaba con «Mostrar escritorio», `user-desktop-symbolic`). Lo demás sale de Kora (también `folder-open` y las variantes `-open`). |
 | `/usr/share/icons/uzunyx-sora` | Las mismas carpetas y el mismo Dolphin con los colores del logo de Sora; hereda de `uzunyx` (botones y lo demás). Lo elige el tema global «Uzunyx Sora». |
 | (`gen-folders.py`) | Dibuja las carpetas de cada edición (pestaña de atrás en el acento, frente gris oscuro con brillo arriba, curvas blanca y del acento abajo a la derecha, como los mechones del logo, y borde blanco tenue; colores de los logos de Akane y Sora; modelo del usuario y variante «C» elegida por él, 2026-11-08) y les pone el emblema de cada SVG de `../icons/iconos-carpetas-v2`. La carpeta común y Dolphin llevan los colores del logo de la edición; Dolphin es la carpeta al revés, con el frente del acento y el delfín blanco, para que se distinga como app (idea «4», elegida por el usuario el 2026-11-10). Las carpetas de la carpeta personal llevan un color propio cada una (`PLACES`), igual en Akane y Sora. Se genera al instalar, en `build/folders`. |
-| `/usr/bin/uzunyx-gtk-theme-setup` + `/etc/xdg/autostart/` | Al iniciar sesión, una sola vez por usuario, cambia el tema GTK de Breeze (o ninguno) a Breeze-Uzunyx. Marca: `~/.config/uzunyx/gtk-theme-set`. |
+| `/usr/bin/uzunyx-gtk-theme-setup` + `/etc/xdg/autostart/` | Al iniciar sesión, una sola vez por usuario, cambia el tema GTK de Breeze (o ninguno) a Breeze-Uzunyx. Marca: `~/.config/uzunyx/gtk-theme-set`. Desde 0.10.0, además, botones en la configuración GTK del usuario (ver abajo): en cada inicio de sesión copia `uzunyx-windowcontrols.css` a `~/.config/gtk-4.0/` y `uzunyx-titlebuttons.css` con `uzunyx-buttons/` (los SVG) a `~/.config/gtk-3.0/`; los importa desde cada `gtk.css` una vez (marca `gtk-titlebuttons`) y, si está Flatpak, `flatpak override --user --filesystem=xdg-config/gtk-3.0:ro --filesystem=xdg-config/gtk-4.0:ro` una vez (marca `flatpak-gtk-config`). |
+| `/usr/share/uzunyx-buttons/uzunyx-windowcontrols.css` | CSS de los botones para libadwaita (`libadwaita.css` en el repo). |
+| `/usr/share/uzunyx-buttons/gtk-3.0/` | CSS de GTK3 del tema (`gen-gtk-css.py 3 uzunyx-buttons`) con sus SVG al lado, para la configuración del usuario (desde 0.10.1). |
 
 ## Por qué así
 
@@ -62,8 +64,18 @@ SVG: lo ponen la decoración (`UzunyxButton.qml`) y el CSS de GTK
   `~/.config`, pero con `--filesystem=xdg-config/gtk-4.0:ro` Flatpak monta
   esa carpeta también en `~/.var/app/<id>/config/gtk-4.0`, donde GTK la
   busca (comprobado). `colors.css` de kde-gtk-config no trae nombres de
-  libadwaita, así que no cambia sus colores. Las apps GTK3 de Flatpak
-  siguen con Adwaita.
+  libadwaita, así que no cambia sus colores.
+- **Apps GTK3 de Flatpak** (desde 0.10.1, pedido por el usuario el
+  2026-11-20): no ven `/usr/share/themes` (en Flatpak los temas GTK3 son
+  extensiones `org.gtk.Gtk3theme.*` de Flathub, y Breeze-Uzunyx no está), así
+  que usan Adwaita, con las bolas del tema de iconos pero muy separadas. El
+  mismo CSS de GTK3 del tema, con los SVG al lado (dentro de Flatpak no se
+  puede leer `/usr/share`), va en `~/.config/gtk-3.0`; GTK lo lee por encima
+  del tema. El resto de la app sigue con Adwaita. Comprobado con gedit de
+  Flathub; en las apps GTK3 del sistema repite el tema y no cambia ningún
+  píxel; `colors.css` de kde-gtk-config tampoco cambia nada en gedit. Si el
+  usuario elige otro tema GTK, los botones siguen siendo los de Uzunyx (está
+  en su configuración): quitar las líneas `@import` de los `gtk.css`.
 - **Firefox:** no usa el CSS de GTK: dibuja
   `-moz-symbolic-icon(window-*-symbolic)` del tema de iconos (y maximizar
   también para restaurar). **Chromium/Electron** (Claude Desktop) también
@@ -75,9 +87,6 @@ SVG: lo ponen la decoración (`UzunyxButton.qml`) y el CSS de GTK
   `kconf_update` de kde-gtk-config pone Breeze a los usuarios nuevos; por
   eso el script de autoarranque. Cambia el tema por D-Bus
   (`org.kde.GtkConfig.setGtkTheme`), igual que la configuración del sistema.
-- **libadwaita** ignora los temas GTK; sus botones usan los iconos
-  `window-*-symbolic`, así que deberían salir de colores por el tema de
-  iconos (sin probar).
 - Otros usos de esos iconos (p. ej. una «x» de cerrar dentro de una app GTK)
   también salen de colores.
 
