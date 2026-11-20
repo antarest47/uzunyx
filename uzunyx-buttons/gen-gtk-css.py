@@ -29,10 +29,15 @@ SELECTORS = {
         "window.background.chromium .titlebar button.titlebutton.{0}",
         "window.background.chromium.maximized headerbar button.titlebutton.{0}",
     ],
+    # Breeze GTK 4 also uses ".titlebar windowcontrols button.X" (two classes),
+    # which beat the first three: a header bar set as the titlebar has that class.
+    # Without the last two (up to 0.9.1), plain GTK 4 apps showed Breeze's arrows.
     "4": [
         "window headerbar windowcontrols button.{0}",
         "window windowcontrols > button.{0}",
         "window.maximized headerbar windowcontrols button.{0}",
+        "window .titlebar windowcontrols button.{0}",
+        "window.maximized .titlebar windowcontrols button.{0}",
     ],
 }
 
@@ -68,6 +73,10 @@ def css(version, svg_dir):
   background-repeat: no-repeat;
 }}
 """)
+    if version == "4":
+        # GTK 3 puts 6 px between them (26 px between centres); GTK 4's Breeze relies on
+        # negative margins, which the rule above removes, and they touched.
+        out.append("windowcontrols {\n  border-spacing: 6px;\n}\n")
     images = ",\n".join(f"{s.format(b)} image" for b in BUTTONS for s in sels)
     out.append(f"{images} {{\n  opacity: 0;\n}}\n")
     for b in BUTTONS:

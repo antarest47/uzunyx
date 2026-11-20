@@ -1,0 +1,41 @@
+/* Uzunyx: window buttons of libadwaita apps like those of the other apps.
+ *
+ * Installed as ~/.config/gtk-4.0/uzunyx-windowcontrols.css and imported from
+ * ~/.config/gtk-4.0/gtk.css by uzunyx-gtk-theme-setup (uzunyx-buttons). Libadwaita
+ * ignores GTK themes, so Breeze-Uzunyx never reaches it: it takes the icons from the
+ * icon theme (Uzunyx's balls, window-*-symbolic in PNG) but draws them 24 px wide,
+ * further apart, with a grey circle behind (on the image). Here, the sizes of
+ * Breeze-Uzunyx (18 px + 1 px padding, 26 px between centres) and the hover ring.
+ *
+ * Plain GTK 4 apps also read this file: only sizes and the image are touched, and
+ * there the image is hidden (the ball is the button's background, from the theme). */
+windowcontrols {
+  border-spacing: 6px;
+}
+
+windowcontrols > button {
+  min-width: 18px;
+  min-height: 18px;
+  padding: 1px;
+  margin: 0;
+}
+
+windowcontrols > button > image,
+windowcontrols > button:hover > image,
+windowcontrols > button:active > image,
+windowcontrols > button:backdrop > image {
+  background: none;
+  padding: 0;
+  margin: 0;
+  -gtk-icon-size: 20px;
+  border-radius: 50%;
+  box-shadow: none;
+}
+
+windowcontrols > button:hover > image {
+  box-shadow: 0 0 0 2px #c2b6b0;
+}
+
+windowcontrols > button.close:hover > image {
+  box-shadow: 0 0 0 2px #fe919d;
+}

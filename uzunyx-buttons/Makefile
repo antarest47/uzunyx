@@ -1,5 +1,5 @@
 NAME    := uzunyx-buttons
-VERSION := 0.9.1
+VERSION := 0.10.0
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -40,12 +40,14 @@ install:
 	python3 gen-icons.py svg $(EDITION_FOLDERS)/akane $(DESTDIR)$(ICON_DIR)
 	python3 gen-icons.py - $(EDITION_FOLDERS)/sora $(DESTDIR)$(ICON_DIR)-sora uzunyx-sora
 	find $(DESTDIR)$(ICON_DIR) $(DESTDIR)$(ICON_DIR)-sora -type d -exec chmod 755 {} + -o -type f -exec chmod 644 {} +
+	install -Dm644 libadwaita.css $(DESTDIR)$(PREFIX)/share/uzunyx-buttons/uzunyx-windowcontrols.css
 	install -Dm755 uzunyx-gtk-theme-setup $(DESTDIR)$(PREFIX)/bin/uzunyx-gtk-theme-setup
 	install -Dm644 uzunyx-gtk-theme-setup.desktop $(DESTDIR)$(SYSCONFDIR)/xdg/autostart/uzunyx-gtk-theme-setup.desktop
 
 uninstall:
 	rm -rf $(DESTDIR)$(GTK_DIR) $(DESTDIR)$(ICON_DIR) $(DESTDIR)$(ICON_DIR)-sora
 	rm -f $(DESTDIR)$(PREFIX)/bin/uzunyx-gtk-theme-setup
+	rm -rf $(DESTDIR)$(PREFIX)/share/uzunyx-buttons
 	rm -f $(DESTDIR)$(SYSCONFDIR)/xdg/autostart/uzunyx-gtk-theme-setup.desktop
 
 deb: clean

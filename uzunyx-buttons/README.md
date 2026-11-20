@@ -44,7 +44,26 @@ SVG: lo ponen la decoración (`UzunyxButton.qml`) y el CSS de GTK
   invisibles). Con un tema propio no los inyecta y vale nuestro CSS. Los
   selectores igualan o superan los de Breeze GTK
   (`window headerbar button.titlebutton.close`, más las variantes de
-  Chromium y de ventana maximizada).
+  Chromium y de ventana maximizada). En GTK4, Breeze usa también
+  `.titlebar windowcontrols button.X` (dos clases): hasta 0.9.1 ganaba y las
+  apps GTK4 sin libadwaita mostraban sus flechas; desde 0.10.0 están las
+  variantes `window .titlebar …` y 6 px entre botones (`border-spacing`,
+  26 px entre centros como en GTK3; sin los márgenes negativos de Breeze se
+  tocaban).
+- **libadwaita** (desde 0.10.0, visto por el usuario el 2026-11-20 con la
+  Calculadora de Flathub): ignora el tema GTK, así que Breeze-Uzunyx no le
+  llega. Toma los iconos del tema de iconos (las bolas, PNG) pero los dibuja
+  a 24 px, más separados y con un círculo gris detrás (en la `image`). El
+  CSS del usuario (`~/.config/gtk-4.0/gtk.css`) sí lo lee, con prioridad
+  sobre el de libadwaita: `uzunyx-windowcontrols.css` pone las medidas de
+  Breeze-Uzunyx, quita el círculo y dibuja el aro de hover en la `image`.
+  En GTK4 sin libadwaita la `image` está oculta (la bola es el fondo del
+  botón), así que solo cambia la separación. Las apps Flatpak no ven
+  `~/.config`, pero con `--filesystem=xdg-config/gtk-4.0:ro` Flatpak monta
+  esa carpeta también en `~/.var/app/<id>/config/gtk-4.0`, donde GTK la
+  busca (comprobado). `colors.css` de kde-gtk-config no trae nombres de
+  libadwaita, así que no cambia sus colores. Las apps GTK3 de Flatpak
+  siguen con Adwaita.
 - **Firefox:** no usa el CSS de GTK: dibuja
   `-moz-symbolic-icon(window-*-symbolic)` del tema de iconos (y maximizar
   también para restaurar). **Chromium/Electron** (Claude Desktop) también
