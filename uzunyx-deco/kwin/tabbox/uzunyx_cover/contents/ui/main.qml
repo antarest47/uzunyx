@@ -5,9 +5,9 @@
  *
  * Opening: the first frame is an exact copy of the desktop (wallpaper and every
  * window where it really is); from there each window flies to its place in the
- * row, the current one to its left (Alt+Tab has already chosen the next), while
- * the wallpaper blurs like in KWin's Overview (DesktopBackground, the item it
- * uses). Windows that aren't on screen (minimized, on another desktop) fade in.
+ * row, the current one shrinking into the middle (selected again: see start()),
+ * while the wallpaper blurs like in KWin's Overview (DesktopBackground, the item
+ * it uses). Windows that aren't on screen (minimized, on another desktop) fade in.
  *
  * Closing: with automaticallyHide off, KWin only announces it (aboutToHide);
  * the window that ended up active grows back to its place, the others go back
@@ -74,14 +74,17 @@ KWin.TabBoxSwitcher {
             property var chosenRect: null
             readonly property bool showing: opened && !closing
 
-            // Alt+Tab moves the selection to the next window right after the
-            // switcher appears; wait for it (or a moment, for Alt+Shift+Tab or
-            // a switcher opened another way) so the current window doesn't head
-            // for the middle first.
+            // The switcher only shows when Alt is held past a moment; a quick
+            // Alt+Tab switches at once without it. Shown, it starts on the
+            // current window (index 0), facing the viewer in the middle: it is
+            // the one on top on screen, so it shrinks in front while the others
+            // come out from behind to the sides; Tab then moves on, and letting
+            // go of Alt without it stays on the same window. KWin had already
+            // moved the selection to the next one (and may do it a moment after
+            // this window exists): put it back until the animation starts.
             property bool painted: false
-            property bool settled: false
             function start() {
-                if (!animate && painted && settled) {
+                if (!animate && painted) {
                     animate = true;
                     opened = true;
                 }
@@ -93,9 +96,8 @@ KWin.TabBoxSwitcher {
             Connections {
                 target: tabBox
                 function onCurrentIndexChanged() {
-                    if (!stage.settled && tabBox.currentIndex !== 0) {
-                        stage.settled = true;
-                        stage.start();
+                    if (!stage.animate && tabBox.currentIndex !== 0) {
+                        tabBox.currentIndex = 0;
                     }
                 }
             }
@@ -104,15 +106,10 @@ KWin.TabBoxSwitcher {
                 running: true
                 onTriggered: {
                     stage.painted = true;
-                    stage.settled = true;
                     stage.start();
                 }
             }
-            Component.onCompleted: {
-                if (tabBox.currentIndex !== 0) {
-                    settled = true;
-                }
-            }
+            Component.onCompleted: tabBox.currentIndex = 0
 
             function leave() {
                 // KWin activates the chosen window right after asking the

@@ -1,5 +1,5 @@
 NAME    := uzunyx-deco
-VERSION := 0.15.7
+VERSION := 0.15.8
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
