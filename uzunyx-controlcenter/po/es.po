@@ -169,3 +169,66 @@ msgstr "Cable"
 
 msgid "Disconnected"
 msgstr "Desconectado"
+
+msgid "Wrong passphrase"
+msgstr "Contraseña incorrecta"
+
+msgid "Could not unlock the drive"
+msgstr "No se pudo desbloquear el dispositivo"
+
+msgid "Could not mount the drive"
+msgstr "No se pudo montar el dispositivo"
+
+msgid "%1 free"
+msgstr "%1 libres"
+
+msgid "Locked"
+msgstr "Bloqueado"
+
+msgid "Not mounted"
+msgstr "Sin montar"
+
+msgid "Eject all"
+msgstr "Expulsar todo"
+
+msgid "Encrypted drive"
+msgstr "Disco cifrado"
+
+msgid "Unlock"
+msgstr "Desbloquear"
+
+msgid "Mount"
+msgstr "Montar"
+
+msgid "Open"
+msgstr "Abrir"
+
+msgid "Unmount and lock"
+msgstr "Desmontar y bloquear"
+
+msgid "Unmount"
+msgstr "Desmontar"
+
+msgid "Notifications"
+msgstr "Notificaciones"
+
+msgid "%1 · the latest: %2"
+msgstr "%1 · la última: %2"
+
+msgid "Clear all"
+msgstr "Borrar todo"
+
+msgid "No notifications"
+msgstr "Sin notificaciones"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "Resume"
+msgstr "Reanudar"
+
+msgid "Pause"
+msgstr "Pausar"
+
+msgid "Cancel"
+msgstr "Cancelar"

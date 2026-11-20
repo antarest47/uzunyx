@@ -6,6 +6,7 @@
  */
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Shapes
 import org.kde.bluezqt as BluezQt
 import org.kde.kirigami as Kirigami
 import org.kde.notificationmanager as NotificationManager
@@ -189,6 +190,111 @@ PlasmoidItem {
         }
     ]
     Component.onCompleted: findTray()
+
+    // Plugging in a drive opens the control center on its page, over the pill. Plasma's
+    // device notifier would open the hidden tray's window at the left of the panel: its
+    // own popup is turned off (popupOnNewDevice), and the helper waits for UDisks.
+    Instantiator {
+        model: root.tray ? root.tray.systemTrayModel : null
+        delegate: QtObject {
+            required property var model
+            readonly property var applet: model.hasApplet ? model.applet : null
+            onAppletChanged: {
+                if (applet && applet.plasmoid && applet.plasmoid.pluginName === "org.kde.plasma.devicenotifier"
+                        && applet.plasmoid.configuration.popupOnNewDevice !== false) {
+                    applet.plasmoid.configuration.popupOnNewDevice = false;
+                }
+            }
+        }
+    }
+    function showNewDrives(drives) {
+        if (drives && drives.length > 0) {
+            root.page = "usb";
+            root.expanded = true;
+        }
+    }
+    P5Support.DataSource {
+        id: driveWatcher
+        readonly property string command: "/usr/libexec/uzunyx-controlcenter-helper usb-wait"
+        engine: "executable"
+        Component.onCompleted: connectSource(command)
+        onNewData: (source, data) => {
+            disconnectSource(source);
+            let answer = {};
+            try {
+                answer = JSON.parse(data.stdout);
+            } catch (e) {
+                answer = { error: "no answer" };
+            }
+            if (answer.error) {
+                driveRetry.start();
+            } else {
+                Qt.callLater(root.showNewDrives, answer.result);
+                Qt.callLater(connectSource, command);
+            }
+        }
+    }
+    Timer {
+        id: driveRetry
+        interval: 10000
+        onTriggered: driveWatcher.connectSource(driveWatcher.command)
+    }
+
+    // Notifications: the ones in the history (Plasma's live in the hidden tray, and a
+    // minimized copy went there with no way back), and the jobs running (copies,
+    // downloads), on top like the timers.
+    NotificationManager.Notifications {
+        id: notificationModel
+        showNotifications: true
+        showJobs: true
+        showExpired: true
+        showDismissed: true
+        groupMode: NotificationManager.Notifications.GroupDisabled
+        sortMode: NotificationManager.Notifications.SortByDate
+    }
+    NotificationManager.Notifications {
+        id: jobModel
+        showNotifications: false
+        showJobs: true
+        showExpired: true
+        showDismissed: true
+        groupMode: NotificationManager.Notifications.GroupDisabled
+    }
+    // {count, percent} of the jobs running, for the pill's ring.
+    readonly property var runningJobs: {
+        let count = 0, sum = 0;
+        for (let i = 0; i < jobWatcher.count; i++) {
+            const job = jobWatcher.objectAt(i);
+            if (job && job.running) {
+                count++;
+                sum += job.percentage;
+            }
+        }
+        return { count: count, percent: count > 0 ? sum / count : 0 };
+    }
+    Instantiator {
+        id: jobWatcher
+        model: jobModel
+        delegate: QtObject {
+            required property var model
+            readonly property int percentage: model.percentage || 0
+            readonly property bool running: model.jobState !== NotificationManager.Notifications.JobStateStopped
+        }
+    }
+    // Everything goes but the jobs still running: the history, and the popups on screen.
+    function clearNotifications() {
+        for (let i = notificationModel.count - 1; i >= 0; i--) {
+            const index = notificationModel.index(i, 0);
+            const isJob = notificationModel.data(index, NotificationManager.Notifications.TypeRole) === NotificationManager.Notifications.JobType;
+            const state = notificationModel.data(index, NotificationManager.Notifications.JobStateRole);
+            if (!isJob || state === NotificationManager.Notifications.JobStateStopped) {
+                notificationModel.close(index);
+            }
+        }
+        notificationModel.clear(NotificationManager.Notifications.ClearExpired);
+    }
+    // The ones that are not running jobs: what the row and the page count.
+    readonly property int notificationCount: notificationModel.count - runningJobs.count
     Connections {
         target: root.tray
         function onStatusChanged() {
@@ -423,6 +529,43 @@ PlasmoidItem {
                     }
                 }
                 PillIcon { visible: root.bluetoothConnected; source: "bluetooth-active-symbolic" }
+                // A copy or a download running: a ring in the accent with its progress.
+                Item {
+                    visible: root.runningJobs.count > 0
+                    implicitWidth: Kirigami.Units.iconSizes.small
+                    implicitHeight: implicitWidth
+                    Shape {
+                        anchors.fill: parent
+                        preferredRendererType: Shape.CurveRenderer
+                        ShapePath {
+                            strokeColor: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.25)
+                            strokeWidth: 2
+                            fillColor: "transparent"
+                            PathAngleArc {
+                                centerX: Kirigami.Units.iconSizes.small / 2
+                                centerY: centerX
+                                radiusX: centerX - 1.5
+                                radiusY: radiusX
+                                startAngle: 0
+                                sweepAngle: 360
+                            }
+                        }
+                        ShapePath {
+                            strokeColor: Kirigami.Theme.focusColor
+                            strokeWidth: 2
+                            fillColor: "transparent"
+                            capStyle: ShapePath.RoundCap
+                            PathAngleArc {
+                                centerX: Kirigami.Units.iconSizes.small / 2
+                                centerY: centerX
+                                radiusX: centerX - 1.5
+                                radiusY: radiusX
+                                startAngle: -90
+                                sweepAngle: Math.max(8, root.runningJobs.percent * 3.6)
+                            }
+                        }
+                    }
+                }
                 PillIcon { source: root.volumeIcon }
                 // Red on the red beat can't be read: orange, chosen by the user.
                 // Kora's, with its outline on whole pixels: the theme's is a dim
@@ -539,6 +682,16 @@ PlasmoidItem {
     Loader {
         anchors.fill: parent
         anchors.margins: parent.margin
+        active: root.page === "notifications"
+        sourceComponent: NotificationsPage {
+            notifications: notificationModel
+            onBack: root.page = "main"
+            onClearAll: root.clearNotifications()
+        }
+    }
+    Loader {
+        anchors.fill: parent
+        anchors.margins: parent.margin
         active: root.page === "audio"
         sourceComponent: AudioPage {
             onBack: root.page = "main"
@@ -603,6 +756,46 @@ PlasmoidItem {
                         }
                     }
                 }
+            }
+        }
+
+        // Jobs running: copies, downloads. Finished, they go to the notifications.
+        Repeater {
+            model: jobModel
+            delegate: JobCard {
+                required property var model
+                required property int index
+                Layout.fillWidth: true
+                visible: model.jobState !== NotificationManager.Notifications.JobStateStopped
+                summary: model.summary || ""
+                body: model.body || ""
+                iconName: model.applicationIconName || "document-save-symbolic"
+                percentage: model.percentage || 0
+                suspended: model.jobState === NotificationManager.Notifications.JobStateSuspended
+                suspendable: model.suspendable === true
+                killable: model.killable === true
+                onPauseClicked: suspended ? jobModel.resumeJob(jobModel.index(index, 0)) : jobModel.suspendJob(jobModel.index(index, 0))
+                onCancelClicked: jobModel.killJob(jobModel.index(index, 0))
+            }
+        }
+
+        ListRow {
+            visible: root.notificationCount > 0
+            iconSource: "notifications-symbolic"
+            title: i18n("Notifications")
+            subtitle: {
+                const latest = notificationModel.count > 0
+                    ? notificationModel.data(notificationModel.index(0, 0), NotificationManager.Notifications.SummaryRole) : "";
+                return latest ? i18n("%1 · the latest: %2", root.notificationCount, latest) : String(root.notificationCount);
+            }
+            onClicked: root.page = "notifications"
+            PlasmaComponents.ToolButton {
+                text: i18n("Clear all")
+                onClicked: root.clearNotifications()
+            }
+            PlasmaComponents.ToolButton {
+                icon.name: "go-next-symbolic"
+                onClicked: root.page = "notifications"
             }
         }
 

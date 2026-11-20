@@ -12,6 +12,8 @@ ColumnLayout {
 
     property string title
     default property alias rows: list.data
+    // Buttons at the right of the title.
+    property alias actions: headerActions.data
     signal back()
 
     spacing: Kirigami.Units.smallSpacing * 2
@@ -27,6 +29,10 @@ ColumnLayout {
             level: 4
             text: page.title
             elide: Text.ElideRight
+        }
+        RowLayout {
+            id: headerActions
+            spacing: 0
         }
     }
 

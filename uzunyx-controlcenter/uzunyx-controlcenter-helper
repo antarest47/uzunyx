@@ -4,9 +4,12 @@
     tray-activate SERVICE PATH     opens the app of a tray icon
     tray-menu SERVICE PATH         its menu (com.canonical.dbusmenu)
     tray-event SERVICE PATH ID     clicks a menu entry
-    usb                            removable partitions
-    usb-mount|usb-unmount DEVICE
-    usb-eject DEVICE               unmounts all of its disk and powers it off
+    usb                            removable partitions (encrypted ones with their state)
+    usb-mount|usb-unmount DEVICE   an encrypted one: its unlocked contents (unmount also locks it)
+    usb-unlock DEVICE              asks for the passphrase with KDE's dialog, unlocks and mounts
+    usb-eject DEVICE               unmounts all of its disk, locks it and powers it off
+    usb-eject-all
+    usb-wait                       waits until a removable partition shows up or goes away
 """
 
 import json
@@ -68,21 +71,39 @@ def tray_activate(service, path):
     return True
 
 
+ENCRYPTED = ("crypto_LUKS", "crypto_BITLK")
+UDISKS = "org.freedesktop.UDisks2"
+
+
 def block_devices():
-    out = subprocess.run(["lsblk", "-J", "-o", "NAME,PATH,LABEL,SIZE,TYPE,RM,HOTPLUG,MOUNTPOINT,FSTYPE,TRAN"],
+    out = subprocess.run(["lsblk", "-J", "-b", "-o",
+                          "NAME,PATH,LABEL,SIZE,TYPE,RM,HOTPLUG,MOUNTPOINT,FSTYPE,FSAVAIL,TRAN"],
                          capture_output=True, text=True, check=True).stdout
     return json.loads(out)["blockdevices"]
 
 
+def removable_disks():
+    return [disk for disk in block_devices() if disk["hotplug"] or disk["rm"] or disk["tran"] == "usb"]
+
+
 def usb():
+    """One entry per partition with a file system. An encrypted one stays one entry: its
+    "inner" is the unlocked contents (a mapper device), whose label and mount it shows."""
     found = []
-    for disk in block_devices():
-        if not (disk["hotplug"] or disk["rm"] or disk["tran"] == "usb"):
-            continue
+    for disk in removable_disks():
         for part in disk.get("children") or [disk]:
-            if part["fstype"]:
-                found.append({"device": part["path"], "disk": disk["path"], "label": part["label"] or "",
-                              "size": part["size"], "mount": part["mountpoint"] or ""})
+            if part["fstype"] in ENCRYPTED:
+                inner = (part.get("children") or [None])[0]
+                found.append({"device": part["path"], "disk": disk["path"], "encrypted": True,
+                              "unlocked": inner is not None, "inner": inner["path"] if inner else "",
+                              "label": (inner or {}).get("label") or part["label"] or "",
+                              "size": part["size"], "free": (inner or {}).get("fsavail"),
+                              "mount": (inner or {}).get("mountpoint") or ""})
+            elif part["fstype"]:
+                found.append({"device": part["path"], "disk": disk["path"], "encrypted": False,
+                              "unlocked": False, "inner": "", "label": part["label"] or "",
+                              "size": part["size"], "free": part.get("fsavail"),
+                              "mount": part["mountpoint"] or ""})
     return found
 
 
@@ -91,15 +112,165 @@ def udisks(*args):
     return True
 
 
-def usb_eject(device):
-    for disk in block_devices():
-        parts = disk.get("children") or [disk]
-        if device == disk["path"] or device in [p["path"] for p in parts]:
-            for part in parts:
-                if part["mountpoint"]:
-                    udisks("unmount", "-b", part["path"])
-            return udisks("power-off", "-b", disk["path"])
+def entry_of(device):
+    for item in usb():
+        if device in (item["device"], item["inner"]):
+            return item
     raise ValueError(device)
+
+
+def usb_mount(device):
+    item = entry_of(device)
+    if item["encrypted"]:
+        if not item["unlocked"]:
+            return usb_unlock(item["device"])
+        device = item["inner"]
+    udisks("mount", "-b", device)
+    return entry_of(device)["mount"]
+
+
+def usb_unmount(device):
+    item = entry_of(device)
+    if item["mount"]:
+        udisks("unmount", "-b", item["inner"] or item["device"])
+    if item["unlocked"]:
+        udisks("lock", "-b", item["device"])
+    return True
+
+
+def object_path(device):
+    """UDisks' object for a block device, which is also its Solid UDI."""
+    return "/org/freedesktop/UDisks2/block_devices/" + re.sub(r"[^\w]", "_", device[len("/dev/"):])
+
+
+INTROSPECTION = """<node><interface name="org.uzunyx.ControlCenter.Passphrase">
+<method name="passphraseReply"><arg name="passphrase" type="s" direction="in"/></method>
+<method name="dialogClosed"/></interface></node>"""
+
+
+def ask_passphrase(device):
+    """KDE's passphrase dialog (kded's soliduiserver, the one Dolphin and Plasma use). It
+    answers on the object we name with QDBusInterface: an Introspect first, then a call to
+    passphraseReply with no interface; "" when cancelled. The passphrase never goes
+    through a command line."""
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+    loop = GLib.MainLoop()
+    answer = {}
+    path = "/org/uzunyx/ControlCenter/Passphrase"
+
+    def send_reply(message, body):
+        reply = message.new_method_reply()
+        if body is not None:
+            reply.set_body(body)
+        bus.send_message(reply, Gio.DBusSendMessageFlags.NONE)
+        return False
+
+    def on_message(connection, message, incoming):
+        if not (incoming and message.get_message_type() == Gio.DBusMessageType.METHOD_CALL
+                and message.get_path() == path):
+            return message
+        member = message.get_member()
+        if member == "Introspect":
+            GLib.idle_add(send_reply, message, GLib.Variant("(s)", (INTROSPECTION,)))
+        elif member in ("passphraseReply", "dialogClosed"):
+            if member == "passphraseReply":
+                answer["passphrase"] = message.get_body().unpack()[0] or None
+            if not message.get_flags() & Gio.DBusMessageFlags.NO_REPLY_EXPECTED:
+                GLib.idle_add(send_reply, message, None)
+            GLib.idle_add(loop.quit)
+        return None
+
+    filter_id = bus.add_filter(on_message)
+    try:
+        bus.call_sync("org.kde.kded6", "/modules/soliduiserver", "org.kde.SolidUiServer",
+                      "showPassphraseDialog",
+                      GLib.Variant("(sssus)", (object_path(device), bus.get_unique_name(), path, 0,
+                                               "uzunyx-controlcenter")),
+                      None, Gio.DBusCallFlags.NONE, 10000)
+        GLib.timeout_add_seconds(600, loop.quit)
+        loop.run()
+        # Let the last replies go out.
+        bus.flush_sync(None)
+    finally:
+        bus.remove_filter(filter_id)
+    return answer.get("passphrase")
+
+
+def usb_unlock(device):
+    item = entry_of(device)
+    if not item["encrypted"]:
+        raise ValueError(device)
+    if not item["unlocked"]:
+        passphrase = ask_passphrase(item["device"])
+        if passphrase is None:
+            return ""  # cancelled
+        system = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+        try:
+            system.call_sync(UDISKS, object_path(item["device"]), UDISKS + ".Encrypted", "Unlock",
+                             GLib.Variant("(sa{sv})", (passphrase, {})), GLib.VariantType("(o)"),
+                             Gio.DBusCallFlags.NONE, 120000)
+        except GLib.Error as error:
+            if "Failed to activate" in error.message or "passphrase" in error.message.lower():
+                raise ValueError("wrong passphrase") from error
+            raise
+        item = entry_of(device)
+    if not item["mount"]:
+        udisks("mount", "-b", item["inner"])
+    return entry_of(device)["mount"]
+
+
+def eject_disk(disk):
+    parts = disk.get("children") or [disk]
+    for part in parts:
+        for inner in part.get("children") or []:
+            if inner["mountpoint"]:
+                udisks("unmount", "-b", inner["path"])
+        if part["fstype"] in ENCRYPTED and part.get("children"):
+            udisks("lock", "-b", part["path"])
+        if part["mountpoint"]:
+            udisks("unmount", "-b", part["path"])
+    return udisks("power-off", "-b", disk["path"])
+
+
+def usb_eject(device):
+    for disk in removable_disks():
+        parts = disk.get("children") or [disk]
+        inners = [i["path"] for p in parts for i in p.get("children") or []]
+        if device == disk["path"] or device in [p["path"] for p in parts] or device in inners:
+            return eject_disk(disk)
+    raise ValueError(device)
+
+
+def usb_eject_all():
+    for disk in removable_disks():
+        eject_disk(disk)
+    return True
+
+
+def usb_wait():
+    """Returns the partitions that showed up (empty if one went away), when UDisks says
+    something changed. Unlocking or mounting doesn't count: same partitions."""
+    before = {item["device"] for item in usb()}
+    system = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+    loop = GLib.MainLoop()
+    result = {}
+
+    def check():
+        now = {item["device"]: item for item in usb()}
+        if set(now) != before:
+            result["new"] = [now[d] for d in now if d not in before]
+            loop.quit()
+        return False
+
+    def on_signal(*_args):
+        # udev and lsblk need a moment after UDisks tells.
+        GLib.timeout_add(700, check)
+
+    for name in ("InterfacesAdded", "InterfacesRemoved"):
+        system.signal_subscribe(UDISKS, "org.freedesktop.DBus.ObjectManager", name,
+                                "/org/freedesktop/UDisks2", None, Gio.DBusSignalFlags.NONE, on_signal)
+    loop.run()
+    return result["new"]
 
 
 def device(value):
@@ -113,9 +284,12 @@ COMMANDS = {
     "tray-menu": tray_menu,
     "tray-event": tray_event,
     "usb": usb,
-    "usb-mount": lambda d: udisks("mount", "-b", device(d)),
-    "usb-unmount": lambda d: udisks("unmount", "-b", device(d)),
+    "usb-mount": lambda d: usb_mount(device(d)),
+    "usb-unmount": lambda d: usb_unmount(device(d)),
+    "usb-unlock": lambda d: usb_unlock(device(d)),
     "usb-eject": lambda d: usb_eject(device(d)),
+    "usb-eject-all": usb_eject_all,
+    "usb-wait": usb_wait,
 }
 
 
