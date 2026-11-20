@@ -21,6 +21,11 @@ aparecen, 240 ms, `OutCubic`) y al cerrarse **se hunden** (lo inverso,
   Tsunyx), le deja la animación. Elige las mismas ventanas que Escala.
   En Configuración del sistema → Efectos aparece en la categoría exclusiva
   de abrir y cerrar.
+- **Ventanas internas de KWin** (desde 0.2.3): las que animaría (normales o
+  diálogos, como el selector de Alt+Tab) las reclama igual, para que Escala
+  no las toque, pero no las anima. El selector `uzunyx_cover` de
+  `uzunyx-deco` ≥ 0.15.6 empieza como una copia exacta del escritorio y mueve
+  las ventanas desde ahí; emerger (o el zoom de Escala) tapaba ese comienzo.
 - La ventana cerrada se retiene con `refWindow()`/`unrefWindow()` a mano,
   no con `EffectWindowDeletedRef`: al cerrar KWin destruye las ventanas
   aunque estén animando, y soltar esa referencia desde `windowDeleted` las

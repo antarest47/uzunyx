@@ -65,6 +65,7 @@ private:
 
     static bool isAnimatable(EffectWindow *w);
     bool grabbedByOther(EffectWindow *w, int role) const;
+    bool claimInternal(EffectWindow *w, int role);
     void start(EffectWindow *w, bool closing);
     void stop(EffectWindow *w);
     void log(const QString &text) const;

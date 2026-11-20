@@ -122,6 +122,6 @@ en la Vista general (`KWin.DesktopBackground` con `MultiEffect`; el panel queda
 debajo). Las que no están en pantalla (minimizadas, de otro escritorio) aparecen con un
 fundido. La geometría sale de `KWin.Workspace.stackingOrder` por `internalId`, tomada una
 vez al crear cada tapa (como binding hacía un bucle). Al soltar Alt KWin cierra el
-selector enseguida, sin animación de vuelta. Comprobado en KWin y Plasma anidados, con
+selector enseguida, sin animación de vuelta. En 0.15.5 los `Behavior` animaban también el primer cambio (cuando cada tapa recibe su lugar real), así que las ventanas aparecían con un fundido en la fila; desde 0.15.6 están apagados hasta el primer cuadro (`frameSwapped`). Además hace falta `uzunyx-openclose` ≥ 0.2.3, que ya no hace emerger la ventana del selector (ni deja que la anime Escala). Comprobado en KWin y Plasma anidados, con
 `org_kde_kwin_fake_input` sosteniendo Alt (el cliente tiene que seguir conectado: al
 cerrarse, KWin suelta sus teclas).

@@ -29,6 +29,15 @@ KWin.TabBoxSwitcher {
             readonly property int count: covers.count
             // False for the first frame: everything where it really is.
             property bool opened: false
+            // The Behaviors stay off until then, so that setting the starting
+            // places (Component.onCompleted of each cover) isn't animated.
+            property bool animate: false
+            function start() {
+                if (!animate) {
+                    animate = true;
+                    opened = true;
+                }
+            }
 
             // The windows by id, to know where each one is on screen. Built on
             // first use: the covers ask before the window's own bindings run.
@@ -70,10 +79,11 @@ KWin.TabBoxSwitcher {
             visible: true
 
             // One frame as the desktop looks, then everything moves.
+            onFrameSwapped: start()
             Timer {
-                interval: 16
+                interval: 100
                 running: true
-                onTriggered: stage.opened = true
+                onTriggered: stage.start()
             }
 
             KWin.DesktopBackground {
@@ -87,7 +97,7 @@ KWin.TabBoxSwitcher {
                     blurEnabled: true
                     blurMax: 64
                     blur: stage.opened ? 1 : 0
-                    Behavior on blur { NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                    Behavior on blur { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
                 }
             }
 
@@ -95,7 +105,7 @@ KWin.TabBoxSwitcher {
                 anchors.fill: parent
                 color: Kirigami.Theme.backgroundColor
                 opacity: stage.opened ? 0.3 : 0
-                Behavior on opacity { NumberAnimation { duration: stage.duration } }
+                Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
             }
 
             Item {
@@ -141,19 +151,19 @@ KWin.TabBoxSwitcher {
                         scale: stage.opened ? (chosen ? 1 : 0.8) : 1
                         opacity: !stage.opened ? (fromScreen ? 1 : 0) : (distance > 3 ? 0 : (distance > 2 ? 0.45 : 1))
 
-                        Behavior on x { NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on y { NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on width { NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on height { NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on scale { NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
-                        Behavior on opacity { NumberAnimation { duration: stage.duration } }
+                        Behavior on x { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                        Behavior on y { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                        Behavior on width { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                        Behavior on height { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                        Behavior on scale { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                        Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
 
                         transform: Rotation {
                             origin.x: cover.width / 2
                             origin.y: cover.height / 2
                             axis { x: 0; y: 1; z: 0 }
                             angle: stage.opened ? -cover.side * 58 : 0
-                            Behavior on angle { NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                            Behavior on angle { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
                         }
 
                         // The frame hugs the window, whatever its shape.
@@ -169,7 +179,7 @@ KWin.TabBoxSwitcher {
                             border.width: cover.chosen ? 2 : 1
                             border.color: cover.chosen ? Kirigami.Theme.focusColor : Qt.rgba(1, 1, 1, 0.25)
                             opacity: stage.opened ? 1 : 0
-                            Behavior on opacity { NumberAnimation { duration: stage.duration } }
+                            Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
                         }
 
                         KWin.WindowThumbnail {
@@ -194,7 +204,7 @@ KWin.TabBoxSwitcher {
                     spacing: Kirigami.Units.largeSpacing
                     visible: current !== null
                     opacity: stage.opened ? 1 : 0
-                    Behavior on opacity { NumberAnimation { duration: stage.duration } }
+                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
 
                     Kirigami.Icon {
                         anchors.verticalCenter: parent.verticalCenter

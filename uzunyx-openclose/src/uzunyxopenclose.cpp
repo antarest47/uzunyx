@@ -119,8 +119,25 @@ void UzunyxOpenCloseEffect::start(EffectWindow *w, bool closing)
     w->addRepaintFull();
 }
 
+// KWin's own windows that would be animated otherwise (the Alt+Tab
+// switcher): claimed so Scale leaves them alone too, but not animated. The
+// uzunyx_cover switcher starts as an exact copy of the desktop and moves the
+// windows from there; emerging (or Scale's zoom) hid that start.
+bool UzunyxOpenCloseEffect::claimInternal(EffectWindow *w, int role)
+{
+    if (!w->internalWindow() || !(w->isNormalWindow() || w->isDialog()) || grabbedByOther(w, role)) {
+        return false;
+    }
+    w->setData(role, QVariant::fromValue(static_cast<void *>(this)));
+    log(QStringLiteral("%1 internal \"%2\": claimed, not animated").arg(role == WindowAddedGrabRole ? QStringLiteral("open") : QStringLiteral("close"), w->caption()));
+    return true;
+}
+
 void UzunyxOpenCloseEffect::slotWindowAdded(EffectWindow *w)
 {
+    if (claimInternal(w, WindowAddedGrabRole)) {
+        return;
+    }
     const bool animate = !effects->hasActiveFullScreenEffect() && isAnimatable(w) && w->isVisible()
         && !grabbedByOther(w, WindowAddedGrabRole);
     log(QStringLiteral("open %1 \"%2\": %3").arg(w->windowClass(), w->caption(), animate ? QStringLiteral("animated") : QStringLiteral("skipped")));
@@ -131,6 +148,10 @@ void UzunyxOpenCloseEffect::slotWindowAdded(EffectWindow *w)
 
 void UzunyxOpenCloseEffect::slotWindowClosed(EffectWindow *w)
 {
+    if (claimInternal(w, WindowClosedGrabRole)) {
+        stop(w);
+        return;
+    }
     const bool animate = !effects->hasActiveFullScreenEffect() && isAnimatable(w) && w->isVisible()
         && !w->skipsCloseAnimation() && !grabbedByOther(w, WindowClosedGrabRole);
     log(QStringLiteral("close %1: %2").arg(w->windowClass(), animate ? QStringLiteral("animated") : QStringLiteral("skipped")));
