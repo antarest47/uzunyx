@@ -12,6 +12,12 @@ Las apps que dibujan su propia barra la conservan. Al soltar una ventana sobre
 otra se intercambian. Quedan flotando los diálogos, las de tamaño fijo, las de
 todos los escritorios y las de pantalla completa.
 
+El mosaico funciona como una sola ventana (desde 0.9.2): al activar una de sus
+ventanas (gestor de tareas, Alt+Tab, clic), las demás del mismo escritorio y
+pantalla también vienen al frente, debajo de ella, y una ventana flotante que
+las tapaba queda detrás de todo el mosaico. Las que flotan con Super+Shift+E
+siguen encima (`keepAbove`). Comprobado en un KWin anidado.
+
 ## Atajos
 
 Todos con la mano izquierda:

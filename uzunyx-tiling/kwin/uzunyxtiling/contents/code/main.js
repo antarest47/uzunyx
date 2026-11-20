@@ -572,9 +572,30 @@ workspace.windowAdded.connect(w => {
     }
     layOut();
 });
+// A tiling works as one window: activating one of its windows (from the task
+// manager, Alt+Tab...) brings the others of its layout to the front too, in
+// their stacking order and below it, so a window floating or opened over them
+// doesn't hide part of the tiling. Raising doesn't activate, so no loop.
+function raiseGroup(w) {
+    if (mode === "off" || !w || !tileable(w) || typeof workspace.raiseWindow !== "function") {
+        return;
+    }
+    const group = groupOf(w);
+    if (group.length < 2) {
+        return;
+    }
+    workspace.stackingOrder
+        .filter(other => other !== w && group.indexOf(other) !== -1)
+        .forEach(other => workspace.raiseWindow(other));
+    workspace.raiseWindow(w);
+}
+
 // The handles are those of the desktop on screen, and something may now cover them.
 workspace.currentDesktopChanged.connect(layOut);
-workspace.windowActivated.connect(layOut);
+workspace.windowActivated.connect(w => {
+    raiseGroup(w);
+    layOut();
+});
 workspace.windowRemoved.connect(w => {
     order = order.filter(other => other !== w);
     saved.delete(key(w));
