@@ -36,7 +36,9 @@ import shutil
 import subprocess
 import sys
 
-from gi.repository import Gio, GLib
+import gi
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import GdkPixbuf, Gio, GLib
 
 EDITIONS = {
     "akane": {"lnf": "org.uzunyx.desktop", "wallpaper": "UzunyxAkane",
@@ -52,12 +54,16 @@ SETTINGS_DESKTOP = "org.uzunyx.settings.desktop"
 LAUNCHERS = ("local.tsunyxlauncher", "org.kde.plasma.kickoff")
 # Uzunyx's pictures of each edition (uzunyx-lookandfeel): the drawing and the logo. The
 # user's picture follows the edition only while it is one of these (or the default for new
-# users, /etc/skel/.face, the drawing of Akane), matched by content: Plasma and the users
-# module copy the chosen file to ~/.face.
+# users, /etc/skel/.face, the drawing of Akane), matched by how they look: the users module
+# stores a scaled copy.
 AVATARS = "/usr/share/plasma/avatars"
 AVATAR_KINDS = {"akane": {"drawing": "Uzunyx Akane.png", "logo": "Uzunyx Akane (logo).png"},
                 "sora": {"drawing": "Uzunyx Sora.png", "logo": "Uzunyx Sora (logo).png"}}
 DEFAULT_AVATAR = ("/etc/skel/.face", "drawing")
+# Pictures are compared shrunk to SAMPLE px: the same one scaled and saved again differs by
+# under 1 (of 255) on average; different ones by 60 or more.
+SAMPLE = 24
+MAX_DIFFERENCE = 6
 
 # Plasma desktop script: the logo on every launcher button.
 LAUNCHER_SCRIPT = """
@@ -194,35 +200,76 @@ def same_file(a, b):
         return False
 
 
-def uzunyx_avatar_kind(face):
+def thumbnail(path):
+    """The picture shrunk to SAMPLE x SAMPLE, as RGB bytes (None if it can't be read)."""
+    try:
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, SAMPLE, SAMPLE, False)
+    except GLib.Error:
+        return None
+    pixels, channels, stride = pixbuf.get_pixels(), pixbuf.get_n_channels(), pixbuf.get_rowstride()
+    return bytes(pixels[y * stride + x * channels + c]
+                 for y in range(SAMPLE) for x in range(SAMPLE) for c in range(3))
+
+
+def looks_like(a, b):
+    """Same picture, even scaled and saved again (the users module stores a 256 px copy)."""
+    if same_file(a, b):
+        return True
+    ta, tb = thumbnail(a), thumbnail(b)
+    if ta is None or tb is None:
+        return False
+    return sum(abs(x - y) for x, y in zip(ta, tb)) / len(ta) < MAX_DIFFERENCE
+
+
+def uzunyx_avatar_kind(picture):
     """"drawing" or "logo" if the picture is one of Uzunyx's, else None."""
     candidates = [DEFAULT_AVATAR] + [(os.path.join(AVATARS, f), kind)
                                      for files in AVATAR_KINDS.values() for kind, f in files.items()]
     for path, kind in candidates:
-        if same_file(face, path):
+        if looks_like(picture, path):
             return kind
     return None
 
 
+def accounts_user(bus):
+    return bus.call_sync("org.freedesktop.Accounts", "/org/freedesktop/Accounts", "org.freedesktop.Accounts",
+                         "FindUserById", GLib.Variant("(x)", (os.getuid(),)), None,
+                         Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
+
+
 def apply_avatar(name):
-    """The edition's picture, for Plasma (~/.face) and the login screen (AccountsService)."""
+    """The edition's picture, for the login screen and Plasma (AccountsService) and ~/.face.
+
+    The picture in use is AccountsService's: Plasma 6's users module sets only that one (a
+    256 px copy in /var/lib/AccountsService/icons) and leaves ~/.face as it was."""
     face = os.path.expanduser("~/.face")
-    kind = uzunyx_avatar_kind(face)
+    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+    user = accounts_user(bus)
+    icon = bus.call_sync("org.freedesktop.Accounts", user, "org.freedesktop.DBus.Properties", "Get",
+                         GLib.Variant("(ss)", ("org.freedesktop.Accounts.User", "IconFile")), None,
+                         Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
+    current = icon if icon and os.path.isfile(icon) else face
+    kind = uzunyx_avatar_kind(current)
     if kind is None:
         return  # the user's own picture (or none)
     wanted = os.path.join(AVATARS, AVATAR_KINDS[name][kind])
-    if not os.path.exists(wanted) or same_file(face, wanted):
+    if not os.path.exists(wanted) or looks_like(current, wanted):
         return
-    shutil.copyfile(wanted, face + ".new")
-    os.replace(face + ".new", face)
+    # ~/.face too, unless it holds a picture of the user's (the users module doesn't write it).
+    if not os.path.exists(face) or uzunyx_avatar_kind(face):
+        source = face
+    else:
+        source = os.path.join(os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache"),
+                              "uzunyx-avatar.png")
+        os.makedirs(os.path.dirname(source), exist_ok=True)
+    shutil.copyfile(wanted, source + ".new")
+    os.replace(source + ".new", source)
     # From a file of the user's, AccountsService copies it to its icons, where SDDM looks;
     # given a file of root's, it only remembers the path (and SDDM shows the default).
-    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM)
-    user = bus.call_sync("org.freedesktop.Accounts", "/org/freedesktop/Accounts", "org.freedesktop.Accounts",
-                         "FindUserById", GLib.Variant("(x)", (os.getuid(),)), None,
-                         Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
     bus.call_sync("org.freedesktop.Accounts", user, "org.freedesktop.Accounts.User", "SetIconFile",
-                  GLib.Variant("(s)", (face,)), None, Gio.DBusCallFlags.NONE, 5000, None)
+                  GLib.Variant("(s)", (source,)), None, Gio.DBusCallFlags.NONE, 5000, None)
+    if source != face:
+        os.remove(source)
 
 
 def apply_system(name, parts):

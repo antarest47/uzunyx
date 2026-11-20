@@ -42,13 +42,18 @@ normal solo cambian los colores y la decoración.
   - Lanzador: script de plasmashell (`evaluateScript` por D-Bus) que pone el
     logo en `icon` de cada `local.tsunyxlauncher` u `org.kde.plasma.kickoff`.
   - Imagen del usuario (desde 0.5.2, pedido por el usuario el 2026-11-19;
-    `--no-avatar` la deja): solo si `~/.face` es, por contenido, una de las de
-    Uzunyx (`/etc/skel/.face`, la de los usuarios nuevos, o una de
+    `--no-avatar` la deja): la que vale es la de AccountsService (`IconFile`),
+    porque el módulo «Usuarios» de Plasma 6 solo guarda ahí una copia de
+    256 px y no toca `~/.face`. Si es una de las de Uzunyx
+    (`/etc/skel/.face`, la de los usuarios nuevos, o una de
     `/usr/share/plasma/avatars` de `uzunyx-lookandfeel`), pasa a la misma de
-    la otra edición: dibujo por dibujo, logo por logo. Copia el archivo a
-    `~/.face` y llama a `SetIconFile` de AccountsService con esa copia (sin
-    contraseña; así llega a SDDM). Una imagen propia no se toca. No tiene
-    tarjeta en el módulo: siempre sigue a la edición.
+    la otra edición: dibujo por dibujo, logo por logo. Se compara cómo se ven
+    (reducidas a 24 px con GdkPixbuf; la misma reescalada difiere en menos
+    de 1 de 255 de media, las distintas en 54 o más; límite 6), no los bytes
+    (así fallaba 0.5.2). La nueva va con `SetIconFile` (sin contraseña; así
+    llega a SDDM) desde `~/.face` si esa también es de Uzunyx o no existe, o
+    desde una copia temporal en `~/.cache` si `~/.face` es una propia vieja.
+    Una imagen propia no se toca. No tiene tarjeta en el módulo.
   - Con `--sddm` y/o `--plymouth`: una sola llamada
     `pkexec /usr/libexec/uzunyx-system-edition <edición> sddm plymouth`
     (una sola contraseña).
