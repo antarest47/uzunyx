@@ -96,7 +96,7 @@ sudo uzunyx-install
 ```
 
 Los efectos de KWin escritos en C++ (`uzunyx-outline`, `uzunyx-openclose`,
-`uzunyx-genie`, `uzunyx-altguard`) se compilan contra una versión exacta de KWin. Si
+`uzunyx-genie`, `uzunyx-altguard`, `uzunyx-maxgesture`) se compilan contra una versión exacta de KWin. Si
 el sistema tiene otra, apt los omite y el resto funciona.
 
 ## Compilar
@@ -142,6 +142,7 @@ ISO sin root con `mmdebstrap`. Ver [uzunyx-iso/README.md](uzunyx-iso/README.md).
 | [`uzunyx-openclose`](uzunyx-openclose) | Efecto de KWin: abrir y cerrar ventanas |
 | [`uzunyx-genie`](uzunyx-genie) | Efecto de KWin: minimizar con forma de genio |
 | [`uzunyx-altguard`](uzunyx-altguard) | Plugin de KWin: que Alt no abra el menú de la app tras un atajo |
+| [`uzunyx-maxgesture`](uzunyx-maxgesture) | Plugin de KWin: Shift + clic o mantener apretado maximizar pone pantalla completa |
 | [`uzunyx-shortcuts`](uzunyx-shortcuts) | Atajos globales |
 | [`uzunyx-keys`](uzunyx-keys) | Ventana con todos los atajos |
 | [`uzunyx-timer`](uzunyx-timer) | Temporizadores |

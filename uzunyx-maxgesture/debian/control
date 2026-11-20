@@ -1,0 +1,19 @@
+Package: uzunyx-maxgesture
+Version: @VERSION@
+Section: x11
+Priority: optional
+Architecture: @ARCH@
+Maintainer: emi <285864120+antarest47@users.noreply.github.com>
+Depends: kwin-wayland (>= @KWIN@), kwin-wayland (<< @KWIN@.~)
+Recommends: uzunyx-deco (>= 0.14.1)
+Description: the maximize button of every window also does fullscreen
+ KWin plugin. Shift + click on the maximize button of any window, or
+ holding it pressed for half a second, puts the window in fullscreen
+ instead of maximizing it. It works with apps that draw their own title
+ bar (GTK, libadwaita, Electron, Firefox), which can't get a fourth
+ button, as well as with KWin's own decoration. A plain click still
+ maximizes and restores. With uzunyx-deco, the fullscreen window goes to a
+ virtual desktop of its own.
+ .
+ Built against one exact KWin version: KWin refuses to load it in any
+ other, so it must be rebuilt after every KWin update.
