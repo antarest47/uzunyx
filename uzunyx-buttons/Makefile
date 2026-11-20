@@ -1,5 +1,5 @@
 NAME    := uzunyx-buttons
-VERSION := 0.10.0
+VERSION := 0.10.1
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -41,6 +41,12 @@ install:
 	python3 gen-icons.py - $(EDITION_FOLDERS)/sora $(DESTDIR)$(ICON_DIR)-sora uzunyx-sora
 	find $(DESTDIR)$(ICON_DIR) $(DESTDIR)$(ICON_DIR)-sora -type d -exec chmod 755 {} + -o -type f -exec chmod 644 {} +
 	install -Dm644 libadwaita.css $(DESTDIR)$(PREFIX)/share/uzunyx-buttons/uzunyx-windowcontrols.css
+	@# GTK3 buttons for the user's config (Flatpak apps can't see the theme), with
+	@# the SVGs next to it: uzunyx-gtk-theme-setup copies both to ~/.config/gtk-3.0.
+	install -d $(DESTDIR)$(PREFIX)/share/uzunyx-buttons/gtk-3.0/uzunyx-buttons
+	for b in $(BUTTONS); do for s in $(STATES); do install -m644 svg/$$b-$$s.svg $(DESTDIR)$(PREFIX)/share/uzunyx-buttons/gtk-3.0/uzunyx-buttons/; done; done
+	python3 gen-gtk-css.py 3 uzunyx-buttons > $(DESTDIR)$(PREFIX)/share/uzunyx-buttons/gtk-3.0/uzunyx-titlebuttons.css
+	chmod 644 $(DESTDIR)$(PREFIX)/share/uzunyx-buttons/gtk-3.0/uzunyx-titlebuttons.css
 	install -Dm755 uzunyx-gtk-theme-setup $(DESTDIR)$(PREFIX)/bin/uzunyx-gtk-theme-setup
 	install -Dm644 uzunyx-gtk-theme-setup.desktop $(DESTDIR)$(SYSCONFDIR)/xdg/autostart/uzunyx-gtk-theme-setup.desktop
 

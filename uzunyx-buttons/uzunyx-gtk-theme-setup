@@ -1,6 +1,7 @@
 #!/bin/sh
 # Switches the user's GTK theme from Breeze to Breeze-Uzunyx once, at login,
-# and gives libadwaita apps the Uzunyx window buttons.
+# and puts the Uzunyx window buttons in the user's GTK config (libadwaita and
+# Flatpak apps).
 #
 # A Plasma global theme cannot set the GTK theme, and kde-gtk-config sets
 # Breeze for new users. Only Breeze or no theme is replaced, and only once:
@@ -11,24 +12,31 @@
 
 config="${XDG_CONFIG_HOME:-$HOME/.config}"
 
-# Window buttons of libadwaita apps, which ignore GTK themes: a CSS file of
-# uzunyx-buttons in the user's GTK 4 config, copied at every login (so new
-# versions arrive) and imported from gtk.css once (kde-gtk-config keeps the
-# rest of that file when it adds its colors.css). Flatpak apps get that folder
-# read-only, also once, when flatpak is there.
-css=/usr/share/uzunyx-buttons/uzunyx-windowcontrols.css
-if [ -r "$css" ]; then
-    mkdir -p "$config/gtk-4.0" "$config/uzunyx"
-    cmp -s "$css" "$config/gtk-4.0/uzunyx-windowcontrols.css" ||
-        cp "$css" "$config/gtk-4.0/uzunyx-windowcontrols.css"
-    if [ ! -e "$config/uzunyx/gtk4-windowcontrols" ]; then
+# Window buttons in the user's GTK config, which GTK reads above any theme:
+# - GTK 4: libadwaita apps ignore GTK themes, so Breeze-Uzunyx never reaches them;
+# - GTK 3: Flatpak apps can't see /usr/share/themes and use Adwaita (the CSS of
+#   Breeze-Uzunyx with its SVGs, which in native apps repeats the theme).
+# The files are copied at every login (so new versions arrive) and imported from
+# gtk.css once (kde-gtk-config keeps the rest of that file when it adds its
+# colors.css). Flatpak apps get both folders read-only, also once, when flatpak
+# is there: Flatpak mounts them in ~/.var/app/<id>/config too, where GTK looks.
+share=/usr/share/uzunyx-buttons
+if [ -d "$share" ]; then
+    mkdir -p "$config/gtk-3.0" "$config/gtk-4.0" "$config/uzunyx"
+    cmp -s "$share/uzunyx-windowcontrols.css" "$config/gtk-4.0/uzunyx-windowcontrols.css" ||
+        cp "$share/uzunyx-windowcontrols.css" "$config/gtk-4.0/uzunyx-windowcontrols.css"
+    rm -rf "$config/gtk-3.0/uzunyx-buttons"
+    cp -r "$share/gtk-3.0/uzunyx-buttons" "$share/gtk-3.0/uzunyx-titlebuttons.css" "$config/gtk-3.0/"
+    if [ ! -e "$config/uzunyx/gtk-titlebuttons" ]; then
         grep -qs "uzunyx-windowcontrols.css" "$config/gtk-4.0/gtk.css" ||
             printf "\n@import 'uzunyx-windowcontrols.css';\n" >> "$config/gtk-4.0/gtk.css"
-        touch "$config/uzunyx/gtk4-windowcontrols"
+        grep -qs "uzunyx-titlebuttons.css" "$config/gtk-3.0/gtk.css" ||
+            printf "\n@import 'uzunyx-titlebuttons.css';\n" >> "$config/gtk-3.0/gtk.css"
+        touch "$config/uzunyx/gtk-titlebuttons"
     fi
-    if [ ! -e "$config/uzunyx/flatpak-gtk4" ] && command -v flatpak >/dev/null 2>&1; then
-        flatpak override --user --filesystem=xdg-config/gtk-4.0:ro &&
-            touch "$config/uzunyx/flatpak-gtk4"
+    if [ ! -e "$config/uzunyx/flatpak-gtk-config" ] && command -v flatpak >/dev/null 2>&1; then
+        flatpak override --user --filesystem=xdg-config/gtk-3.0:ro --filesystem=xdg-config/gtk-4.0:ro &&
+            touch "$config/uzunyx/flatpak-gtk-config"
     fi
 fi
 
