@@ -327,6 +327,9 @@ Item {
     }
 
     function matches(w) {
+        if (!w) {
+            return false;
+        }
         if (filter.length === 0) {
             return true;
         }
@@ -491,7 +494,22 @@ Item {
             property var entries: []
             // Where the windows go below the search field and above the panel.
             property rect area: Qt.rect(0, 0, 0, 0)
-            readonly property var shown: entries.map(e => root.matches(e.window))
+            // Ids of the windows closed while the view is open: they stay in the
+            // list (replacing it would rebuild every tile, with no animation),
+            // fade out, and the others move to the new grid.
+            property var removed: ({})
+            // Ids of the ones being closed from the view, out of the grid already.
+            property var leaving: ({})
+            function setLeaving(id, value) {
+                const copy = Object.assign({}, leaving);
+                if (value) {
+                    copy[id] = true;
+                } else {
+                    delete copy[id];
+                }
+                leaving = copy;
+            }
+            readonly property var shown: entries.map(e => !removed[e.id] && !leaving[e.id] && root.matches(e.window))
             readonly property var places: root.layout(entries.map(e => e.window), shown, area, gap, label)
             // The selected one, for Enter and the arrows: the first shown at start.
             property int selected: -1
@@ -530,6 +548,8 @@ Item {
             Component.onCompleted: {
                 const list = windows.map(w => ({
                     window: w,
+                    id: w.internalId.toString(),
+                    wid: w.internalId,
                     from: w.minimized ? null : inScreen(w.frameGeometry),
                 }));
                 let bottom = Kirigami.Units.gridUnit * 2;
@@ -555,8 +575,11 @@ Item {
             Connections {
                 target: KWin.Workspace
                 function onWindowRemoved(window) {
-                    if (stage.entries.some(e => e.window === window)) {
-                        stage.entries = stage.entries.filter(e => e.window !== window);
+                    const entry = stage.entries.find(e => e.window === window);
+                    if (entry && !stage.removed[entry.id]) {
+                        const removed = Object.assign({}, stage.removed);
+                        removed[entry.id] = true;
+                        stage.removed = removed;
                     }
                 }
             }
@@ -670,22 +693,35 @@ Item {
                         readonly property bool isShown: stage.shown[index] === true && place !== null
                         readonly property bool isChosen: stage.chosen === window
                         readonly property bool isSelected: stage.selected === index && isShown
-                        // Closing it from here: invisible first (see the top), back
-                        // if it is still there a moment later (it asked something).
+                        // Closing it from here: the thumbnail fades out while the
+                        // others move to the new grid; then the real window, made
+                        // invisible first (see the top), is closed. If it is still
+                        // there a moment later (it asked something), it comes back.
                         property bool going: false
                         function closeIt() {
                             going = true;
-                            window.opacity = 0;
-                            window.closeWindow();
-                            stillThere.start();
+                            stage.setLeaving(modelData.id, true);
+                            closeLater.start();
+                        }
+                        Timer {
+                            id: closeLater
+                            interval: root.duration
+                            onTriggered: {
+                                if (tile.window && !tile.window.deleted) {
+                                    tile.window.opacity = 0;
+                                    tile.window.closeWindow();
+                                    stillThere.start();
+                                }
+                            }
                         }
                         Timer {
                             id: stillThere
                             interval: 1500
                             onTriggered: {
-                                if (!tile.window.deleted) {
+                                if (tile.window && !tile.window.deleted) {
                                     tile.window.opacity = 1;
                                     tile.going = false;
+                                    stage.setLeaving(tile.modelData.id, false);
                                 }
                             }
                         }
@@ -698,7 +734,7 @@ Item {
                         // closing (the chosen one where it is now), the grid between.
                         readonly property var target: {
                             if (!stage.opened) {
-                                if (isChosen && !window.deleted) {
+                                if (isChosen && window && !window.deleted) {
                                     return stage.inScreen(window.frameGeometry);
                                 }
                                 return from;
@@ -714,9 +750,10 @@ Item {
                         width: rect.width
                         height: rect.height
                         z: isChosen ? 300 : (hover.containsMouse ? 200 : 100 + index)
-                        opacity: going ? 0 : !stage.opened ? (target ? 1 : 0) : (isShown ? (window.minimized ? 0.7 : 1) : 0)
-                        scale: going ? 0.85 : 1
-                        Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                        readonly property bool gone: going || stage.removed[modelData.id] === true
+                        opacity: gone ? 0 : !stage.opened ? (target ? 1 : 0) : (isShown ? (window && window.minimized ? 0.7 : 1) : 0)
+                        scale: gone ? 0.85 : 1
+                        Behavior on scale { NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
                         visible: opacity > 0
 
                         Behavior on x { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
@@ -740,7 +777,7 @@ Item {
 
                         KWin.WindowThumbnail {
                             anchors.fill: parent
-                            wId: tile.window.internalId
+                            wId: tile.modelData.wid
                         }
 
                         MouseArea {
@@ -796,12 +833,12 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: Kirigami.Units.iconSizes.small
                                 height: width
-                                source: tile.window.icon
+                                source: tile.window ? tile.window.icon : ""
                             }
                             Text {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: Math.min(implicitWidth, Math.max(tile.width - Kirigami.Units.iconSizes.small - Kirigami.Units.smallSpacing * 2, Kirigami.Units.gridUnit * 6))
-                                text: tile.window.caption
+                                text: tile.window ? tile.window.caption : ""
                                 color: Kirigami.Theme.textColor
                                 elide: Text.ElideRight
                             }

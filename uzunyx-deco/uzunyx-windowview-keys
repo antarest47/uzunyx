@@ -16,6 +16,7 @@ receive D-Bus calls.
     Stop()                   gives it back
     Poll() -> (s, as)        the text, and the keys since the last poll:
                              enter, escape, left, right, up, down, next, previous
+                             (Esc with something typed only clears it)
 
 Started by D-Bus activation on the view's first opening; it goes away after
 ten minutes without being used.
@@ -97,6 +98,9 @@ class Keys:
         ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
         if event.keyval == Gdk.KEY_BackSpace:
             self.text = "" if ctrl else self.text[:-1]
+        elif event.keyval == Gdk.KEY_Escape and self.text:
+            # Esc clears what was typed; only with nothing typed it closes the view.
+            self.text = ""
         elif event.keyval in KEYS:
             key = KEYS[event.keyval]
             if key == "next" and event.state & Gdk.ModifierType.SHIFT_MASK:

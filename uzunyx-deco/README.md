@@ -169,6 +169,14 @@ panel era una copia inerte y al cerrar una ventana desde la vista parpadeaba a s
 - La ventana elegida se activa al terminar la animación (activarla antes la subía encima
   de la vista); con Esc vuelve a estar activa la que lo estaba al abrir.
 
+Desde 0.16.2 (pedido por el usuario el 2026-11-20): Esc con algo escrito solo lo borra (lo
+hace el ayudante del teclado); con el buscador vacío cierra la vista. Y una ventana que se
+cierra con la vista abierta (desde ella o por su cuenta) no rehace la cuadrícula de golpe: se
+queda en la lista marcada como cerrada (`removed`, o `leaving` mientras se la cierra desde la
+vista), su miniatura se desvanece y se achica, y las demás se mueven y cambian de tamaño hasta
+su lugar en la cuadrícula nueva. Cerrando desde la vista, la ventana real se cierra después
+de esa animación. Comprobado en un Plasma anidado.
+
 Comprobado en un Plasma anidado (también con dos pantallas, con el filtro y eligiendo una
 ventana por temporizadores de prueba, porque ahí no se puede teclear).
 
