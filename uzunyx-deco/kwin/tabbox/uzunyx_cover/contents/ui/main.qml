@@ -3,11 +3,15 @@
  * the viewer and the others turned away at its sides. Rotation around the Y axis
  * gives the perspective; the windows on each side are stacked towards the centre.
  *
- * When it opens, every window on screen starts where it really is and flies to
- * its place in the row, so the current one seems to shrink into the middle,
- * while the wallpaper behind blurs like in KWin's Overview (DesktopBackground,
- * the same item it uses). Windows that aren't on screen (minimized, on another
- * desktop) fade in at their place in the row.
+ * Opening: the first frame is an exact copy of the desktop (wallpaper and every
+ * window where it really is); from there each window flies to its place in the
+ * row, the current one to its left (Alt+Tab has already chosen the next), while
+ * the wallpaper blurs like in KWin's Overview (DesktopBackground, the item it
+ * uses). Windows that aren't on screen (minimized, on another desktop) fade in.
+ *
+ * Closing: with automaticallyHide off, KWin only announces it (aboutToHide);
+ * the window that ended up active grows back to its place, the others go back
+ * to theirs, the blur clears, and then the switcher hides itself.
  */
 import QtQuick
 import QtQuick.Effects
@@ -18,9 +22,40 @@ import org.kde.kwin as KWin
 KWin.TabBoxSwitcher {
     id: tabBox
 
+    // KWin would hide the switcher (and destroy its window) the moment Alt is
+    // released; instead it only says so (aboutToHide), and the switcher hides
+    // itself once its closing animation is over (stage.leave()).
+    automaticallyHide: false
+
     Instantiator {
-        active: tabBox.visible
-        delegate: Window {
+        id: stages
+        active: false
+        delegate: stageComponent
+    }
+
+    // Called by the window itself, which this destroys: runs here.
+    function finishLeaving() {
+        stages.active = false;
+        visible = false;
+    }
+
+    onAboutToShow: {
+        // Also when it is shown again while still closing: start over.
+        stages.active = false;
+        stages.active = true;
+    }
+    onAboutToHide: {
+        if (stages.object) {
+            stages.object.leave();
+        } else {
+            tabBox.visible = false;
+        }
+    }
+
+    Component {
+        id: stageComponent
+
+        Window {
             id: stage
 
             readonly property int duration: 300
@@ -29,21 +64,85 @@ KWin.TabBoxSwitcher {
             readonly property int count: covers.count
             // False for the first frame: everything where it really is.
             property bool opened: false
-            // The Behaviors stay off until then, so that setting the starting
-            // places (Component.onCompleted of each cover) isn't animated.
+            // True from the moment KWin hides the switcher.
+            property bool closing: false
+            // The Behaviors stay off until the first frame, so that setting the
+            // starting places (Component.onCompleted of each cover) isn't animated.
             property bool animate: false
+            // The window that ends up active, and where it is, once closing.
+            property string chosenId: ""
+            property var chosenRect: null
+            readonly property bool showing: opened && !closing
+
+            // Alt+Tab moves the selection to the next window right after the
+            // switcher appears; wait for it (or a moment, for Alt+Shift+Tab or
+            // a switcher opened another way) so the current window doesn't head
+            // for the middle first.
+            property bool painted: false
+            property bool settled: false
             function start() {
-                if (!animate) {
+                if (!animate && painted && settled) {
                     animate = true;
                     opened = true;
                 }
+            }
+            onFrameSwapped: {
+                painted = true;
+                start();
+            }
+            Connections {
+                target: tabBox
+                function onCurrentIndexChanged() {
+                    if (!stage.settled && tabBox.currentIndex !== 0) {
+                        stage.settled = true;
+                        stage.start();
+                    }
+                }
+            }
+            Timer {
+                interval: 60
+                running: true
+                onTriggered: {
+                    stage.painted = true;
+                    stage.settled = true;
+                    stage.start();
+                }
+            }
+            Component.onCompleted: {
+                if (tabBox.currentIndex !== 0) {
+                    settled = true;
+                }
+            }
+
+            function leave() {
+                // KWin activates the chosen window right after asking the
+                // switcher to hide (and none on Esc): read it once that is done.
+                Qt.callLater(() => {
+                    const active = KWin.Workspace.activeWindow;
+                    const current = covers.count > 0 ? covers.itemAt(tabBox.currentIndex) : null;
+                    chosenId = active ? active.internalId.toString()
+                        : (current ? current.model.windowId.toString() : "");
+                    const w = windowOf(chosenId, true);
+                    if (w) {
+                        const f = w.frameGeometry;
+                        chosenRect = Qt.rect(f.x - tabBox.screenGeometry.x, f.y - tabBox.screenGeometry.y, f.width, f.height);
+                    }
+                    animate = true;
+                    closing = true;
+                    gone.start();
+                });
+            }
+            Timer {
+                id: gone
+                interval: stage.duration + 40
+                onTriggered: tabBox.finishLeaving()
             }
 
             // The windows by id, to know where each one is on screen. Built on
             // first use: the covers ask before the window's own bindings run.
             property var windowMap: null
-            function windowOf(windowId) {
-                if (!windowMap) {
+            function windowOf(windowId, fresh) {
+                if (!windowMap || fresh) {
                     const map = {};
                     for (const w of KWin.Workspace.stackingOrder) {
                         map[w.internalId.toString()] = w;
@@ -78,34 +177,42 @@ KWin.TabBoxSwitcher {
             color: "transparent"
             visible: true
 
-            // One frame as the desktop looks, then everything moves.
-            onFrameSwapped: start()
-            Timer {
-                interval: 100
-                running: true
-                onTriggered: stage.start()
-            }
-
-            KWin.DesktopBackground {
+            // Opaque, so nothing shows through (the panel included), also while
+            // closing: at the end it matches the desktop, blur gone and every
+            // window back in its place, and the real one takes over.
+            Item {
+                id: backdrop
                 anchors.fill: parent
-                activity: KWin.Workspace.currentActivity
-                desktop: KWin.Workspace.currentDesktop
-                outputName: stage.output ? stage.output.name : ""
 
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    blurEnabled: true
-                    blurMax: 64
-                    blur: stage.opened ? 1 : 0
-                    Behavior on blur { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                Rectangle {
+                    anchors.fill: parent
+                    color: Kirigami.Theme.backgroundColor
                 }
-            }
 
-            Rectangle {
-                anchors.fill: parent
-                color: Kirigami.Theme.backgroundColor
-                opacity: stage.opened ? 0.3 : 0
-                Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
+                KWin.DesktopBackground {
+                    anchors.fill: parent
+                    activity: KWin.Workspace.currentActivity
+                    desktop: KWin.Workspace.currentDesktop
+                    outputName: stage.output ? stage.output.name : ""
+
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        // Without padding the edges stay opaque: with it they
+                        // faded out and showed the desktop and panel behind.
+                        autoPaddingEnabled: false
+                        blurEnabled: true
+                        blurMax: 64
+                        blur: stage.showing ? 1 : 0
+                        Behavior on blur { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: Kirigami.Theme.backgroundColor
+                    opacity: stage.showing ? 0.3 : 0
+                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
+                }
             }
 
             Item {
@@ -126,30 +233,38 @@ KWin.TabBoxSwitcher {
                         required property int index
                         required property var model
 
-                        // Shortest way around from the chosen window: negative on the left.
+                        // Shortest way around from the chosen window: negative on
+                        // the left. A tie goes left, so with Alt+Tab the current
+                        // window (the one before the chosen) always goes left.
                         readonly property int offset: {
                             const half = stage.count / 2;
                             let d = (index - tabBox.currentIndex + stage.count) % stage.count;
-                            return d > half ? d - stage.count : d;
+                            return d >= half && d > 0 ? d - stage.count : d;
                         }
                         readonly property int distance: Math.abs(offset)
                         readonly property int side: offset === 0 ? 0 : (offset > 0 ? 1 : -1)
                         readonly property bool chosen: offset === 0
-                        // Where it starts: its real place, if it's on screen.
-                        // Taken once, before the first frame.
+                        readonly property bool leavingOnTop: stage.closing && model.windowId.toString() === stage.chosenId
+
+                        // Its real place, taken once, before the first frame.
                         property var from: null
                         Component.onCompleted: from = stage.placeOf(model.windowId)
-                        readonly property bool fromScreen: from != null
-                        readonly property bool inRow: stage.opened || !fromScreen
+                        // Where it is (or goes) outside the row: its real place
+                        // before opening and after closing; null means the row.
+                        readonly property var place: !stage.opened ? from
+                            : (stage.closing ? (leavingOnTop && stage.chosenRect ? stage.chosenRect : from) : null)
+                        readonly property bool inRow: place == null
 
-                        width: inRow ? stage.coverWidth : from.width
-                        height: inRow ? stage.coverHeight : from.height
-                        y: inRow ? Math.round((stage.height - stage.coverHeight) / 2 - stage.height * 0.03) : from.y
-                        x: inRow ? Math.round((stage.width - stage.coverWidth) / 2 + side * (stage.width * 0.27 + (distance - 1) * stage.width * 0.055)) : from.x
+                        width: inRow ? stage.coverWidth : place.width
+                        height: inRow ? stage.coverHeight : place.height
+                        y: inRow ? Math.round((stage.height - stage.coverHeight) / 2 - stage.height * 0.03) : place.y
+                        x: inRow ? Math.round((stage.width - stage.coverWidth) / 2 + side * (stage.width * 0.27 + (distance - 1) * stage.width * 0.055)) : place.x
                         // The model is in focus order, the first one on top: as on screen.
-                        z: stage.opened ? 100 - distance : 100 - index
-                        scale: stage.opened ? (chosen ? 1 : 0.8) : 1
-                        opacity: !stage.opened ? (fromScreen ? 1 : 0) : (distance > 3 ? 0 : (distance > 2 ? 0.45 : 1))
+                        z: leavingOnTop ? 300 : (stage.opened ? 100 - distance : 100 - index)
+                        scale: inRow ? (chosen ? 1 : 0.8) : 1
+                        // In the row: dimmer far away; fading in and out when it
+                        // has no place on screen.
+                        opacity: !inRow ? 1 : (!stage.showing ? 0 : (distance > 3 ? 0 : (distance > 2 ? 0.45 : 1)))
 
                         Behavior on x { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
                         Behavior on y { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
@@ -162,7 +277,7 @@ KWin.TabBoxSwitcher {
                             origin.x: cover.width / 2
                             origin.y: cover.height / 2
                             axis { x: 0; y: 1; z: 0 }
-                            angle: stage.opened ? -cover.side * 58 : 0
+                            angle: cover.inRow ? -cover.side * 58 : 0
                             Behavior on angle { enabled: stage.animate; NumberAnimation { duration: stage.duration; easing.type: Easing.OutCubic } }
                         }
 
@@ -178,19 +293,20 @@ KWin.TabBoxSwitcher {
                             color: Kirigami.Theme.alternateBackgroundColor
                             border.width: cover.chosen ? 2 : 1
                             border.color: cover.chosen ? Kirigami.Theme.focusColor : Qt.rgba(1, 1, 1, 0.25)
-                            opacity: stage.opened ? 1 : 0
+                            opacity: stage.showing ? 1 : 0
                             Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
                         }
 
                         KWin.WindowThumbnail {
                             id: thumbnail
                             anchors.fill: parent
-                            anchors.margins: stage.opened ? 3 : 0
+                            anchors.margins: stage.showing ? 3 : 0
                             wId: cover.model.windowId
                         }
 
                         MouseArea {
                             anchors.fill: parent
+                            enabled: stage.showing
                             onClicked: tabBox.model.activate(cover.index)
                         }
                     }
@@ -203,7 +319,7 @@ KWin.TabBoxSwitcher {
                     y: Math.round(parent.height / 2 + stage.coverHeight / 2 + parent.height * 0.015)
                     spacing: Kirigami.Units.largeSpacing
                     visible: current !== null
-                    opacity: stage.opened ? 1 : 0
+                    opacity: stage.showing ? 1 : 0
                     Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: stage.duration } }
 
                     Kirigami.Icon {
