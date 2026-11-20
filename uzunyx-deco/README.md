@@ -62,6 +62,14 @@ tamaño). Redimensionarla a mano la deja como ventana normal de ese tamaño.
 - Si cambia el área de maximizado (paneles, márgenes de edge-gaps,
   `uzunyx-mode`), las ventanas suavemente maximizadas se reajustan: KWin no
   avisa de ese cambio a los scripts, así que se comprueba cada segundo.
+- Con `uzunyx-maxgesture` (Shift + clic o mantener apretado maximizar), la
+  pantalla completa llega después de que el script ya ajustó la ventana al
+  área: en Wayland las dos cosas son pedidos que la app responde, y KWin la
+  devolvería ocupando el área al salir. Si la pantalla completa llega hasta
+  1 s después de un maximizado suave, al salir de ella la ventana recupera
+  el tamaño de antes (0.15.4; KWin 6.6 ignora el tamaño que se le da a una
+  ventana en pantalla completa, así que se le da al salir). Comprobado en
+  la VM con Ubuntu 26.04 y una ventana GTK3 con barra propia.
 - Arreglo aparte: si una ventana con esta decoración aparece ya maximizada,
   el script le recrea la decoración una vez (`noBorder` sí y no). Aurorae a
   veces no llega a pintar la decoración creada en ese momento (barra de

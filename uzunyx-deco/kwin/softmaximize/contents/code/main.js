@@ -17,6 +17,12 @@ const restoreGeometry = new Map();
 const fittedAreas = new Map();
 // windows we are currently changing ourselves (ignore their signals)
 const busy = new Set();
+// internalId -> when it was last soft-maximized (Date.now())
+const softMaximizedAt = new Map();
+// Fullscreen this soon after a soft maximize came with it (see setup).
+const FULLSCREEN_WITH_MAXIMIZE = 1000;
+// internalId -> geometry to give back when it leaves that fullscreen
+const afterFullScreen = new Map();
 
 function key(w) {
     return w.internalId.toString();
@@ -54,6 +60,7 @@ function softMaximize(w, previous) {
     restoreGeometry.set(key(w), previous);
     w.frameGeometry = maximizeArea(w);
     fittedAreas.set(key(w), [copyRect(maximizeArea(w))]);
+    softMaximizedAt.set(key(w), Date.now());
     busy.delete(key(w));
 }
 
@@ -91,6 +98,35 @@ function setup(w) {
         } else if (drawsOwnFrame(w)) {
             softMaximize(w, beforeMaximize);
         }
+    });
+
+    // uzunyx-maxgesture turns the maximize request of a Shift + click (or a
+    // long press) on the maximize button into fullscreen, but on Wayland
+    // both are requests: this script has already soft-maximized the window
+    // when the fullscreen arrives, and KWin restores a fullscreen window to
+    // the geometry it had, so it would come back filling the area. That
+    // can't be changed while it is fullscreen (KWin 6.6 ignores it), so it
+    // gets its previous size back when it leaves fullscreen.
+    w.fullScreenChanged.connect(() => {
+        if (!w.fullScreen) {
+            const previous = afterFullScreen.get(key(w));
+            afterFullScreen.delete(key(w));
+            if (previous) {
+                busy.add(key(w));
+                w.frameGeometry = previous;
+                busy.delete(key(w));
+            }
+            return;
+        }
+        const at = softMaximizedAt.get(key(w));
+        const previous = restoreGeometry.get(key(w));
+        softMaximizedAt.delete(key(w));
+        if (!previous || at === undefined || Date.now() - at > FULLSCREEN_WITH_MAXIMIZE) {
+            return;
+        }
+        restoreGeometry.delete(key(w));
+        fittedAreas.delete(key(w));
+        afterFullScreen.set(key(w), previous);
     });
 
     // Dragging a soft-maximized window gives it back its previous size, like
@@ -193,6 +229,8 @@ workspace.windowAdded.connect(w => {
 workspace.windowRemoved.connect(w => {
     restoreGeometry.delete(key(w));
     fittedAreas.delete(key(w));
+    softMaximizedAt.delete(key(w));
+    afterFullScreen.delete(key(w));
 });
 workspace.screensChanged.connect(refit);
 workspace.virtualScreenGeometryChanged.connect(refit);
