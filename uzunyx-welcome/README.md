@@ -15,7 +15,7 @@ pantalla de inicio de sesión y la de arranque (`--sddm --plymouth`), con «Apli
 mientras tanto. Eso pide contraseña, salvo que ya estén en esa edición. Si se cancela
 o el usuario no tiene permiso, lo avisa y deja seguir.
 
-Solo en el primer inicio, elegir una edición cambia también la imagen del usuario (`~/.face` y `SetIconFile` de AccountsService con esa copia, sin contraseña). Abierta después desde el menú no la toca.
+Solo en el primer inicio, elegir una edición cambia también la imagen del usuario (`~/.face` y `SetIconFile` de AccountsService con esa copia, sin contraseña). Abierta después desde el menú no la cambia ella, pero `uzunyx-edition` ≥ 0.5.2 sí la cambia si sigue siendo una de Uzunyx (una propia no).
 
 La bienvenida de KDE no sale: `/etc/xdg/plasma-welcomerc` trae `LastSeenVersion=99.0.0` (`plasma-desktop` depende de `plasma-welcome`, y `autoload=false` en `kded6rc` no apaga su módulo).
 

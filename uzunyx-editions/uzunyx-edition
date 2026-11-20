@@ -4,7 +4,7 @@
 Uso:
     uzunyx-edition status
     uzunyx-edition set akane|sora [--no-theme] [--no-wallpaper] [--no-lock]
-                                  [--no-launcher] [--no-konsole] [--sddm]
+                                  [--no-launcher] [--no-konsole] [--no-avatar] [--sddm]
                                   [--plymouth]
 
 «set» aplica, sin tocar los paneles:
@@ -14,6 +14,8 @@ Uso:
   - su fondo de pantalla de bloqueo (kscreenlockerrc del usuario);
   - su logo en el botón del lanzador (Tsunyx o Kickoff) del panel;
   - su perfil de Konsole, salvo si el usuario eligió otro;
+  - su imagen de usuario, solo si sigue puesta una de Uzunyx (la de por
+    defecto o una de las de «Usuarios»); una propia no se toca;
   - con --sddm, su fondo en la pantalla de inicio de sesión, y con
     --plymouth, su pantalla de arranque (regenera el initramfs: tarda). Son
     de todo el sistema, así que se hacen como root con pkexec, en una sola
@@ -26,9 +28,11 @@ con su disposición del escritorio, que reemplaza los paneles.
 """
 
 import argparse
+import filecmp
 import glob
 import json
 import os
+import shutil
 import subprocess
 import sys
 
@@ -46,6 +50,14 @@ WALLPAPERS = "/usr/share/wallpapers"
 SYSTEM_HELPER = "/usr/libexec/uzunyx-system-edition"
 SETTINGS_DESKTOP = "org.uzunyx.settings.desktop"
 LAUNCHERS = ("local.tsunyxlauncher", "org.kde.plasma.kickoff")
+# Uzunyx's pictures of each edition (uzunyx-lookandfeel): the drawing and the logo. The
+# user's picture follows the edition only while it is one of these (or the default for new
+# users, /etc/skel/.face, the drawing of Akane), matched by content: Plasma and the users
+# module copy the chosen file to ~/.face.
+AVATARS = "/usr/share/plasma/avatars"
+AVATAR_KINDS = {"akane": {"drawing": "Uzunyx Akane.png", "logo": "Uzunyx Akane (logo).png"},
+                "sora": {"drawing": "Uzunyx Sora.png", "logo": "Uzunyx Sora (logo).png"}}
+DEFAULT_AVATAR = ("/etc/skel/.face", "drawing")
 
 # Plasma desktop script: the logo on every launcher button.
 LAUNCHER_SCRIPT = """
@@ -175,6 +187,44 @@ def apply_konsole(ed):
                 pass
 
 
+def same_file(a, b):
+    try:
+        return filecmp.cmp(a, b, shallow=False)
+    except OSError:
+        return False
+
+
+def uzunyx_avatar_kind(face):
+    """"drawing" or "logo" if the picture is one of Uzunyx's, else None."""
+    candidates = [DEFAULT_AVATAR] + [(os.path.join(AVATARS, f), kind)
+                                     for files in AVATAR_KINDS.values() for kind, f in files.items()]
+    for path, kind in candidates:
+        if same_file(face, path):
+            return kind
+    return None
+
+
+def apply_avatar(name):
+    """The edition's picture, for Plasma (~/.face) and the login screen (AccountsService)."""
+    face = os.path.expanduser("~/.face")
+    kind = uzunyx_avatar_kind(face)
+    if kind is None:
+        return  # the user's own picture (or none)
+    wanted = os.path.join(AVATARS, AVATAR_KINDS[name][kind])
+    if not os.path.exists(wanted) or same_file(face, wanted):
+        return
+    shutil.copyfile(wanted, face + ".new")
+    os.replace(face + ".new", face)
+    # From a file of the user's, AccountsService copies it to its icons, where SDDM looks;
+    # given a file of root's, it only remembers the path (and SDDM shows the default).
+    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+    user = bus.call_sync("org.freedesktop.Accounts", "/org/freedesktop/Accounts", "org.freedesktop.Accounts",
+                         "FindUserById", GLib.Variant("(x)", (os.getuid(),)), None,
+                         Gio.DBusCallFlags.NONE, 5000, None).unpack()[0]
+    bus.call_sync("org.freedesktop.Accounts", user, "org.freedesktop.Accounts.User", "SetIconFile",
+                  GLib.Variant("(s)", (face,)), None, Gio.DBusCallFlags.NONE, 5000, None)
+
+
 def apply_system(name, parts):
     run(["pkexec", SYSTEM_HELPER, name] + parts)
 
@@ -191,6 +241,7 @@ def main():
     s.add_argument("--no-lock", action="store_true", help="no cambiar la pantalla de bloqueo")
     s.add_argument("--no-launcher", action="store_true", help="no cambiar el icono del lanzador")
     s.add_argument("--no-konsole", action="store_true", help="no cambiar el perfil de Konsole")
+    s.add_argument("--no-avatar", action="store_true", help="no cambiar la imagen del usuario")
     s.add_argument("--sddm", action="store_true", help="cambiar también la pantalla de inicio de sesión (root)")
     s.add_argument("--plymouth", action="store_true", help="cambiar también la pantalla de arranque (root)")
     args = parser.parse_args()
@@ -218,6 +269,8 @@ def main():
         steps.append(("lanzador", lambda: apply_launcher(ed)))
     if not args.no_konsole:
         steps.append(("konsole", lambda: apply_konsole(ed)))
+    if not args.no_avatar:
+        steps.append(("imagen del usuario", lambda: apply_avatar(args.edition)))
     system = [part for part, on in (("sddm", args.sddm), ("plymouth", args.plymouth)) if on]
     if system:
         steps.append(("inicio de sesión y arranque" if len(system) > 1 else

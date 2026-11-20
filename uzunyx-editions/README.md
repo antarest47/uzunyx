@@ -16,6 +16,7 @@ normal solo cambian los colores y la decoración.
 | Bloqueo e inicio de sesión | `UzunyxAkaneSky` | `UzunyxSoraSky` |
 | Logo del lanzador | `uzunyx-akane` | `uzunyx-sora` |
 | Pantalla de arranque | `uzunyx-akane` | `uzunyx-sora` |
+| Imagen del usuario (si es de Uzunyx) | `Uzunyx Akane`, `Uzunyx Akane (logo)` | `Uzunyx Sora`, `Uzunyx Sora (logo)` |
 
 (Fondos de `uzunyx-wallpapers`, temas globales y logos de
 `uzunyx-lookandfeel`, temas Plymouth de `uzunyx-plymouth`.)
@@ -40,6 +41,14 @@ normal solo cambian los colores y la decoración.
     Akane, está en `/etc/xdg/kscreenlockerrc`).
   - Lanzador: script de plasmashell (`evaluateScript` por D-Bus) que pone el
     logo en `icon` de cada `local.tsunyxlauncher` u `org.kde.plasma.kickoff`.
+  - Imagen del usuario (desde 0.5.2, pedido por el usuario el 2026-11-19;
+    `--no-avatar` la deja): solo si `~/.face` es, por contenido, una de las de
+    Uzunyx (`/etc/skel/.face`, la de los usuarios nuevos, o una de
+    `/usr/share/plasma/avatars` de `uzunyx-lookandfeel`), pasa a la misma de
+    la otra edición: dibujo por dibujo, logo por logo. Copia el archivo a
+    `~/.face` y llama a `SetIconFile` de AccountsService con esa copia (sin
+    contraseña; así llega a SDDM). Una imagen propia no se toca. No tiene
+    tarjeta en el módulo: siempre sigue a la edición.
   - Con `--sddm` y/o `--plymouth`: una sola llamada
     `pkexec /usr/libexec/uzunyx-system-edition <edición> sddm plymouth`
     (una sola contraseña).

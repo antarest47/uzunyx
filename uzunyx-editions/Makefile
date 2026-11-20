@@ -2,7 +2,7 @@
 # plus the uzunyx-edition command that does the work and its root helper for
 # the login screen.
 NAME    := uzunyx-editions
-VERSION := 0.5.1
+VERSION := 0.5.2
 PREFIX  ?= /usr
 DESTDIR ?=
 ARCH    := $(shell dpkg --print-architecture)
