@@ -7,6 +7,13 @@
  * Minimized windows count; those on all desktops, and Plasma's, don't. With desktops
  * per screen (Plasma 6.7), the one shown on any screen stays. Nothing goes away while
  * macfullscreen has a desktop, because the window goes back to the one it came from.
+ *
+ * Desktops only on the primary screen, as GNOME does: a window on another screen is
+ * put on all desktops, so it stays when the primary changes desktop, and comes back
+ * to one desktop, the current, when it is moved to the primary. Only the windows this
+ * script put on all desktops are given back one (one the user pinned stays pinned).
+ * The primary is the first of workspace.screenOrder (the laptop's, unless another
+ * screen is set as primary).
  */
 const FULLSCREEN_DESKTOP = "⛶ ";
 // Windows of the previous session may still be on their way.
@@ -25,6 +32,42 @@ const settle = new QTimer();
 settle.singleShot = true;
 settle.interval = SETTLE_MS;
 settle.timeout.connect(sweep);
+
+// internalIds of the windows put on all desktops for being on another screen.
+const pinned = new Set();
+
+function primary() {
+    const order = workspace.screenOrder;
+    return order && order.length > 0 ? order[0] : workspace.activeScreen;
+}
+
+// The task manager's windows: dialogs that belong to one follow it, and
+// fullscreen ones keep what macfullscreen (or the app) decided.
+function followsScreen(w) {
+    return (w.normalWindow || w.dialog) && !w.transient && !w.skipTaskbar && !w.deleted
+        && !w.fullScreen && !w.desktops.some(isFullscreenDesktop)
+        && w.resourceClass !== "org.kde.plasmashell";
+}
+
+function place(w) {
+    if (!followsScreen(w)) {
+        return;
+    }
+    const id = w.internalId.toString();
+    const elsewhere = workspace.screens.length > 1 && w.output !== primary();
+    if (elsewhere && !w.onAllDesktops) {
+        pinned.add(id);
+        w.onAllDesktops = true;
+    } else if (!elsewhere && pinned.has(id)) {
+        pinned.delete(id);
+        w.onAllDesktops = false;
+        w.desktops = [workspace.currentDesktop];
+    }
+}
+
+function placeAll() {
+    workspace.windowList().forEach(place);
+}
 
 function isFullscreenDesktop(desktop) {
     return desktop.name.indexOf(FULLSCREEN_DESKTOP) === 0;
@@ -66,11 +109,19 @@ function next() {
 
 function watch(w) {
     w.desktopsChanged.connect(() => settle.start());
+    w.outputChanged.connect(() => place(w));
+    // Leaving fullscreen on another screen: back on all desktops.
+    w.fullScreenChanged.connect(() => place(w));
+    place(w);
 }
 
 workspace.windowList().forEach(watch);
 workspace.windowAdded.connect(watch);
 workspace.windowRemoved.connect(() => settle.start());
 workspace.currentDesktopChanged.connect(() => settle.start());
+workspace.screensChanged.connect(placeAll);
+if (workspace.screenOrderChanged) {
+    workspace.screenOrderChanged.connect(placeAll);
+}
 
 registerShortcut("UzunyxDesktopNext", "Ir al escritorio siguiente, creándolo si hace falta", "Alt+D", next);

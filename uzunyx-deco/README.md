@@ -111,6 +111,11 @@ borra los escritorios vacíos que hayan quedado (empiezan por `⛶`). Con el pun
 contra el borde inferior, la ventana baja de capa (`keepBelow`) y se ve el panel,
 hasta que el puntero se aleja.
 
+Desde 0.15.10, en una pantalla que no es la principal es pantalla completa común,
+sin escritorio propio: los escritorios solo están en la principal (`uzunyxdesktops`
+de `uzunyx-tiling` ≥ 0.10.0, y `PerOutputVirtualDesktops=false` en `/etc/xdg/kwinrc`,
+que hasta 0.15.9 era `true`).
+
 ## Selector de Alt+Tab `uzunyx_cover`
 
 Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en

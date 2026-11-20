@@ -47,6 +47,8 @@ El script `uzunyxdesktops`, activo siempre, con o sin mosaico: un escritorio vac
 
 Alt+D va al siguiente y, en el último, crea uno si ese tiene ventanas. No hay un escritorio de reserva, como en GNOME.
 
+**Escritorios solo en la pantalla principal** (desde 0.10.0, pedido por el usuario el 2026-11-20), como en GNOME: con varias pantallas, los escritorios son los mismos para todas (`PerOutputVirtualDesktops=false`, en el `kwinrc` de `uzunyx-deco` ≥ 0.15.10), pero solo cambia la principal, porque `uzunyxdesktops` pone en todos los escritorios las ventanas que están en otra pantalla. Al llevar una a la principal vuelve a un solo escritorio, el actual; solo a las que puso el script (una que el usuario fijó en todos, sigue así). La principal es la primera de `workspace.screenOrder` (la de la laptop, salvo que se elija otra como principal). En una pantalla secundaria el mosaico arma una sola disposición (`groupKey` con `all`), Alt+E/Alt+Q no hacen nada y `macfullscreen` hace pantalla completa común. Los diálogos que dependen de otra ventana y las ventanas en pantalla completa se dejan como están. Hasta 0.9.3, con escritorios por pantalla, cada pantalla cambiaba por su lado pero los escritorios se creaban en todas a la vez. Comprobado en un KWin anidado con dos salidas (`--output-count 2`). Si se reinicia la sesión con una ventana en la secundaria, KWin la restaura en todos los escritorios y el script ya no sabe que la puso él: al llevarla a la principal sigue en todos.
+
 ## Gestos
 
 El script `uzunyxgestures` (QML, desde 0.8.0) suma dos gestos de tres dedos en el touchpad a los de KWin:

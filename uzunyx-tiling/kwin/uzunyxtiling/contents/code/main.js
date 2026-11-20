@@ -69,10 +69,26 @@ function key(w) {
     return w.internalId.toString();
 }
 
+// Desktops are only on the primary screen (uzunyxdesktops): windows on another screen
+// are on all desktops, and that screen has a single layout.
+function primary() {
+    const screens = workspace.screenOrder;
+    return screens && screens.length > 0 ? screens[0] : workspace.activeScreen;
+}
+
+function onSecondary(w) {
+    return workspace.screens.length > 1 && w.output !== primary();
+}
+
+// The desktop of its layout: its own, or the current one on another screen.
+function desktopOf(w) {
+    return w.onAllDesktops ? workspace.currentDesktop : w.desktops[0];
+}
+
 function eligible(w) {
     return w.normalWindow && !w.transient && w.resizeable && w.moveable && !w.skipTaskbar
         && !w.specialWindow && w.resourceClass !== "org.kde.plasmashell" && w.resourceClass !== KEYS_WINDOW
-        && w.desktops.length === 1;
+        && (w.onAllDesktops ? onSecondary(w) : w.desktops.length === 1);
 }
 
 function isFullscreen(w) {
@@ -84,7 +100,7 @@ function tileable(w) {
 }
 
 function groupKey(w) {
-    return w.output.name + "|" + w.desktops[0].id;
+    return w.output.name + "|" + (w.onAllDesktops ? "all" : w.desktops[0].id);
 }
 
 // The tiled windows sharing a layout with w, in order.
@@ -186,8 +202,8 @@ function layOut() {
     const arrange = mode === "stack" ? monadTall : dwindle;
     for (const [group, windows] of groups) {
         const first = windows[0];
-        const area = workspace.clientArea(KWin.MaximizeArea, first.output, first.desktops[0]);
-        const screen = workspace.clientArea(KWin.FullScreenArea, first.output, first.desktops[0]);
+        const area = workspace.clientArea(KWin.MaximizeArea, first.output, desktopOf(first));
+        const screen = workspace.clientArea(KWin.FullScreenArea, first.output, desktopOf(first));
         const gap = same(area, screen) ? 0 : GAP;
         const laid = arrange(windows.length, area, gap, sizesOf(group, windows.length).ratios);
         const rects = laid.rects;
@@ -224,18 +240,18 @@ function handles(groups) {
     const list = [];
     for (const [group, windows] of groups) {
         const first = windows[0];
-        if (workspace.currentDesktopForScreen(first.output) !== first.desktops[0]) {
+        if (!first.onAllDesktops && workspace.currentDesktopForScreen(first.output) !== first.desktops[0]) {
             continue;
         }
-        const area = workspace.clientArea(KWin.MaximizeArea, first.output, first.desktops[0]);
-        const screen = workspace.clientArea(KWin.FullScreenArea, first.output, first.desktops[0]);
+        const area = workspace.clientArea(KWin.MaximizeArea, first.output, desktopOf(first));
+        const screen = workspace.clientArea(KWin.FullScreenArea, first.output, desktopOf(first));
         const gap = same(area, screen) ? 0 : GAP;
         for (const d of divisions.get(group) || []) {
             const strip = d.horizontal
                 ? { x: d.border - HANDLE_MARGIN, y: d.across, width: gap + 2 * HANDLE_MARGIN, height: d.acrossLength }
                 : { x: d.across, y: d.border - HANDLE_MARGIN, width: d.acrossLength, height: gap + 2 * HANDLE_MARGIN };
             const covered = workspace.stackingOrder.some(w => coverable(w) && !same(w.frameGeometry, strip)
-                && !w.minimized && !w.hidden && windows.indexOf(w) < 0 && (w.onAllDesktops || w.desktops.indexOf(first.desktops[0]) >= 0)
+                && !w.minimized && !w.hidden && windows.indexOf(w) < 0 && (w.onAllDesktops || w.desktops.indexOf(desktopOf(first)) >= 0)
                 && w.output === first.output && overlaps(w.frameGeometry, strip));
             if (!covered) {
                 strip.horizontal = d.horizontal;
@@ -305,7 +321,7 @@ function dropped(w) {
     const cursor = workspace.cursorPos;
     const target = order.find(other => {
         const f = other.frameGeometry;
-        return other !== w && tileable(other) && other.output === w.output && other.desktops[0] === w.desktops[0]
+        return other !== w && tileable(other) && other.output === w.output && groupKey(other) === groupKey(w)
             && cursor.x >= f.x && cursor.x < f.x + f.width && cursor.y >= f.y && cursor.y < f.y + f.height;
     });
     if (target) {
@@ -443,7 +459,8 @@ function rotate() {
 
 function moveToDesktop(step) {
     const w = workspace.activeWindow;
-    if (!w || !eligible(w) || isFullscreen(w)) {
+    // On another screen there are no desktops to move to.
+    if (!w || !eligible(w) || isFullscreen(w) || w.onAllDesktops) {
         return;
     }
     const from = w.desktops[0];

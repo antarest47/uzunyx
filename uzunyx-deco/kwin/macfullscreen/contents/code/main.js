@@ -11,6 +11,9 @@
  * leaving, out of sight, without giving it the focus, so no empty desktop is
  * left; restoring it from the task manager takes it to a new desktop of its
  * own again, in fullscreen.
+ *
+ * Desktops are only on the primary screen (uzunyxdesktops, uzunyx-tiling): on
+ * another screen fullscreen is plain, on that screen, with no desktop.
  */
 
 // Marks the desktops this script makes, to find the ones left from a session
@@ -117,6 +120,11 @@ function eligible(w) {
         && w.resourceClass !== "org.kde.plasmashell";
 }
 
+function onSecondary(w) {
+    const order = workspace.screenOrder;
+    return workspace.screens.length > 1 && order && order.length > 0 && w.output !== order[0];
+}
+
 function removeDesktop(desktop) {
     if (workspace.desktops.length > 1 && workspace.desktops.some(d => d.id === desktop.id)) {
         workspace.removeDesktop(desktop);
@@ -183,6 +191,8 @@ function leave(w, closing, minimizing) {
 function toggle(w) {
     if (entries.has(key(w))) {
         leave(w, false);
+    } else if (eligible(w) && onSecondary(w)) {
+        w.fullScreen = !w.fullScreen;
     } else if (eligible(w)) {
         enter(w);
     }
@@ -190,7 +200,7 @@ function toggle(w) {
 
 // The app went fullscreen by itself: give it a desktop of its own, as Super+F.
 function followApp(w) {
-    if (w.fullScreen && !entries.has(key(w)) && eligible(w)) {
+    if (w.fullScreen && !entries.has(key(w)) && eligible(w) && !onSecondary(w)) {
         enter(w);
     }
 }

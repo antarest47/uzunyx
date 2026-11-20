@@ -8,8 +8,11 @@ magiclampEnabled=true
 squashEnabled=false
 
 [Windows]
-# Each screen changes desktop on its own, like GNOME (Plasma 6.7; off by default).
-PerOutputVirtualDesktops=true
+# Desktops shared by every screen (KWin's default), but only the primary one
+# changes: uzunyxdesktops (uzunyx-tiling) puts the windows of the other screens on
+# all desktops, as GNOME does. Per-screen desktops (0.13.1 to 0.15.9) made new
+# desktops on every screen at once.
+PerOutputVirtualDesktops=false
 
 [TabBox]
 # Alt+Tab shows the windows of every virtual desktop: with macfullscreen each
