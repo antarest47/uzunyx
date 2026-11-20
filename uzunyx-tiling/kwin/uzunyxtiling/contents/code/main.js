@@ -576,11 +576,30 @@ workspace.windowAdded.connect(w => {
 // manager, Alt+Tab...) brings the others of its layout to the front too, in
 // their stacking order and below it, so a window floating or opened over them
 // doesn't hide part of the tiling. Raising doesn't activate, so no loop.
+// The same goes for KDE's own tiling (Shift while dragging, Meta+T; also quick
+// tiling): w.tile is the tile a window was put in, and the windows whose tiles
+// share its root (one per screen and desktop) form the group.
+function rootOf(tile) {
+    while (tile && tile.parent) {
+        tile = tile.parent;
+    }
+    return tile;
+}
+
+function kdeTileGroup(w) {
+    const root = w.tile ? rootOf(w.tile) : null;
+    if (!root) {
+        return [];
+    }
+    return workspace.stackingOrder.filter(other => other.tile && !other.minimized && other.normalWindow
+        && rootOf(other.tile) === root && other.desktops.some(d => w.desktops.indexOf(d) !== -1));
+}
+
 function raiseGroup(w) {
-    if (mode === "off" || !w || !tileable(w) || typeof workspace.raiseWindow !== "function") {
+    if (!w || typeof workspace.raiseWindow !== "function") {
         return;
     }
-    const group = groupOf(w);
+    const group = mode !== "off" && tileable(w) ? groupOf(w) : kdeTileGroup(w);
     if (group.length < 2) {
         return;
     }

@@ -16,7 +16,11 @@ El mosaico funciona como una sola ventana (desde 0.9.2): al activar una de sus
 ventanas (gestor de tareas, Alt+Tab, clic), las demás del mismo escritorio y
 pantalla también vienen al frente, debajo de ella, y una ventana flotante que
 las tapaba queda detrás de todo el mosaico. Las que flotan con Super+Shift+E
-siguen encima (`keepAbove`). Comprobado en un KWin anidado.
+siguen encima (`keepAbove`). Desde 0.9.3 vale también con el mosaico de
+Uzunyx apagado, para las zonas del propio KDE (Shift al arrastrar una ventana,
+Super+T para editarlas, y el mosaico rápido de Super+flechas o Alt+1/Alt+3):
+las ventanas cuyas zonas comparten raíz (una por pantalla y escritorio,
+`w.tile` y sus `parent`) vienen juntas. Comprobado en un KWin anidado.
 
 ## Atajos
 

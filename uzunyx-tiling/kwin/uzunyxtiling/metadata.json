@@ -15,7 +15,7 @@
         "License": "GPL-3.0-or-later",
         "Name": "Uzunyx tiling",
         "Name[es]": "Mosaico de Uzunyx",
-        "Version": "0.7.2"
+        "Version": "0.7.3"
     },
     "X-Plasma-API": "javascript",
     "X-Plasma-MainScript": "code/main.js"
