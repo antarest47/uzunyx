@@ -13,8 +13,8 @@ Metapaquete que instala todo Uzunyx (para el instalador o la ISO).
   RAM (la mitad, 8 GiB como máximo, zstd) con prioridad sobre el archivo de intercambio
   que propone el instalador. Se cambia en `/etc/systemd/zram-generator.conf`.
 - **Recommends** (apt los instala por defecto, pero se pueden quitar sin
-  llevarse el resto): los efectos de KWin en C++ (`uzunyx-outline`,
-  `uzunyx-openclose`, `uzunyx-genie`), que van fijados a una versión de
+  llevarse el resto): los efectos y plugins de KWin en C++ (`uzunyx-outline`,
+  `uzunyx-openclose`, `uzunyx-genie`, `uzunyx-altguard`, `uzunyx-maxgesture`), que van fijados a una versión de
   KWin y hay que quitarlos o recompilarlos cuando KWin se actualiza; la
   pantalla de arranque (`uzunyx-plymouth`) y GRUB (`uzunyx-grub`), que
   cambian cómo arranca el PC.

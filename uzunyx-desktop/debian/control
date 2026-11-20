@@ -33,6 +33,7 @@ Depends: uzunyx-lookandfeel (>= 0.24.0), uzunyx-archive-keyring,
  plasma-discover-backend-flatpak
 Recommends: uzunyx-outline,
  uzunyx-altguard,
+ uzunyx-maxgesture,
  lunyx,
  uzunyx-openclose,
  uzunyx-genie,

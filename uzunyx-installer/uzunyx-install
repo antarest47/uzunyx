@@ -79,7 +79,7 @@ fi
 apt-get -y --install-recommends install uzunyx-desktop
 
 kwin=$(dpkg-query -W -f='${Version}' kwin-wayland)
-for p in uzunyx-outline uzunyx-openclose uzunyx-genie; do
+for p in uzunyx-outline uzunyx-openclose uzunyx-genie uzunyx-altguard uzunyx-maxgesture; do
     dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q '^install ok installed' || \
         echo "Aviso: $p no se instaló: se compila para una sola versión de KWin (aquí $kwin)."
 done
