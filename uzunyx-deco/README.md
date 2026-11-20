@@ -110,3 +110,18 @@ vuelve a sus escritorios, se borra el creado y se regresa al de antes. Al arranc
 borra los escritorios vacíos que hayan quedado (empiezan por `⛶`). Con el puntero
 contra el borde inferior, la ventana baja de capa (`keepBelow`) y se ve el panel,
 hasta que el puntero se aleja.
+
+## Selector de Alt+Tab `uzunyx_cover`
+
+Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en
+`/etc/xdg/kwinrc`): vistas en vivo, la elegida de frente y las demás giradas a los
+lados. Desde 0.15.5 (maqueta aprobada por el usuario el 2026-11-20), al abrirlo cada
+ventana que está en pantalla sale desde su lugar real y vuela a su sitio en la fila, así
+que la actual se achica hasta el centro, mientras el fondo de pantalla se difumina como
+en la Vista general (`KWin.DesktopBackground` con `MultiEffect`; el panel queda
+debajo). Las que no están en pantalla (minimizadas, de otro escritorio) aparecen con un
+fundido. La geometría sale de `KWin.Workspace.stackingOrder` por `internalId`, tomada una
+vez al crear cada tapa (como binding hacía un bucle). Al soltar Alt KWin cierra el
+selector enseguida, sin animación de vuelta. Comprobado en KWin y Plasma anidados, con
+`org_kde_kwin_fake_input` sosteniendo Alt (el cliente tiene que seguir conectado: al
+cerrarse, KWin suelta sus teclas).
