@@ -6,6 +6,11 @@
  *
  * Fullscreen asked for by the app itself (VirtualBox, QEMU, RustDesk, F11, a
  * video in the browser...) goes to a desktop of its own too, in every app.
+ *
+ * Minimizing it (Firefox has its own button in fullscreen) does the same as
+ * leaving, out of sight, without giving it the focus, so no empty desktop is
+ * left; restoring it from the task manager takes it to a new desktop of its
+ * own again, in fullscreen.
  */
 
 // Marks the desktops this script makes, to find the ones left from a session
@@ -14,6 +19,9 @@ const NAME_PREFIX = "⛶ ";
 
 // internalId -> { window, desktop, homes (ids of its own desktops) }
 const entries = new Map();
+// internalIds of windows minimized while fullscreen on their own desktop,
+// to bring them back that way.
+const minimizedFullscreen = new Set();
 let busy = false;
 
 function key(w) {
@@ -140,7 +148,9 @@ function homeDesktops(entry) {
     return own.length > 0 ? own : ordinary.slice(0, 1);
 }
 
-function leave(w, closing) {
+// closing: the window is going away. minimizing: it stays minimized, so the
+// focus isn't given back to it.
+function leave(w, closing, minimizing) {
     const entry = entries.get(key(w));
     if (!entry) {
         return;
@@ -162,7 +172,7 @@ function leave(w, closing) {
     }
     removeDesktop(entry.desktop);
     busy = false;
-    if (!closing) {
+    if (!closing && !minimizing) {
         // Once the desktop change has settled, or the focus goes to another window.
         pendingFocus = w;
         focusTimer.start();
@@ -196,10 +206,25 @@ function watch(w) {
             followApp(w);
         }
     });
+    w.minimizedChanged.connect(() => {
+        if (busy) {
+            return;
+        }
+        if (w.minimized && entries.has(key(w))) {
+            minimizedFullscreen.add(key(w));
+            leave(w, false, true);
+        } else if (!w.minimized && minimizedFullscreen.has(key(w))) {
+            minimizedFullscreen.delete(key(w));
+            if (eligible(w)) {
+                enter(w);
+            }
+        }
+    });
     w.closed.connect(() => {
         if (pendingFocus === w) {
             pendingFocus = null;
         }
+        minimizedFullscreen.delete(key(w));
         leave(w, true);
     });
 }

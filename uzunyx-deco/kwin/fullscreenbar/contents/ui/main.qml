@@ -1,13 +1,14 @@
 /*
  * Title bar for fullscreen windows, like macOS: rest the pointer against the
  * top edge over a fullscreen window and a bar slides down with its title and
- * two buttons, leave fullscreen and close. Minimize isn't there: with
- * macfullscreen the window is alone on its desktop.
+ * the three buttons of the window decoration: minimize, leave fullscreen and
+ * close. macfullscreen takes a minimized window back to where it came from
+ * and, when restored, to a desktop of its own again.
  *
  * Meant for apps that keep every key (virtual machines, remote desktops), so
  * Meta+F never reaches KWin. Only the pointer is needed. If the app captures
  * the pointer too (a VM without absolute pointer), it never reaches the edge:
- * then only the app's own release key helps.
+ * then only the app's own release key helps. Not in browsers (see skip).
  *
  * By watching the pointer, as macfullscreen does for the panel: a registered
  * screen edge would make KWin draw a glow there, in any window. Windows a
@@ -38,6 +39,28 @@ Item {
         colorGroup: SystemPalette.Active
     }
 
+    // Browsers have their own top edge in fullscreen: Firefox and its kin
+    // slide down their tabs and toolbar there (with their own restore and
+    // close buttons), Chromium and its kin show an exit button. The bar would
+    // cover them, and a browser never keeps Meta+F or Esc. By resourceClass,
+    // lowercase: the native name and the Flatpak id.
+    readonly property var skip: [
+        "firefox", "firefox-esr", "org.mozilla.firefox",
+        "floorp", "one.ablaze.floorp",
+        "librewolf", "io.gitlab.librewolf-community",
+        "zen", "zen-browser", "app.zen_browser.zen",
+        "waterfox", "net.waterfox.waterfox",
+        "chromium", "chromium-browser", "org.chromium.chromium",
+        "google-chrome", "com.google.chrome",
+        "brave-browser", "com.brave.browser",
+        "microsoft-edge", "com.microsoft.edge",
+        "vivaldi-stable", "com.vivaldi.vivaldi",
+    ]
+
+    function skipped(w) {
+        return skip.indexOf(String(w.resourceClass).toLowerCase()) >= 0;
+    }
+
     // By id: the desktops come as separate wrappers, not the same object.
     function onCurrentDesktop(w) {
         const current = Workspace.currentDesktop.id;
@@ -57,7 +80,7 @@ Item {
             }
             const g = w.frameGeometry;
             if (pos.x >= g.x && pos.x < g.x + g.width && pos.y >= g.y && pos.y < g.y + g.height) {
-                return w;
+                return root.skipped(w) ? null : w;
             }
         }
         return null;
@@ -197,6 +220,17 @@ Item {
                 }
                 spacing: 4
 
+                BarButton {
+                    image: "minimize"
+                    onClicked: {
+                        const t = root.target;
+                        root.target = null;
+                        root.hide();
+                        if (t) {
+                            t.minimized = true;
+                        }
+                    }
+                }
                 BarButton {
                     image: "maximize"
                     onClicked: {

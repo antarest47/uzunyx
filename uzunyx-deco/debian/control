@@ -26,7 +26,7 @@ Description: rounded KWin window decoration that stays rounded when maximized
  Fullscreen windows go to a virtual desktop of their own, like macOS
  (Meta+F, the window menu, or the app's own fullscreen). Resting the
  pointer against the top edge of a fullscreen window slides down a title
- bar with buttons to leave fullscreen and to close: for apps that keep
+ bar with buttons to minimize, leave fullscreen and close: for apps that keep
  every key, such as virtual machines.
  .
  Alt+Tab uses its own switcher in the style of Cover Switch, with live previews.
