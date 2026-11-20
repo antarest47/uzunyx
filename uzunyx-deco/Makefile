@@ -1,5 +1,5 @@
 NAME    := uzunyx-deco
-VERSION := 0.14.1
+VERSION := 0.15.0
 PREFIX  ?= /usr
 SYSCONFDIR ?= /etc
 DESTDIR ?=
@@ -11,6 +11,9 @@ BUTTONS_SVG := $(wildcard ../uzunyx-buttons/svg/*.svg)
 SCRIPTS_DIR  := $(PREFIX)/share/kwin-wayland/scripts
 SCRIPTS      := softmaximize panelconfigretry macfullscreen
 SCRIPT_FILES := metadata.json contents/code/main.js
+# Declarative (QML) scripts
+QML_SCRIPTS      := fullscreenbar
+QML_SCRIPT_FILES := metadata.json contents/ui/main.qml
 TABBOX_DIR   := $(PREFIX)/share/kwin-wayland/tabbox
 
 BUILD := build
@@ -26,12 +29,13 @@ install:
 	install -d $(DESTDIR)$(DECO_DIR)/contents/buttons
 	install -m644 $(BUTTONS_SVG) $(DESTDIR)$(DECO_DIR)/contents/buttons/
 	for s in $(SCRIPTS); do for f in $(SCRIPT_FILES); do install -Dm644 kwin/$$s/$$f $(DESTDIR)$(SCRIPTS_DIR)/$$s/$$f; done; done
+	for s in $(QML_SCRIPTS); do for f in $(QML_SCRIPT_FILES); do install -Dm644 kwin/$$s/$$f $(DESTDIR)$(SCRIPTS_DIR)/$$s/$$f; done; done
 	for f in metadata.json contents/ui/main.qml; do install -Dm644 kwin/tabbox/uzunyx_cover/$$f $(DESTDIR)$(TABBOX_DIR)/uzunyx_cover/$$f; done
 	install -Dm644 kwinrc $(DESTDIR)$(SYSCONFDIR)/xdg/kwinrc
 
 uninstall:
 	rm -rf $(DESTDIR)$(DECO_DIR)
-	for s in $(SCRIPTS); do rm -rf $(DESTDIR)$(SCRIPTS_DIR)/$$s; done
+	for s in $(SCRIPTS) $(QML_SCRIPTS); do rm -rf $(DESTDIR)$(SCRIPTS_DIR)/$$s; done
 	rm -rf $(DESTDIR)$(TABBOX_DIR)/uzunyx_cover
 	rm -f $(DESTDIR)$(SYSCONFDIR)/xdg/kwinrc
 

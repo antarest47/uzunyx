@@ -1,0 +1,22 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "285864120+antarest47@users.noreply.github.com",
+                "Name": "emi"
+            }
+        ],
+        "Description": "A title bar that slides down over fullscreen windows when the pointer rests against the top edge, with buttons to leave fullscreen and to close",
+        "Description[es]": "Una barra de título que baja sobre las ventanas en pantalla completa al apoyar el puntero en el borde superior, con botones para salir de pantalla completa y cerrar",
+        "EnabledByDefault": true,
+        "Icon": "view-restore",
+        "Id": "fullscreenbar",
+        "License": "GPL-3.0-or-later",
+        "Name": "Fullscreen title bar",
+        "Name[es]": "Barra de título en pantalla completa",
+        "Version": "0.1.0"
+    },
+    "X-Plasma-API": "declarativescript",
+    "X-Plasma-MainScript": "ui/main.qml"
+}
