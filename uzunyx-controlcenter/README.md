@@ -46,7 +46,7 @@ pantalla) menos los trabajos en marcha; su página lista el historial, con la ac
 una al hacer clic y una cruz para cerrarla. El modelo solo tiene datos dentro de
 plasmashell (el servidor de notificaciones es el widget de la bandeja): con
 `plasmawindowed` sale vacío. Comprobado en un Plasma anidado, con un trabajo falso por
-`org.kde.JobViewServerV2` y dispositivos falsos; falta un USB real y uno cifrado.
+`org.kde.JobViewServerV2` y dispositivos falsos; comprobado por el usuario en su sesión el mismo día con USB reales.
 
 El wifi de la píldora sigue la señal con los niveles de Kora; encendido sin conectar se ve
 gris, y conectado sin internet lleva una exclamación amarilla. En la lista de redes, clic
