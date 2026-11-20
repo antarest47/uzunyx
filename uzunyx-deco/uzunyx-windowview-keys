@@ -18,8 +18,10 @@ receive D-Bus calls.
                              enter, escape, left, right, up, down, next, previous
                              (Esc with something typed only clears it)
 
-Started by D-Bus activation on the view's first opening; it goes away after
-ten minutes without being used.
+Started by D-Bus activation each time the view opens, and gone when it closes
+(Stop): one started with the session and kept got the focus but never a key
+(seen by the user on 2026-11-20); a fresh one always works. It also goes away
+after ten minutes without being used.
 """
 
 import cairo
@@ -60,6 +62,7 @@ class Keys:
         self.text = ""
         self.keys = []
         self.idle = 0
+        self.quitting = 0
         self.window = Gtk.Window(title=TITLE)
         self.window.set_decorated(False)
         self.window.set_skip_taskbar_hint(True)
@@ -113,6 +116,9 @@ class Keys:
     def on_call(self, _bus, _sender, _path, _interface, method, _params, invocation):
         self.idle = 0
         if method == "Start":
+            if self.quitting:
+                GLib.source_remove(self.quitting)
+                self.quitting = 0
             self.text = ""
             self.keys = []
             self.im.reset()
@@ -123,6 +129,8 @@ class Keys:
             self.text = ""
             self.keys = []
             invocation.return_value(None)
+            # The next opening starts a fresh one (unless it comes right away).
+            self.quitting = GLib.timeout_add(100, Gtk.main_quit)
         elif method == "Poll":
             keys, self.keys = self.keys, []
             invocation.return_value(GLib.Variant("(sas)", (self.text, keys)))

@@ -177,6 +177,12 @@ vista), su miniatura se desvanece y se achica, y las demás se mueven y cambian 
 su lugar en la cuadrícula nueva. Cerrando desde la vista, la ventana real se cierra después
 de esa animación. Comprobado en un Plasma anidado.
 
+Desde 0.16.3: el ayudante del teclado arranca de cero en cada apertura (activación de
+D-Bus con `Start`) y termina al cerrarse la vista (`Stop`). Un ayudante iniciado con la
+sesión y reutilizado tenía el foco de KWin pero nunca recibía teclas (visto por el usuario
+el 2026-11-20 tras volver a iniciar sesión, con la 0.16.2); uno recién iniciado siempre
+funcionó. Si la vista se vuelve a abrir antes de 100 ms, el mismo sigue.
+
 Comprobado en un Plasma anidado (también con dos pantallas, con el filtro y eligiendo una
 ventana por temporizadores de prueba, porque ahí no se puede teclear).
 
