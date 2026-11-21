@@ -195,6 +195,60 @@ Item {
         return null;
     }
 
+    // The view around a screen's panel: the main window down to it, and the
+    // pieces at its sides and below. Again if the panel changes while the view
+    // is open (it grows with a desktop more: uzunyx-pager has a dot for each),
+    // or the pieces would cover part of it and leave the blur in pieces.
+    function placeStage(stage, places) {
+        const g = stage.output.geometry;
+        const hole = holeOn(stage.output);
+        const title = stage.title;
+        for (const key of Object.keys(places)) {
+            if (key.indexOf(title + " ") === 0) {
+                delete places[key];
+            }
+        }
+        places[title] = Qt.rect(g.x, g.y, g.width, hole ? hole.y : g.height);
+        const rects = !hole ? [] : [
+            Qt.rect(0, hole.y, hole.x, g.height - hole.y),
+            Qt.rect(hole.x + hole.width, hole.y, g.width - hole.x - hole.width, g.height - hole.y),
+            Qt.rect(hole.x, hole.y + hole.height, hole.width, g.height - hole.y - hole.height),
+        ].filter(r => r.width > 0 && r.height > 0);
+        rects.forEach((r, i) => places[title + " " + i] = Qt.rect(g.x + r.x, g.y + r.y, r.width, r.height));
+        stage.hole = hole;
+        if (stage.pieces.length === rects.length) {
+            rects.forEach((r, i) => stage.pieces[i].rect = r);
+        } else {
+            for (const piece of stage.pieces) {
+                piece.destroy();
+            }
+            stage.pieces = rects.map((r, i) => pieceComponent.createObject(null, { stage: stage, rect: r, title: title + " " + i }));
+        }
+    }
+    function sameRect(a, b) {
+        return (!a && !b) || (!!a && !!b && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height);
+    }
+    Timer {
+        interval: 200
+        repeat: true
+        running: root.stages.length > 0 && !root.closing
+        onTriggered: {
+            for (const stage of root.stages) {
+                if (!root.sameRect(root.holeOn(stage.output), stage.hole)) {
+                    const places = Object.assign({}, root.geometries);
+                    root.placeStage(stage, places);
+                    root.geometries = places;
+                    // The main window's new height, for KWin.
+                    for (const w of KWin.Workspace.stackingOrder) {
+                        if (w.caption === stage.title && places[stage.title]) {
+                            w.frameGeometry = places[stage.title];
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     function toggle() {
         if (stages.length === 0) {
             open();
@@ -220,11 +274,9 @@ Item {
         const screens = KWin.Workspace.screens.map(output => ({ output: output, windows: windowsOn(output) }));
         const list = [];
         const places = {};
+        geometries = {};
         for (const screen of screens) {
-            const g = screen.output.geometry;
-            const hole = holeOn(screen.output);
             const title = viewTitle + " " + screen.output.name;
-            places[title] = Qt.rect(g.x, g.y, g.width, hole ? hole.y : g.height);
             // Created without a parent: a Window inside an Item would only show
             // while that Item's window does, and a script's root has none.
             // Not shown yet: the pieces go first, so the main window is KWin's
@@ -235,20 +287,8 @@ Item {
                 hasSearch: focused && screen.output.name === focused.name,
                 isPrimary: !!primary && screen.output.name === primary.name,
                 title: title,
-                hole: hole,
             });
-            if (hole) {
-                const pieces = [
-                    Qt.rect(0, hole.y, hole.x, g.height - hole.y),
-                    Qt.rect(hole.x + hole.width, hole.y, g.width - hole.x - hole.width, g.height - hole.y),
-                    Qt.rect(hole.x, hole.y + hole.height, hole.width, g.height - hole.y - hole.height),
-                ].filter(r => r.width > 0 && r.height > 0);
-                stage.pieces = pieces.map((r, i) => {
-                    const pieceTitle = title + " " + i;
-                    places[pieceTitle] = Qt.rect(g.x + r.x, g.y + r.y, r.width, r.height);
-                    return pieceComponent.createObject(null, { stage: stage, rect: r, title: pieceTitle });
-                });
-            }
+            placeStage(stage, places);
             list.push(stage);
         }
         geometries = places;
@@ -463,12 +503,12 @@ Item {
                 let fixes = 0;
                 const putBack = () => {
                     const f = window.frameGeometry;
-                    if (window.deleted || root.stages.length === 0 || fixes >= 20
-                            || (f.x === place.x && f.y === place.y && f.width === place.width && f.height === place.height)) {
+                    const now = root.geometries[window.caption];
+                    if (window.deleted || !now || root.stages.length === 0 || fixes >= 20 || root.sameRect(f, now)) {
                         return;
                     }
                     fixes += 1;
-                    window.frameGeometry = place;
+                    window.frameGeometry = now;
                 };
                 Qt.callLater(putBack);
                 window.frameGeometryChanged.connect(() => Qt.callLater(putBack));
@@ -843,6 +883,37 @@ Item {
             readonly property int pageIndex: isPrimary ? Math.max(0, desktops.findIndex(d => root.sameDesktop(d, root.viewDesktop))) : 0
             // The page in view (set by the page itself).
             property var page: null
+            ListModel {
+                id: pageModel
+            }
+            function syncPages() {
+                const ids = (isPrimary ? KWin.Workspace.desktops : [null]).map(d => d ? String(d.id) : "");
+                for (let i = pageModel.count - 1; i >= 0; i--) {
+                    if (ids.indexOf(pageModel.get(i).desktopId) < 0) {
+                        pageModel.remove(i);
+                    }
+                }
+                ids.forEach((id, i) => {
+                    let at = -1;
+                    for (let j = i; j < pageModel.count; j++) {
+                        if (pageModel.get(j).desktopId === id) {
+                            at = j;
+                            break;
+                        }
+                    }
+                    if (at < 0) {
+                        pageModel.insert(i, { desktopId: id });
+                    } else if (at !== i) {
+                        pageModel.move(at, i, 1);
+                    }
+                });
+            }
+            Connections {
+                target: KWin.Workspace
+                function onDesktopsChanged() {
+                    stage.syncPages();
+                }
+            }
 
             // Where the windows go below the search field (and the strip) and
             // above the panel.
@@ -908,6 +979,7 @@ Item {
             }
 
             Component.onCompleted: {
+                syncPages();
                 let bottom = Kirigami.Units.gridUnit * 2;
                 for (const w of KWin.Workspace.stackingOrder) {
                     if (w.dock && !w.minimized && w.output && w.output.name === output.name) {
@@ -1242,17 +1314,23 @@ Item {
                     }
                 }
 
-                // The pages, side by side; the one in view at x = 0.
+                // The pages, side by side; the one in view at x = 0. A model
+                // kept in step with KWin's desktops (one added or taken away
+                // leaves the other pages as they are: rebuilding them all made
+                // every thumbnail grow again from nothing).
                 Repeater {
-                    model: stage.desktops
+                    model: pageModel
 
                     delegate: Item {
                         id: page
 
-                        required property var modelData
+                        required property string desktopId
                         required property int index
                         // Null on a screen without desktops: every window.
-                        readonly property var desktop: modelData
+                        readonly property var desktop: desktopId === "" ? null
+                            : (KWin.Workspace.desktops.find(d => d.id === desktopId) || null)
+                        // Its tiles don't animate until they have their first places.
+                        property bool laidOut: false
                         readonly property bool isCurrent: index === stage.pageIndex
                         onIsCurrentChanged: if (isCurrent) stage.page = page
                         Component.onDestruction: if (stage.page === page) stage.page = null
@@ -1280,6 +1358,7 @@ Item {
                         onFirstShownChanged: if (selected < 0 || !shown[selected]) selected = firstShown
                         onShownChanged: if (selected >= 0 && !shown[selected]) selected = firstShown
                         Component.onCompleted: {
+                            Qt.callLater(() => page.laidOut = true);
                             entries = root.pageOrder(stage.windows, desktop).map(w => ({
                                 window: w,
                                 id: w.internalId.toString(),
@@ -1409,11 +1488,11 @@ Item {
                                 Behavior on scale { NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
                                 visible: opacity > 0
 
-                                Behavior on x { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on y { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on width { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on height { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on opacity { enabled: root.settled; NumberAnimation { duration: root.duration } }
+                                Behavior on x { enabled: root.settled && page.laidOut; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on y { enabled: root.settled && page.laidOut; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on width { enabled: root.settled && page.laidOut; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on height { enabled: root.settled && page.laidOut; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on opacity { enabled: root.settled && page.laidOut; NumberAnimation { duration: root.duration } }
 
                                 // The ring: in the accent on the selected one, a lighter
                                 // line on the one under the pointer.

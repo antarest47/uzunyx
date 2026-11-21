@@ -263,6 +263,22 @@ funciones paso a paso, porque `org_kde_kwin_fake_input` no hace gestos de touchp
 soltar antes y después de la mitad, cerrar a medias, y las páginas a medio deslizar. El cambio
 de escritorio real con los dedos no se pudo probar ahí.
 
+Desde 0.18.1 (visto por el usuario el 2026-11-21):
+
+- **El hueco del panel sigue al panel.** Con un escritorio más el panel crece (`uzunyx-pager`
+  tiene un punto por escritorio) y las piezas de la vista, calculadas al abrir, tapaban parte
+  de él y el difuminado se veía cortado a su altura. Ahora cada 200 ms se mira dónde está el
+  panel y, si cambió, se rehacen la ventana principal y las piezas (`placeStage`; las piezas
+  se mueven si son las mismas). `putBack` usa siempre el lugar actual.
+- **Las páginas no se rehacen** cuando aparece o se borra un escritorio: el `Repeater` usa un
+  `ListModel` que se pone al día con los escritorios de KWin (agrega, quita o mueve solo lo
+  que cambió). Antes el modelo era la lista de escritorios y cualquier cambio rehacía todas
+  las páginas, y sus miniaturas crecían desde la nada. Una página nueva no anima sus
+  miniaturas hasta tener su primer lugar (`laidOut`).
+
+Comprobado en un Plasma anidado: con Alt+D el panel pasó de 1024 a 1038 px y las piezas lo
+siguieron; al volver del escritorio vacío (que se borra) no se creó ninguna página.
+
 ## Selector de Alt+Tab `uzunyx_cover`
 
 Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en
