@@ -53,10 +53,12 @@ Alt+D va al siguiente y, en el último, crea uno si ese tiene ventanas. No hay u
 
 El script `uzunyxgestures` (QML, desde 0.8.0) suma dos gestos de tres dedos en el touchpad a los de KWin:
 
-- Hacia arriba abre el lanzador del panel (Tsunyx), como Super, y hacia abajo lo cierra (0.8.1). Se sabe si está abierto por su ventana, que solo existe mientras lo está.
+- Hacia arriba abre el lanzador del panel (Tsunyx), como Super, y hacia abajo lo cierra (0.8.1); desde 0.11.0, siguiendo a los dedos (ver abajo).
 - Hacia la izquierda, en el último escritorio, hace lo de Alt+D: crea otro y va a él. En los demás escritorios cambia KWin, como siempre (los dedos llevan el escritorio: a la izquierda va al siguiente).
 
-Los dos llaman a atajos globales por kglobalaccel (`activate application launcher` de plasmashell y `UzunyxDesktopNext`).
+El de la izquierda llama a un atajo global por kglobalaccel (`UzunyxDesktopNext`).
+
+Desde 0.11.0 (pedido por el usuario el 2026-11-21), **Tsunyx sigue a los dedos**: mientras se mueven, los iconos vuelan del botón del panel (o vuelven a él) tanto como avanzó el gesto, y al levantarlos termina hacia el lado que pasó la mitad. El script ya no llama al atajo: manda el avance (`SwipeGestureHandler.progress`), con «move», «done» o «cancel» y el nombre de la pantalla, a `uzunyx-gesture-relay` (`/usr/libexec`, Python, activado por D-Bus, `org.uzunyx.GestureRelay`, método `Send`), que lo repite como la señal `Gesture`: un script de KWin no puede emitir señales y el `SignalWatcher` de QML solo escucha a un remitente fijo. Lo escucha Tsunyx Launcher ≥ 1.14.0 (con uno más viejo los gestos no hacen nada: `Breaks: tsunyx-launcher (<< 1.14.0)`); solo el de la pantalla del puntero. Comprobado en un Plasma anidado mandando `Send` con `qdbus6` (el anidado no hace gestos de touchpad).
 
 ## Con el ratón
 

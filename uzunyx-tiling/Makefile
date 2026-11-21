@@ -1,5 +1,5 @@
 NAME    := uzunyx-tiling
-VERSION := 0.10.1
+VERSION := 0.11.0
 PREFIX  ?= /usr
 DESTDIR ?=
 
@@ -21,6 +21,8 @@ install:
 	install -Dm755 uzunyx-tiling $(DESTDIR)$(PREFIX)/bin/uzunyx-tiling
 	install -Dm755 uzunyx-tiling-handles $(DESTDIR)$(PREFIX)/libexec/uzunyx-tiling-handles
 	install -Dm644 dbus/org.uzunyx.TilingHandles.service $(DESTDIR)$(PREFIX)/share/dbus-1/services/org.uzunyx.TilingHandles.service
+	install -Dm755 uzunyx-gesture-relay $(DESTDIR)$(PREFIX)/libexec/uzunyx-gesture-relay
+	install -Dm644 dbus/org.uzunyx.GestureRelay.service $(DESTDIR)$(PREFIX)/share/dbus-1/services/org.uzunyx.GestureRelay.service
 	install -Dm644 org.uzunyx.tiling-cycle.desktop $(DESTDIR)$(PREFIX)/share/applications/org.uzunyx.tiling-cycle.desktop
 	(cd kwin/$(SCRIPT) && find . -type f -exec install -Dm644 {} $(DESTDIR)$(SCRIPT_DIR)/{} \;)
 	for s in uzunyxdesktops uzunyxgestures; do \

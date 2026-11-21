@@ -15,7 +15,7 @@
         "License": "GPL-3.0-or-later",
         "Name": "Uzunyx gestures",
         "Name[es]": "Gestos de Uzunyx",
-        "Version": "0.2.0"
+        "Version": "0.3.0"
     },
     "X-Plasma-API": "declarativescript",
     "X-Plasma-MainScript": "ui/main.qml"

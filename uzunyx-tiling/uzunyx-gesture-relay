@@ -1,0 +1,73 @@
+#!/usr/bin/python3
+"""Passes the progress of touchpad gestures from KWin scripts to plasmoids.
+
+A KWin script can call D-Bus methods but can't emit signals, and a plasmoid's
+QML can watch signals but only from a fixed sender. So uzunyxgestures calls
+Send here while the fingers move, and this repeats it as the signal Gesture,
+which Tsunyx Launcher watches to make its opening and closing follow the
+fingers.
+
+    Send(kind, state, progress, output)
+        kind      "open" (three fingers up) or "close" (down)
+        state     "move" while the fingers move, "done" or "cancel" on lifting
+                  them (as KWin decides: "done" when the gesture went all the way)
+        progress  0 to 1, as KWin gives it
+        output    the name of the screen with the pointer
+
+Started by D-Bus activation; goes away after ten minutes without being used.
+"""
+
+from gi.repository import Gio, GLib
+
+NAME = "org.uzunyx.GestureRelay"
+PATH = "/org/uzunyx/GestureRelay"
+INTERFACE = "org.uzunyx.GestureRelay"
+XML = """
+<node>
+  <interface name="org.uzunyx.GestureRelay">
+    <method name="Send">
+      <arg type="s" name="kind" direction="in"/>
+      <arg type="s" name="state" direction="in"/>
+      <arg type="d" name="progress" direction="in"/>
+      <arg type="s" name="output" direction="in"/>
+    </method>
+    <signal name="Gesture">
+      <arg type="s" name="kind"/>
+      <arg type="s" name="state"/>
+      <arg type="d" name="progress"/>
+      <arg type="s" name="output"/>
+    </signal>
+  </interface>
+</node>
+"""
+IDLE_SECONDS = 600
+
+
+class Relay:
+    def __init__(self, loop):
+        self.loop = loop
+        self.idle = 0
+        self.bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+        node = Gio.DBusNodeInfo.new_for_xml(XML)
+        self.bus.register_object(PATH, node.interfaces[0], self.on_call, None, None)
+        Gio.bus_own_name_on_connection(self.bus, NAME, Gio.BusNameOwnerFlags.NONE, None,
+                                       lambda *_: loop.quit())
+        GLib.timeout_add_seconds(60, self.check_idle)
+
+    def on_call(self, _bus, _sender, _path, _interface, method, params, invocation):
+        self.idle = 0
+        if method == "Send":
+            self.bus.emit_signal(None, PATH, INTERFACE, "Gesture", params)
+        invocation.return_value(None)
+
+    def check_idle(self):
+        self.idle += 60
+        if self.idle >= IDLE_SECONDS:
+            self.loop.quit()
+        return True
+
+
+if __name__ == "__main__":
+    main_loop = GLib.MainLoop()
+    Relay(main_loop)
+    main_loop.run()
