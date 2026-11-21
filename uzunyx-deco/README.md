@@ -186,6 +186,42 @@ funcionó. Si la vista se vuelve a abrir antes de 100 ms, el mismo sigue.
 Comprobado en un Plasma anidado (también con dos pantallas, con el filtro y eligiendo una
 ventana por temporizadores de prueba, porque ahí no se puede teclear).
 
+Desde 0.17.0 (variante C de las maquetas, elegida por el usuario el 2026-11-21): **los
+escritorios dentro de la vista.**
+
+- **Tira de escritorios** debajo del buscador, solo en la pantalla principal: cada escritorio
+  con su fondo y sus ventanas en pequeño (`KWin.DesktopBackground` y `WindowThumbnail`
+  escalados), el número debajo (los `⛶` de `macfullscreen`, con su nombre y más tenues) y
+  un «+» al final. El que está a la vista lleva el aro del acento.
+- **Una página por escritorio.** Clic en la tira, la rueda sobre ella, Ctrl+← → o Re Pág /
+  Av Pág (el ayudante manda `desktop-left` / `desktop-right`) deslizan las páginas sin
+  cerrar la vista. El escritorio de KWin no cambia mientras tanto: al cerrar, KWin pasa al
+  escritorio a la vista (Esc o clic en el fondo) o al de la ventana elegida, mientras la vista
+  todavía tapa todo, y la vista espera 540 ms en vez de 340 para que no se vea el
+  deslizamiento de KWin (500 ms). La que estaba activa al abrir solo vuelve a estarlo si está
+  en ese escritorio. Si KWin cambia de escritorio con la vista abierta (tres dedos, Alt+A/D),
+  la vista lo sigue; para eso sus ventanas, y la del ayudante del teclado, están en todos los
+  escritorios, y la del ayudante sigue activa.
+- **El buscador busca en todos los escritorios.** Cada página tiene todas las ventanas de su
+  pantalla: primero las de su escritorio, después las demás por escritorio; sin texto solo
+  se ven las suyas. Al buscar, cada resultado lleva el número de su escritorio (gris en el
+  actual, en el acento en los otros) y la tira cuenta los encontrados en cada uno. Elegir
+  uno de otro escritorio va a ese escritorio; al cerrar, las de otros escritorios se
+  desvanecen en vez de volar (no tienen lugar en pantalla).
+- **Arrastrar una miniatura a la tira** la lleva a ese escritorio (`desktops = [d]`); sobre
+  «+», a uno nuevo, al que va la vista. Mientras se arrastra, una copia con borde claro sigue
+  al puntero, más chica sobre la tira, y el destino se marca en blanco.
+- «+» crea un escritorio al final, `Escritorio N`, como Alt+D (`uzunyxdesktops`), salvo
+  que el último ya esté vacío; un escritorio vacío que no está en pantalla lo sigue borrando
+  `uzunyxdesktops`, y la vista vuelve entonces al actual.
+- La lista de páginas se rehace si cambian los escritorios; las entradas de cada página se
+  toman una vez, así que mover una ventana de escritorio solo la anima fuera de su página.
+
+Comprobado en un Plasma anidado con tres escritorios, ratón y teclado simulados
+(`org_kde_kwin_fake_input`): tira, clic, rueda, Ctrl+→, búsqueda con resultados de otros
+escritorios y elegir uno, arrastrar a otro escritorio y a «+», Esc tras cambiar de página,
+seguir un cambio de escritorio de KWin, y con dos pantallas.
+
 ## Selector de Alt+Tab `uzunyx_cover`
 
 Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en
