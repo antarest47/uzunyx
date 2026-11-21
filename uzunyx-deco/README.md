@@ -279,6 +279,24 @@ Desde 0.18.1 (visto por el usuario el 2026-11-21):
 Comprobado en un Plasma anidado: con Alt+D el panel pasó de 1024 a 1038 px y las piezas lo
 siguieron; al volver del escritorio vacío (que se borra) no se creó ninguna página.
 
+Desde 0.18.2 (dos cierres de KWin vistos por el usuario el 2026-11-21, con las trazas de
+`systemd-coredump`):
+
+- **Al cerrar sesión.** `viewDesktop` guardaba el último escritorio también con la vista
+  cerrada; al apagarse, KWin destruye los escritorios, la propiedad pasaba a nulo y
+  `onViewDesktopChanged` le pedía a `KWin.Workspace` los escritorios cuando ya se estaba
+  destruyendo (`lookupSingletonProperty`, SIGSEGV en `~VirtualDesktopManager`). Ahora se pone
+  en nulo al cerrar la vista y el manejador no hace nada con nulo. También cerraba así cada
+  KWin anidado de las pruebas desde 0.18.0.
+- **Al borrarse un escritorio con una ventana recién cerrada.** La tira se rehacía entera
+  (su modelo era la lista de escritorios) con la lista de ventanas del principio, que tenía
+  la cerrada (nula), y KWin se caía al crear sus miniaturas. La tira usa ahora el mismo
+  `ListModel` que las páginas, una ventana cerrada sale de la lista de la tira, y las
+  miniaturas y las páginas nuevas pasan por alto las nulas.
+
+Comprobado en un Plasma anidado: una ventana cerrada y su escritorio borrado con la vista
+abierta, sin errores, y el KWin anidado ya no deja volcado al cerrarse.
+
 ## Selector de Alt+Tab `uzunyx_cover`
 
 Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en

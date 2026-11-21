@@ -121,6 +121,13 @@ Item {
         easing.type: Easing.OutCubic
     }
     onViewDesktopChanged: {
+        // Null when the view closes, or when its desktop is destroyed: also
+        // while KWin quits, when asking KWin.Workspace anything crashes it
+        // (seen on logout on 2026-11-21). Nothing to do then.
+        if (!viewDesktop) {
+            pageShift = 0;
+            return;
+        }
         const index = Math.max(0, KWin.Workspace.desktops.findIndex(d => sameDesktop(d, viewDesktop)));
         if (stages.length > 0 && !closing) {
             pageShift += index - shownIndex;
@@ -365,6 +372,7 @@ Item {
             root.previous = null;
             root.keysWindow = null;
             root.closingDesktop = null;
+            root.viewDesktop = null;
         }
     }
 
@@ -934,6 +942,9 @@ Item {
                 leaving = copy;
             }
             function gone(w) {
+                if (!w) {
+                    return true;
+                }
                 const id = w.internalId.toString();
                 return w.deleted || removed[id] === true || leaving[id] === true;
             }
@@ -995,13 +1006,17 @@ Item {
                 area = Qt.rect(side, top, geo.width - 2 * side, geo.height - top - bottom);
             }
 
-            // A window closed while the view is open goes out of it.
+            // A window closed while the view is open goes out of it: out of
+            // the strip's list (its thumbnails are made again from it, and a
+            // closed window there crashed KWin, seen on 2026-11-21), and marked
+            // in the pages, which keep it to fade it out.
             Connections {
                 target: KWin.Workspace
                 function onWindowRemoved(window) {
                     if (stage.windows.indexOf(window) < 0) {
                         return;
                     }
+                    stage.windows = stage.windows.filter(w => w && w !== window);
                     const id = window.internalId.toString();
                     if (!stage.removed[id]) {
                         const removed = Object.assign({}, stage.removed);
@@ -1166,13 +1181,15 @@ Item {
 
                     Repeater {
                         id: thumbs
-                        model: stage.isPrimary ? stage.desktops : []
+                        // The same model as the pages: a desktop added or taken
+                        // away leaves the other thumbnails as they are.
+                        model: stage.isPrimary ? pageModel : 0
 
                         delegate: Item {
                             id: thumb
-                            required property var modelData
+                            required property string desktopId
                             required property int index
-                            readonly property var desktop: modelData
+                            readonly property var desktop: KWin.Workspace.desktops.find(d => d.id === desktopId) || null
                             readonly property bool isCurrent: index === stage.pageIndex
                             readonly property bool isDrop: stage.dropIndex === index
                             // While searching, how many it found here.
@@ -1223,15 +1240,15 @@ Item {
                                     delegate: KWin.WindowThumbnail {
                                         required property var modelData
                                         readonly property var window: modelData
-                                        readonly property rect frame: window.frameGeometry
-                                        visible: !window.minimized && !stage.gone(window) && root.onDesktop(window, thumb.desktop)
+                                        readonly property rect frame: window ? window.frameGeometry : Qt.rect(0, 0, 0, 0)
+                                        visible: !!window && !window.minimized && !stage.gone(window) && root.onDesktop(window, thumb.desktop)
                                         // Searching: the ones not found go dim.
                                         opacity: root.matches(window) ? 1 : 0.3
                                         x: Math.round((frame.x - stage.geo.x) * picture.ratio)
                                         y: Math.round((frame.y - stage.geo.y) * picture.ratio)
                                         width: Math.round(frame.width * picture.ratio)
                                         height: Math.round(frame.height * picture.ratio)
-                                        wId: window.internalId
+                                        wId: window ? window.internalId : undefined
                                     }
                                 }
                                 Rectangle {
@@ -1359,7 +1376,7 @@ Item {
                         onShownChanged: if (selected >= 0 && !shown[selected]) selected = firstShown
                         Component.onCompleted: {
                             Qt.callLater(() => page.laidOut = true);
-                            entries = root.pageOrder(stage.windows, desktop).map(w => ({
+                            entries = root.pageOrder(stage.windows.filter(w => w && !w.deleted), desktop).map(w => ({
                                 window: w,
                                 id: w.internalId.toString(),
                                 wid: w.internalId,

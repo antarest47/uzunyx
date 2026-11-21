@@ -25,7 +25,12 @@ let ready = false;
 const startup = new QTimer();
 startup.singleShot = true;
 startup.interval = STARTUP_MS;
-startup.timeout.connect(() => ready = true);
+// Then once: the empty desktops left from the session before (or emptied in
+// the meantime) go now, not at the next change.
+startup.timeout.connect(() => {
+    ready = true;
+    sweep();
+});
 startup.start();
 
 const settle = new QTimer();

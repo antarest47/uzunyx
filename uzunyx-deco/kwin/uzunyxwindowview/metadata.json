@@ -15,7 +15,7 @@
         "License": "GPL-3.0-or-later",
         "Name": "Uzunyx window view",
         "Name[es]": "Vista de ventanas de Uzunyx",
-        "Version": "0.4.1"
+        "Version": "0.4.2"
     },
     "X-Plasma-API": "declarativescript",
     "X-Plasma-MainScript": "ui/main.qml"

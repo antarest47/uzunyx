@@ -69,3 +69,5 @@ Una ventana nueva queda invisible hasta tener el tamaño de su lugar (500 ms com
 ## Animación
 
 Desde 0.9.0, con el mosaico encendido, el efecto `uzunyxtilemotion` (JS) anima los cambios de lugar: la ventana se desliza y cambia de tamaño desde el lugar anterior (220 ms; el contenido se estira, como en Estirar de KWin al maximizar). Una ventana nueva espera 180 ms a que las demás le hagan lugar y aparece creciendo, como en Hyprland. El script carga el efecto al encender el mosaico y lo descarga al apagarlo, y también mientras se arrastra una división. Deja quietas las ventanas que se mueven con el ratón, las que se maximizan o pasan a pantalla completa y las recién abiertas.
+
+Desde 0.11.1: `uzunyxdesktops` borra los escritorios vacíos en cuanto termina su espera de inicio (30 s, para las ventanas que la sesión anterior todavía está abriendo). Antes esperaba al siguiente cambio de escritorio o de ventana, y un escritorio vacío de la sesión anterior quedaba ahí (visto por el usuario el 2026-11-21). Comprobado en un KWin anidado que arrancó con un cuarto escritorio vacío.
