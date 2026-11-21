@@ -1,5 +1,5 @@
 NAME    := uzunyx-tiling
-VERSION := 0.11.1
+VERSION := 0.11.2
 PREFIX  ?= /usr
 DESTDIR ?=
 

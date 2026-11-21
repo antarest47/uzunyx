@@ -8,6 +8,9 @@
  * per screen (Plasma 6.7), the one shown on any screen stays. Nothing goes away while
  * macfullscreen has a desktop, because the window goes back to the one it came from.
  *
+ * The ones left empty from the session before go as soon as the script starts:
+ * on Wayland the windows come back on the current desktop, not on theirs.
+ *
  * Desktops only on the primary screen, as GNOME does: a window on another screen is
  * put on all desktops, so it stays when the primary changes desktop, and comes back
  * to one desktop, the current, when it is moved to the primary. Only the windows this
@@ -16,22 +19,8 @@
  * screen is set as primary).
  */
 const FULLSCREEN_DESKTOP = "⛶ ";
-// Windows of the previous session may still be on their way.
-const STARTUP_MS = 30000;
 // Several changes in a row (moving a window also switches desktop) count as one.
 const SETTLE_MS = 150;
-
-let ready = false;
-const startup = new QTimer();
-startup.singleShot = true;
-startup.interval = STARTUP_MS;
-// Then once: the empty desktops left from the session before (or emptied in
-// the meantime) go now, not at the next change.
-startup.timeout.connect(() => {
-    ready = true;
-    sweep();
-});
-startup.start();
 
 const settle = new QTimer();
 settle.singleShot = true;
@@ -91,7 +80,7 @@ function onScreen(desktop) {
 }
 
 function sweep() {
-    if (!ready || workspace.desktops.some(isFullscreenDesktop)) {
+    if (workspace.desktops.some(isFullscreenDesktop)) {
         return;
     }
     workspace.desktops.filter(d => !onScreen(d) && isEmpty(d)).forEach(d => {
@@ -126,6 +115,11 @@ workspace.windowList().forEach(watch);
 workspace.windowAdded.connect(watch);
 workspace.windowRemoved.connect(() => settle.start());
 workspace.currentDesktopChanged.connect(() => settle.start());
+// At once, too: the empty desktops left from the session before go now. Until
+// 0.11.1 this waited 30 s for the windows of that session, but on Wayland they
+// come back on the current desktop, not on theirs (seen by the user on
+// 2026-11-21), so the wait only kept empty desktops around.
+settle.start();
 workspace.screensChanged.connect(placeAll);
 if (workspace.screenOrderChanged) {
     workspace.screenOrderChanged.connect(placeAll);
