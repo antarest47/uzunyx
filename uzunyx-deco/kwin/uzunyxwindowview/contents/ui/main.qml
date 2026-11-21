@@ -384,12 +384,24 @@ Item {
             const place = root.geometries[window.caption];
             if (place) {
                 window.frameGeometry = place;
-                // KWin may still place it on its own right after.
-                Qt.callLater(() => {
-                    if (!window.deleted) {
-                        window.frameGeometry = place;
+                // KWin may still place it on its own right after. And it moves
+                // the windows touching the edges of the work area when that
+                // changes (a fullscreen desktop has no panel strut, edge-gaps
+                // goes away there): the view's slid down or up, showing the
+                // screen under it (seen by the user on 2026-11-21). Put back,
+                // a few times at most per opening, in case KWin insists.
+                let fixes = 0;
+                const putBack = () => {
+                    const f = window.frameGeometry;
+                    if (window.deleted || root.stages.length === 0 || fixes >= 20
+                            || (f.x === place.x && f.y === place.y && f.width === place.width && f.height === place.height)) {
+                        return;
                     }
-                });
+                    fixes += 1;
+                    window.frameGeometry = place;
+                };
+                Qt.callLater(putBack);
+                window.frameGeometryChanged.connect(() => Qt.callLater(putBack));
             }
         }
         function onWindowActivated(window) {

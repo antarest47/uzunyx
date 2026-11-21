@@ -115,9 +115,14 @@ focusTimer.timeout.connect(() => {
     pendingFocus = null;
 });
 
+// Screenshot tools: their region selector is an ordinary window in fullscreen
+// (Spectacle's showed up on a desktop of its own, seen by the user on 2026-11-21).
+const NEVER = ["org.kde.spectacle", "spectacle", "flameshot", "org.flameshot.Flameshot"];
+
 function eligible(w) {
     return w && w.normalWindow && w.fullScreenable && !w.skipTaskbar
         && w.resourceClass !== "org.kde.plasmashell"
+        && NEVER.indexOf(String(w.resourceClass)) < 0
         // The window view's own windows (uzunyxwindowview).
         && String(w.caption).indexOf("Uzunyx window view") !== 0;
 }

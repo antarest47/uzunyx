@@ -116,6 +116,10 @@ sin escritorio propio: los escritorios solo están en la principal (`uzunyxdeskt
 de `uzunyx-tiling` ≥ 0.10.0, y `PerOutputVirtualDesktops=false` en `/etc/xdg/kwinrc`,
 que hasta 0.15.9 era `true`).
 
+Desde 0.17.2, las herramientas de captura quedan fuera (lista `NEVER` por `resourceClass`:
+Spectacle y Flameshot): su selector de región es una ventana común en pantalla completa, y
+Spectacle se iba a un escritorio `⛶` propio (visto por el usuario el 2026-11-21).
+
 ## Vista de ventanas `uzunyxwindowview`
 
 Desde 0.16.0 (variante B de las maquetas, elegida por el usuario el 2026-11-20), en lugar
@@ -227,6 +231,15 @@ crean uno nuevo y la vista sigue abierta en él, como con el «+». KWin le daba
 del escritorio nuevo (la ventana del ayudante nunca estuvo en su cadena de foco) y la vista lo
 tomaba como otra ventana activada; ahora una activación del escritorio (o de nada) no la
 cierra, y la ventana del ayudante vuelve a ser la activa. Comprobado en un Plasma anidado.
+
+Desde 0.17.2 (visto por el usuario el 2026-11-21, con ventanas en pantalla completa): la
+ventana principal de la vista quedaba corrida hacia abajo o hacia arriba y dejaba ver la
+pantalla real (el borde de arriba de la ventana en pantalla completa, o una franja sin
+difuminar sobre el panel). KWin mueve las ventanas que tocan los bordes del área de trabajo
+cuando esta cambia, y cambia al ir o volver de un escritorio `⛶` (sin la reserva del panel).
+Ahora, si una ventana de la vista deja su lugar, se la vuelve a poner (hasta 20 veces por
+apertura). Comprobado en un Plasma anidado moviéndola a la fuerza; el cambio de área
+de esa sesión no lo reproducía.
 
 ## Selector de Alt+Tab `uzunyx_cover`
 
