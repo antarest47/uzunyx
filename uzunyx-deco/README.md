@@ -222,6 +222,12 @@ Comprobado en un Plasma anidado con tres escritorios, ratón y teclado simulados
 escritorios y elegir uno, arrastrar a otro escritorio y a «+», Esc tras cambiar de página,
 seguir un cambio de escritorio de KWin, y con dos pantallas.
 
+Desde 0.17.1 (visto por el usuario el 2026-11-21): Alt+D o tres dedos en el último escritorio
+crean uno nuevo y la vista sigue abierta en él, como con el «+». KWin le daba el foco al fondo
+del escritorio nuevo (la ventana del ayudante nunca estuvo en su cadena de foco) y la vista lo
+tomaba como otra ventana activada; ahora una activación del escritorio (o de nada) no la
+cierra, y la ventana del ayudante vuelve a ser la activa. Comprobado en un Plasma anidado.
+
 ## Selector de Alt+Tab `uzunyx_cover`
 
 Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en

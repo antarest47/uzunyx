@@ -68,6 +68,8 @@ Item {
     property var viewDesktop: null
     // The desktop KWin ends on, while closing.
     property var closingDesktop: null
+    // The keyboard helper's window while the view is open.
+    property var keysWindow: null
     // macfullscreen's own desktops.
     readonly property string fullscreenPrefix: "⛶ "
 
@@ -251,6 +253,7 @@ Item {
             root.closing = false;
             root.chosen = null;
             root.previous = null;
+            root.keysWindow = null;
             root.closingDesktop = null;
         }
     }
@@ -371,6 +374,7 @@ Item {
             window.onAllDesktops = true;
             // The keyboard helper's window: invisible, under the view, active.
             if (window.caption === root.viewTitle + " keys") {
+                root.keysWindow = window;
                 window.opacity = 0;
                 const screen = KWin.Workspace.activeScreen.geometry;
                 window.frameGeometry = Qt.rect(screen.x, screen.y, 1, 1);
@@ -389,9 +393,23 @@ Item {
             }
         }
         function onWindowActivated(window) {
-            if (window && !root.isView(window) && root.stages.length > 0 && !root.closing) {
-                root.close(null, true);
+            if (root.stages.length === 0 || root.closing || root.isView(window)) {
+                return;
             }
+            // Going to a desktop the helper's window has never been on (a new
+            // one: Alt+D, three fingers on the last desktop), KWin gives the
+            // focus to the desktop itself, or to nothing: the view stays, and
+            // the helper takes the keyboard back.
+            if (!window || window.desktopWindow) {
+                Qt.callLater(() => {
+                    const keys = root.keysWindow;
+                    if (keys && !keys.deleted && root.stages.length > 0 && !root.closing) {
+                        KWin.Workspace.activeWindow = keys;
+                    }
+                });
+                return;
+            }
+            root.close(null, true);
         }
         // KWin changed desktop with the view open (three fingers, Alt+A/D).
         function onCurrentDesktopChanged() {
