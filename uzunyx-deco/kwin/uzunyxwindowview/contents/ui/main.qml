@@ -2,7 +2,8 @@
  * Uzunyx's window view, instead of KWin's Overview (variant B of the mockups,
  * chosen by the user on 2026-11-20): every window of the current desktop as a
  * live thumbnail, laid out in a grid over the blurred wallpaper, with a search
- * field on top and the panel still in sight. Meta+Tab or four fingers up.
+ * field on top and the panel still in sight. Meta+Tab or four fingers up; with
+ * the fingers, the opening (and closing, four down) follows them (progress).
  *
  * Desktops (variant C, chosen by the user on 2026-11-21): on the primary screen,
  * below the search field, a strip with every desktop (its wallpaper and its
@@ -70,6 +71,67 @@ Item {
     property var closingDesktop: null
     // The keyboard helper's window while the view is open.
     property var keysWindow: null
+
+    // How open the view is: 0, every window where it really is; 1, the grid.
+    // Animated when opening and closing, or moved by four fingers.
+    property real progress: 0
+    // Four fingers move it: "open" or "close" while they do, "" otherwise.
+    property string fingers: ""
+    readonly property bool following: fingers !== ""
+    // Fully open and still: only then the grid animates its own changes (the
+    // filter, a window closed or moved), or they would fight the opening.
+    readonly property bool settled: progress === 1 && !following && !progressAnimation.running && !closing
+    property bool openingStarted: false
+    NumberAnimation {
+        id: progressAnimation
+        target: root
+        property: "progress"
+        easing.type: Easing.OutCubic
+    }
+    function animateProgress(to) {
+        progressAnimation.stop();
+        progressAnimation.to = to;
+        // A shorter way left (the fingers did part of it), less time.
+        progressAnimation.duration = Math.round(root.duration * Math.max(0.4, Math.abs(to - progress)));
+        progressAnimation.start();
+    }
+    // Opening with the keyboard: once every screen has its thumbnails.
+    function maybeStart() {
+        if (openingStarted || closing || stages.length === 0 || !stages.every(s => s.readyToShow)) {
+            return;
+        }
+        openingStarted = true;
+        if (!following) {
+            animateProgress(1);
+        }
+    }
+
+    // The pages slide by this many pages (0 at rest): when the desktop in view
+    // changes it jumps to where the old page was and goes back to 0, and
+    // three fingers (or four) to the sides move it while they move.
+    property real pageShift: 0
+    property int shownIndex: 0
+    property bool across: false
+    NumberAnimation {
+        id: pageAnimation
+        target: root
+        property: "pageShift"
+        to: 0
+        duration: root.duration
+        easing.type: Easing.OutCubic
+    }
+    onViewDesktopChanged: {
+        const index = Math.max(0, KWin.Workspace.desktops.findIndex(d => sameDesktop(d, viewDesktop)));
+        if (stages.length > 0 && !closing) {
+            pageShift += index - shownIndex;
+            if (!across) {
+                pageAnimation.restart();
+            }
+        } else {
+            pageShift = 0;
+        }
+        shownIndex = index;
+    }
     // macfullscreen's own desktops.
     readonly property string fullscreenPrefix: "⛶ "
 
@@ -147,6 +209,11 @@ Item {
         previous = KWin.Workspace.activeWindow;
         viewDesktop = KWin.Workspace.currentDesktop;
         closingDesktop = null;
+        progressAnimation.stop();
+        progress = 0;
+        openingStarted = false;
+        pageAnimation.stop();
+        pageShift = 0;
         const focused = KWin.Workspace.activeScreen;
         const primary = primaryOutput();
         // Taken before the view's own windows exist.
@@ -204,6 +271,8 @@ Item {
             return;
         }
         closing = true;
+        fingers = "";
+        across = false;
         root.chosen = chosen;
         keepActive = elsewhere === true;
         keyboard("Stop");
@@ -226,6 +295,7 @@ Item {
         for (const stage of stages) {
             stage.leave(chosen);
         }
+        animateProgress(0);
         finished.start();
     }
 
@@ -434,6 +504,8 @@ Item {
             if (root.stages.length > 0 && !KWin.Workspace.desktops.some(d => root.sameDesktop(d, root.viewDesktop))) {
                 root.viewDesktop = KWin.Workspace.currentDesktop;
             }
+            // Its place may have changed (one before it went away): no slide.
+            root.shownIndex = Math.max(0, KWin.Workspace.desktops.findIndex(d => root.sameDesktop(d, root.viewDesktop)));
         }
     }
 
@@ -444,21 +516,102 @@ Item {
         onActivated: root.toggle()
     }
 
+    // Four fingers up open it and down close it, following the fingers: on
+    // lifting them it ends the way it is more than halfway to.
+    function fingersOpen(amount) {
+        if (closing || amount <= 0) {
+            return;
+        }
+        if (stages.length === 0) {
+            fingers = "open";
+            open();
+        }
+        if (fingers === "open") {
+            progressAnimation.stop();
+            progress = amount;
+        }
+    }
+    function fingersClose(amount) {
+        if (closing || stages.length === 0 || amount <= 0) {
+            return;
+        }
+        if (fingers === "" && !progressAnimation.running && progress === 1) {
+            fingers = "close";
+        }
+        if (fingers === "close") {
+            progress = 1 - amount;
+        }
+    }
+    function fingersLifted(kind, done) {
+        if (fingers !== kind) {
+            return;
+        }
+        fingers = "";
+        if (kind === "open" ? (done || progress > 0.5) : !(done || progress < 0.5)) {
+            animateProgress(1);
+        } else {
+            close(null);
+        }
+    }
     KWin.SwipeGestureHandler {
         direction: KWin.SwipeGestureHandler.Direction.Up
         fingerCount: 4
-        onActivated: {
-            if (root.stages.length === 0) {
-                root.open();
-            }
-        }
+        onProgressChanged: root.fingersOpen(progress)
+        onActivated: root.fingersLifted("open", true)
+        onCancelled: root.fingersLifted("open", false)
     }
-
     KWin.SwipeGestureHandler {
         direction: KWin.SwipeGestureHandler.Direction.Down
         fingerCount: 4
-        onActivated: root.close(null)
+        onProgressChanged: root.fingersClose(progress)
+        onActivated: root.fingersLifted("close", true)
+        onCancelled: root.fingersLifted("close", false)
     }
+
+    // Three (or four) fingers to the sides: KWin changes desktop with them, and
+    // the view follows; meanwhile the pages follow the fingers. At the start,
+    // KWin's desktop becomes the one in view, so KWin goes on from there.
+    // With nothing on that side, the pages give a little and come back (or
+    // uzunyxdesktops makes a desktop there, and the view goes to it).
+    function fingersAcross(amount) {
+        if (closing || stages.length === 0 || following) {
+            return;
+        }
+        if (!across) {
+            if (amount === 0) {
+                return;
+            }
+            across = true;
+            if (!sameDesktop(viewDesktop, KWin.Workspace.currentDesktop)) {
+                KWin.Workspace.currentDesktop = viewDesktop;
+            }
+        }
+        pageAnimation.stop();
+        const list = KWin.Workspace.desktops;
+        const at = list.findIndex(d => sameDesktop(d, viewDesktop));
+        const beyond = amount < 0 ? at >= list.length - 1 : at <= 0;
+        pageShift = beyond ? amount * 0.25 : amount;
+    }
+    function fingersAcrossLifted() {
+        if (!across) {
+            return;
+        }
+        across = false;
+        // KWin's change of desktop, if any, comes with the same event or right
+        // after: either way the pages go back to rest from where they are.
+        pageAnimation.restart();
+    }
+    component AcrossHandler: KWin.SwipeGestureHandler {
+        // -1 to the left (the desktop on the right comes in), 1 to the right.
+        required property int sign
+        onProgressChanged: root.fingersAcross(sign * progress)
+        onActivated: root.fingersAcrossLifted()
+        onCancelled: root.fingersAcrossLifted()
+    }
+    AcrossHandler { direction: KWin.SwipeGestureHandler.Direction.Left; fingerCount: 3; sign: -1 }
+    AcrossHandler { direction: KWin.SwipeGestureHandler.Direction.Right; fingerCount: 3; sign: 1 }
+    AcrossHandler { direction: KWin.SwipeGestureHandler.Direction.Left; fingerCount: 4; sign: -1 }
+    AcrossHandler { direction: KWin.SwipeGestureHandler.Direction.Right; fingerCount: 4; sign: 1 }
 
     // The windows of a screen the view can show: those of the task manager, on
     // any desktop, minimized ones included, in stacking order.
@@ -591,15 +744,13 @@ Item {
                 autoPaddingEnabled: false
                 blurEnabled: true
                 blurMax: 64
-                blur: backdrop.view.showing ? 1 : 0
-                Behavior on blur { enabled: backdrop.view.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                blur: root.progress
             }
         }
         Rectangle {
             anchors.fill: parent
             color: Kirigami.Theme.backgroundColor
-            opacity: backdrop.view.showing ? 0.3 : 0
-            Behavior on opacity { enabled: backdrop.view.animate; NumberAnimation { duration: root.duration } }
+            opacity: 0.3 * root.progress
         }
         MouseArea {
             anchors.fill: parent
@@ -677,12 +828,13 @@ Item {
             readonly property int gap: Kirigami.Units.gridUnit * 2
             readonly property int label: Kirigami.Units.gridUnit * 2
 
-            // False for the first frames: everything where it really is.
-            property bool opened: false
-            property bool animate: false
+            // The first frames, everything where it really is, until the
+            // thumbnails have a picture.
             property int frames: 0
             readonly property bool ready: frames >= 3
-            readonly property bool showing: opened && !root.closing
+            property bool readyToShow: false
+            // Answers the pointer: open, or most of the way.
+            readonly property bool showing: root.progress > 0.5 && !root.closing && !root.following
             property var chosen: null
 
             // One page per desktop on the primary screen; one, of every window
@@ -728,9 +880,9 @@ Item {
             readonly property int stripLabel: Math.round(Kirigami.Units.gridUnit * 1.4)
 
             function start() {
-                if (!animate && frames >= 4) {
-                    animate = true;
-                    opened = true;
+                if (!readyToShow && frames >= 4) {
+                    readyToShow = true;
+                    root.maybeStart();
                 }
             }
             onFrameSwapped: {
@@ -748,8 +900,6 @@ Item {
 
             function leave(window) {
                 chosen = window;
-                animate = true;
-                opened = false;
                 cancelDrag();
             }
 
@@ -868,14 +1018,12 @@ Item {
                     width: boxWidth
                     height: Kirigami.Units.gridUnit * 2.2
                     x: Math.round((stage.width - width) / 2)
-                    y: Kirigami.Units.gridUnit * 1.5 + (stage.showing ? 0 : -Kirigami.Units.gridUnit)
+                    y: Kirigami.Units.gridUnit * (1.5 - (1 - root.progress))
                     radius: height / 2
                     color: Qt.rgba(Kirigami.Theme.backgroundColor.r, Kirigami.Theme.backgroundColor.g, Kirigami.Theme.backgroundColor.b, 0.8)
                     border.width: 1
                     border.color: Kirigami.Theme.focusColor
-                    opacity: stage.showing ? 1 : 0
-                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: root.duration } }
-                    Behavior on y { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                    opacity: root.progress
 
                     Kirigami.Icon {
                         id: lens
@@ -927,10 +1075,8 @@ Item {
                     z: 60
                     spacing: stage.stripSpacing
                     x: Math.round((stage.width - width) / 2)
-                    y: stage.stripTop + (stage.showing ? 0 : -Kirigami.Units.gridUnit)
-                    opacity: stage.showing ? 1 : 0
-                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: root.duration } }
-                    Behavior on y { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                    y: stage.stripTop - Kirigami.Units.gridUnit * (1 - root.progress)
+                    opacity: root.progress
 
                     WheelHandler {
                         enabled: stage.showing
@@ -1113,8 +1259,7 @@ Item {
 
                         width: stage.geo.width
                         height: stage.geo.height
-                        x: (index - stage.pageIndex) * (stage.geo.width + stage.gap)
-                        Behavior on x { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                        x: (index - stage.pageIndex + (stage.isPrimary ? root.pageShift : 0)) * (stage.geo.width + stage.gap)
                         // The ones away from view aren't drawn.
                         visible: Math.abs(x) < width + stage.gap
 
@@ -1226,16 +1371,15 @@ Item {
                                 property var lastPlace: place
                                 onPlaceChanged: if (place) lastPlace = place
 
-                                // Where it is: its real place before opening and after
-                                // closing (the chosen one where it is now), the grid
-                                // between. Those of other desktops have no real place
-                                // in view: they fade. Pages away from view, the grid.
-                                readonly property var target: {
-                                    if (stage.opened) {
-                                        return place || lastPlace;
-                                    }
+                                // Its place in the grid, and where it really is (null: nowhere
+                                // on screen, so it grows from the middle of its cell and fades):
+                                // the chosen one where it is now, those of other desktops
+                                // nowhere. Pages away from view, the grid both ways. The tile is
+                                // between the two, as far as the view is open.
+                                readonly property var gridRect: place || lastPlace
+                                readonly property var realRect: {
                                     if (!page.isCurrent) {
-                                        return place || lastPlace;
+                                        return gridRect;
                                     }
                                     if (root.closing) {
                                         if (isChosen && window && !window.deleted) {
@@ -1245,9 +1389,14 @@ Item {
                                     }
                                     return page.onPage[index] ? from : null;
                                 }
-                                // Minimized ones have no place on screen: they grow in the grid.
-                                readonly property var rect: target || (lastPlace ? Qt.rect(lastPlace.x + lastPlace.width / 2,
-                                    lastPlace.y + lastPlace.height / 2, 1, 1) : Qt.rect(stage.width / 2, stage.height / 2, 1, 1))
+                                readonly property var rect: {
+                                    const t = root.progress;
+                                    const g = gridRect || Qt.rect(stage.width / 2, stage.height / 2, 1, 1);
+                                    const r = realRect || Qt.rect(g.x + g.width / 2, g.y + g.height / 2, 1, 1);
+                                    return Qt.rect(r.x + (g.x - r.x) * t, r.y + (g.y - r.y) * t,
+                                                   r.width + (g.width - r.width) * t, r.height + (g.height - r.height) * t);
+                                }
+                                readonly property real gridOpacity: isShown ? (isDragged ? 0.25 : window && window.minimized ? 0.7 : 1) : 0
 
                                 x: rect.x
                                 y: rect.y
@@ -1255,17 +1404,16 @@ Item {
                                 height: rect.height
                                 z: isChosen ? 300 : (hover.containsMouse ? 200 : 100 + index)
                                 readonly property bool gone: going || stage.removed[modelData.id] === true
-                                opacity: gone ? 0 : !stage.opened ? (target ? 1 : 0)
-                                    : (isShown ? (isDragged ? 0.25 : window && window.minimized ? 0.7 : 1) : 0)
+                                opacity: gone ? 0 : (realRect ? 1 : 0) * (1 - root.progress) + gridOpacity * root.progress
                                 scale: gone ? 0.85 : 1
                                 Behavior on scale { NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
                                 visible: opacity > 0
 
-                                Behavior on x { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on y { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on width { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on height { enabled: stage.animate; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
-                                Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: root.duration } }
+                                Behavior on x { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on y { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on width { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on height { enabled: root.settled; NumberAnimation { duration: root.duration; easing.type: Easing.OutCubic } }
+                                Behavior on opacity { enabled: root.settled; NumberAnimation { duration: root.duration } }
 
                                 // The ring: in the accent on the selected one, a lighter
                                 // line on the one under the pointer.
@@ -1276,8 +1424,7 @@ Item {
                                     color: "transparent"
                                     border.width: tile.isSelected ? 3 : (hover.containsMouse ? 2 : 0)
                                     border.color: tile.isSelected ? Kirigami.Theme.focusColor : Qt.rgba(1, 1, 1, 0.5)
-                                    opacity: stage.showing ? 1 : 0
-                                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: root.duration } }
+                                    opacity: root.progress
                                 }
 
                                 KWin.WindowThumbnail {
@@ -1367,8 +1514,7 @@ Item {
                                     anchors.topMargin: Kirigami.Units.smallSpacing * 2
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     spacing: Kirigami.Units.smallSpacing * 2
-                                    opacity: stage.showing ? 1 : 0
-                                    Behavior on opacity { enabled: stage.animate; NumberAnimation { duration: root.duration } }
+                                    opacity: root.progress
                                     readonly property bool badged: page.searching && page.desktop !== null
                                         && KWin.Workspace.desktops.length > 1 && !!tile.window && !tile.window.onAllDesktops
                                     Kirigami.Icon {

@@ -241,6 +241,28 @@ Ahora, si una ventana de la vista deja su lugar, se la vuelve a poner (hasta 20 
 apertura). Comprobado en un Plasma anidado moviéndola a la fuerza; el cambio de área
 de esa sesión no lo reproducía.
 
+Desde 0.18.0 (pedido por el usuario el 2026-11-21): **la vista sigue a los dedos.** Todo lo
+que se mueve al abrir y cerrar depende de un solo valor, `progress` (0: cada ventana donde
+está; 1: la cuadrícula), y cada miniatura, el difuminado, el oscurecido, el buscador y la tira
+se calculan entre los dos extremos. Con el teclado o un clic, `progress` se anima (300 ms,
+menos si ya hizo parte del camino); con cuatro dedos arriba o abajo lo mueve el avance del
+gesto que da KWin (`SwipeGestureHandler.progress`), y al levantar los dedos termina hacia el
+lado al que ya pasó la mitad. Los `Behavior` de la cuadrícula (filtro, ventana cerrada o
+movida) solo actúan con la vista abierta y quieta (`settled`), para no pelear con eso.
+
+Las páginas se corren `pageShift` páginas: al cambiar de escritorio en la vista salta a
+donde estaba la página vieja y vuelve a 0 animado. Con tres dedos (o cuatro) a los lados
+sigue a los dedos; KWin, que tiene esos mismos gestos, decide al soltar si cambia de
+escritorio (con un 25 % del recorrido) y la vista lo sigue. Al empezar el gesto, el escritorio
+de KWin pasa a ser el de la vista (tapado por ella), así KWin cuenta desde ahí. Sin escritorio
+de ese lado, las páginas ceden un cuarto y vuelven (o `uzunyxgestures` crea uno a la
+derecha y la vista va a él).
+
+Comprobado en un Plasma anidado con gestos de prueba (atajos que llaman a las mismas
+funciones paso a paso, porque `org_kde_kwin_fake_input` no hace gestos de touchpad): abrir y
+soltar antes y después de la mitad, cerrar a medias, y las páginas a medio deslizar. El cambio
+de escritorio real con los dedos no se pudo probar ahí.
+
 ## Selector de Alt+Tab `uzunyx_cover`
 
 Estilo Cover Switch (`kwin/tabbox/uzunyx_cover`, solo QML; `[TabBox] LayoutName` en
